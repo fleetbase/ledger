@@ -1,6 +1,6 @@
 <p align="center">
     <p align="center">
-        <img src="https://github.com/user-attachments/assets/197c404c-06b1-4fd4-8a26-624f1d481966" width="280" height="280" />
+        <img src="https://github.com/user-attachments/assets/197c404c-06b1-4fd4-8a26-624f1d481966" width="140" height="140" />
     </p>
     <p align="center">
         Accounting & Invoicing Extension for Fleetbase
