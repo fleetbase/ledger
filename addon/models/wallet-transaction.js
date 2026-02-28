@@ -2,7 +2,6 @@ import Model, { attr } from '@ember-data/model';
 import { computed } from '@ember/object';
 
 export default class WalletTransactionModel extends Model {
-    @attr('string') public_id;
     @attr('string') wallet_uuid;
     @attr('string') type;
     @attr('string') direction;

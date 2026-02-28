@@ -15,9 +15,9 @@ export default class AccountGeneralLedgerComponent extends Component {
 
     @task *loadLedger() {
         const account = this.args.account;
-        if (!account?.public_id) return;
+        if (!account?.id) return;
         try {
-            const result = yield this.fetch.get(`ledger/int/v1/accounts/${account.public_id}/ledger`);
+            const result = yield this.fetch.get(`accounts/${account.id}/ledger`, { namespace: 'ledger/int/v1' });
             this.entries = result?.data?.entries ?? [];
             this.summary = result?.data?.summary ?? null;
         } catch {

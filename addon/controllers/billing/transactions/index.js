@@ -34,7 +34,7 @@ export default class BillingTransactionsIndexController extends Controller {
     }
 
     @action viewTransaction(txn) {
-        this.hostRouter.transitionTo('console.ledger.billing.transactions.index.details', txn.public_id);
+        this.hostRouter.transitionTo('console.ledger.billing.transactions.index.details', txn.id);
     }
 
     @action reload() {

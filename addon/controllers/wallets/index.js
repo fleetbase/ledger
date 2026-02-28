@@ -40,12 +40,12 @@ export default class WalletsIndexController extends Controller {
     }
 
     @action viewWallet(wallet) {
-        this.hostRouter.transitionTo('console.ledger.wallets.index.details', wallet.public_id);
+        this.hostRouter.transitionTo('console.ledger.wallets.index.details', wallet.id);
     }
 
     @action async freezeWallet(wallet) {
         try {
-            await this.fetch.post(`ledger/int/v1/wallets/${wallet.public_id}/freeze`);
+            await this.fetch.post(`wallets/${wallet.id}/freeze`, {}, { namespace: 'ledger/int/v1' });
             this.notifications.success('Wallet frozen.');
             this.hostRouter.refresh();
         } catch (error) {
@@ -55,7 +55,7 @@ export default class WalletsIndexController extends Controller {
 
     @action async unfreezeWallet(wallet) {
         try {
-            await this.fetch.post(`ledger/int/v1/wallets/${wallet.public_id}/unfreeze`);
+            await this.fetch.post(`wallets/${wallet.id}/unfreeze`, {}, { namespace: 'ledger/int/v1' });
             this.notifications.success('Wallet unfrozen.');
             this.hostRouter.refresh();
         } catch (error) {

@@ -6,7 +6,7 @@ export default class HomeRoute extends Route {
 
     async model() {
         try {
-            const response = await this.fetch.get('ledger/int/v1/reports/dashboard');
+            const response = await this.fetch.get('reports/dashboard', { namespace: 'ledger/int/v1' });
             return response?.data ?? {};
         } catch {
             return {};

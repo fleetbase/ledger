@@ -2,7 +2,6 @@ import Model, { attr } from '@ember-data/model';
 import { computed } from '@ember/object';
 
 export default class InvoiceModel extends Model {
-    @attr('string') public_id;
     @attr('string') number;
     @attr('string') status;
     @attr('string') currency;

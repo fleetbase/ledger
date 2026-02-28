@@ -4,8 +4,8 @@ import { inject as service } from '@ember/service';
 export default class BillingTransactionsIndexDetailsRoute extends Route {
     @service store;
 
-    model({ public_id }) {
-        return this.store.findRecord('transaction', public_id, {
+    model({ id }) {
+        return this.store.findRecord('transaction', id, {
             adapterOptions: { namespace: 'ledger/int/v1' },
         });
     }

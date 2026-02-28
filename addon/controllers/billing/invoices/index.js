@@ -89,7 +89,7 @@ export default class BillingInvoicesIndexController extends Controller {
     }
 
     @action viewInvoice(invoice) {
-        this.hostRouter.transitionTo('console.ledger.billing.invoices.index.details', invoice.public_id);
+        this.hostRouter.transitionTo('console.ledger.billing.invoices.index.details', invoice.id);
     }
 
     @action async deleteInvoice(invoice) {

@@ -4,8 +4,8 @@ import { inject as service } from '@ember/service';
 export default class AccountingJournalIndexDetailsRoute extends Route {
     @service store;
 
-    model({ public_id }) {
-        return this.store.findRecord('journal', public_id, {
+    model({ id }) {
+        return this.store.findRecord('journal', id, {
             adapterOptions: { namespace: 'ledger/int/v1' },
         });
     }

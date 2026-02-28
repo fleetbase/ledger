@@ -16,9 +16,10 @@ export default class WalletTransactionHistoryComponent extends Component {
 
     @task *loadTransactions() {
         const wallet = this.args.wallet;
-        if (!wallet?.public_id) return;
+        if (!wallet?.id) return;
         try {
-            const result = yield this.fetch.get(`ledger/int/v1/wallets/${wallet.public_id}/transactions`, {
+            const result = yield this.fetch.get(`wallets/${wallet.id}/transactions`, {
+                namespace: 'ledger/int/v1',
                 params: { page: this.page, limit: 20 },
             });
             this.transactions = result?.data ?? [];

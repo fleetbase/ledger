@@ -34,7 +34,7 @@ export default class SettingsGatewaysIndexController extends Controller {
 
     @task *loadDrivers() {
         try {
-            const result = yield this.fetch.get('ledger/int/v1/gateways/drivers');
+            const result = yield this.fetch.get('gateways/drivers', { namespace: 'ledger/int/v1' });
             this.availableDrivers = result?.data ?? [];
         } catch {
             this.availableDrivers = [];
@@ -65,7 +65,7 @@ export default class SettingsGatewaysIndexController extends Controller {
     }
 
     @action viewGateway(gateway) {
-        this.hostRouter.transitionTo('console.ledger.settings.gateways.index.details', gateway.public_id);
+        this.hostRouter.transitionTo('console.ledger.settings.gateways.index.details', gateway.id);
     }
 
     @action async deleteGateway(gateway) {

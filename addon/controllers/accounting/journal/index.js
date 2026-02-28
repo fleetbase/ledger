@@ -49,7 +49,7 @@ export default class AccountingJournalIndexController extends Controller {
     }
 
     @action viewEntry(entry) {
-        this.hostRouter.transitionTo('console.ledger.accounting.journal.index.details', entry.public_id);
+        this.hostRouter.transitionTo('console.ledger.accounting.journal.index.details', entry.id);
     }
 
     @action async deleteEntry(entry) {

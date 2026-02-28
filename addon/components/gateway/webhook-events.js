@@ -15,9 +15,10 @@ export default class GatewayWebhookEventsComponent extends Component {
 
     @task *loadEvents() {
         const gateway = this.args.gateway;
-        if (!gateway?.public_id) return;
+        if (!gateway?.id) return;
         try {
-            const result = yield this.fetch.get(`ledger/int/v1/gateways/${gateway.public_id}/transactions`, {
+            const result = yield this.fetch.get(`gateways/${gateway.id}/transactions`, {
+                namespace: 'ledger/int/v1',
                 params: { limit: 20 },
             });
             this.events = result?.data ?? [];

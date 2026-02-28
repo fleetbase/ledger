@@ -14,9 +14,10 @@ export default class InvoiceTransactionsComponent extends Component {
 
     @task *loadTransactions() {
         const invoice = this.args.invoice;
-        if (!invoice?.public_id) return;
+        if (!invoice?.id) return;
         try {
-            const result = yield this.fetch.get(`ledger/int/v1/transactions`, {
+            const result = yield this.fetch.get('transactions', {
+                namespace: 'ledger/int/v1',
                 params: { invoice_uuid: invoice.id },
             });
             this.transactions = result?.data ?? [];

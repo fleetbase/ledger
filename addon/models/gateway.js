@@ -2,7 +2,6 @@ import Model, { attr } from '@ember-data/model';
 import { computed } from '@ember/object';
 
 export default class GatewayModel extends Model {
-    @attr('string') public_id;
     @attr('string') name;
     @attr('string') code;
     @attr('string') type;

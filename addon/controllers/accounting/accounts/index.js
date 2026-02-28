@@ -41,7 +41,7 @@ export default class AccountingAccountsIndexController extends Controller {
     }
 
     @action viewAccount(account) {
-        this.hostRouter.transitionTo('console.ledger.accounting.accounts.index.details', account.public_id);
+        this.hostRouter.transitionTo('console.ledger.accounting.accounts.index.details', account.id);
     }
 
     @action reload() {

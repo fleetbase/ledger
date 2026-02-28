@@ -36,7 +36,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
     @action async sendInvoice() {
         const invoice = this.model;
         try {
-            await this.fetch.post(`ledger/int/v1/invoices/${invoice.public_id}/send`);
+            await this.fetch.post(`invoices/${invoice.id}/send`, {}, { namespace: 'ledger/int/v1' });
             this.notifications.success('Invoice sent successfully.');
             this.hostRouter.refresh();
         } catch (error) {
@@ -57,7 +57,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
             confirm: async (modal) => {
                 modal.startLoading();
                 try {
-                    await this.fetch.post(`ledger/int/v1/invoices/${invoice.public_id}/void`);
+                    await this.fetch.post(`invoices/${invoice.id}/void`, {}, { namespace: 'ledger/int/v1' });
                     this.notifications.success('Invoice voided.');
                     this.hostRouter.refresh();
                     modal.done();

@@ -39,7 +39,7 @@ export default class WalletsIndexDetailsController extends Controller {
 
     @action async freezeWallet() {
         try {
-            await this.fetch.post(`ledger/int/v1/wallets/${this.model.public_id}/freeze`);
+            await this.fetch.post(`wallets/${this.model.id}/freeze`, {}, { namespace: 'ledger/int/v1' });
             this.notifications.success('Wallet frozen.');
             this.hostRouter.refresh();
         } catch (error) {
@@ -49,7 +49,7 @@ export default class WalletsIndexDetailsController extends Controller {
 
     @action async unfreezeWallet() {
         try {
-            await this.fetch.post(`ledger/int/v1/wallets/${this.model.public_id}/unfreeze`);
+            await this.fetch.post(`wallets/${this.model.id}/unfreeze`, {}, { namespace: 'ledger/int/v1' });
             this.notifications.success('Wallet unfrozen.');
             this.hostRouter.refresh();
         } catch (error) {

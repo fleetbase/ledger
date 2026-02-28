@@ -2,7 +2,6 @@ import Model, { attr } from '@ember-data/model';
 import { computed } from '@ember/object';
 
 export default class TransactionModel extends Model {
-    @attr('string') public_id;
     @attr('string') gateway_transaction_id;
     @attr('string') gateway_code;
     @attr('string') type;

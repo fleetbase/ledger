@@ -30,13 +30,13 @@ export default class ReportsIndexController extends Controller {
             if (this.asOf) params.as_of = this.asOf;
 
             const endpointMap = {
-                'balance-sheet': 'ledger/int/v1/reports/balance-sheet',
-                'income-statement': 'ledger/int/v1/reports/income-statement',
-                'cash-flow': 'ledger/int/v1/reports/cash-flow',
-                'ar-aging': 'ledger/int/v1/reports/ar-aging',
+                'balance-sheet': 'reports/balance-sheet',
+                'income-statement': 'reports/income-statement',
+                'cash-flow': 'reports/cash-flow',
+                'ar-aging': 'reports/ar-aging',
             };
 
-            const result = yield this.fetch.get(endpointMap[this.activeReport], { params });
+            const result = yield this.fetch.get(endpointMap[this.activeReport], { namespace: 'ledger/int/v1', params });
             this.reportData = result?.data ?? null;
         } catch {
             this.reportData = null;
