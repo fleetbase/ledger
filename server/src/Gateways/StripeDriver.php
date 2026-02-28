@@ -9,10 +9,6 @@ use Fleetbase\Ledger\Exceptions\WebhookSignatureException;
 use Illuminate\Http\Request;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\SignatureVerificationException;
-use Stripe\PaymentIntent;
-use Stripe\Refund;
-use Stripe\SetupIntent;
-use Stripe\Stripe;
 use Stripe\StripeClient;
 use Stripe\Webhook;
 
@@ -115,7 +111,6 @@ class StripeDriver extends AbstractGatewayDriver
 
         $secretKey = $this->config('secret_key');
         if ($secretKey) {
-            Stripe::setApiKey($secretKey);
             $this->client = new StripeClient($secretKey);
         }
 
@@ -161,7 +156,7 @@ class StripeDriver extends AbstractGatewayDriver
                 $params['customer'] = $request->customerId;
             }
 
-            $paymentIntent = PaymentIntent::create($params);
+            $paymentIntent = $this->client->paymentIntents->create($params);
 
             // Determine status
             $status    = $paymentIntent->status === 'succeeded'
@@ -236,7 +231,7 @@ class StripeDriver extends AbstractGatewayDriver
                 $params['metadata'] = $request->metadata;
             }
 
-            $refund = Refund::create($params);
+            $refund = $this->client->refunds->create($params);
 
             $this->logInfo('Refund created', [
                 'id'                    => $refund->id,
@@ -296,7 +291,7 @@ class StripeDriver extends AbstractGatewayDriver
         } else {
             // No webhook secret configured — parse without verification (not recommended for production)
             $this->logError('Webhook received without signature verification. Configure webhook_secret.');
-            $event = \Stripe\Event::constructFrom(json_decode($payload, true));
+            $event = \Stripe\Event::constructFrom(json_decode($payload, true) ?? []);
         }
 
         // Extract the primary object from the event
@@ -351,7 +346,7 @@ class StripeDriver extends AbstractGatewayDriver
                 'usage'               => 'off_session',
             ]);
 
-            $setupIntent = SetupIntent::create($params);
+            $setupIntent = $this->client->setupIntents->create($params);
 
             $this->logInfo('SetupIntent created', ['id' => $setupIntent->id]);
 

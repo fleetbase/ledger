@@ -33,6 +33,38 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
 
         /*
         |--------------------------------------------------------------------------
+        | Public API Routes (Authenticated via API Key — Customer / Driver facing)
+        |--------------------------------------------------------------------------
+        |
+        | These routes are accessible to Fleetbase API consumers (customers, drivers)
+        | authenticated via their API key. Each consumer can only access their own wallet.
+        |
+        | Prefix: /ledger/v1/...
+        */
+        $router->prefix(config('ledger.api.routing.version_prefix', 'v1'))->group(
+            function ($router) {
+                $router->group(
+                    ['middleware' => ['fleetbase.api']],
+                    function ($router) {
+
+                        // ------------------------------------------------------------
+                        // Wallet — Public (Customer / Driver)
+                        // ------------------------------------------------------------
+                        // GET  /ledger/v1/wallet              — Get own wallet (auto-provisions if needed)
+                        // GET  /ledger/v1/wallet/balance      — Get own wallet balance
+                        // GET  /ledger/v1/wallet/transactions — Get own wallet transaction history
+                        // POST /ledger/v1/wallet/topup        — Top up own wallet via payment gateway
+                        $router->get('wallet', 'Api\v1\WalletApiController@getWallet');
+                        $router->get('wallet/balance', 'Api\v1\WalletApiController@getBalance');
+                        $router->get('wallet/transactions', 'Api\v1\WalletApiController@getTransactions');
+                        $router->post('wallet/topup', 'Api\v1\WalletApiController@topUp');
+                    }
+                );
+            }
+        );
+
+        /*
+        |--------------------------------------------------------------------------
         | Internal Ledger API Routes
         |--------------------------------------------------------------------------
         |
@@ -80,16 +112,34 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                         $router->post('invoices/{id}/send', 'Internal\v1\InvoiceController@send');
 
                         // ------------------------------------------------------------
-                        // Wallets
+                        // Wallets — Internal (Operator / Admin)
                         // ------------------------------------------------------------
                         $router->get('wallets', 'Internal\v1\WalletController@query');
                         $router->get('wallets/{id}', 'Internal\v1\WalletController@find');
                         $router->post('wallets', 'Internal\v1\WalletController@create');
                         $router->put('wallets/{id}', 'Internal\v1\WalletController@update');
                         $router->delete('wallets/{id}', 'Internal\v1\WalletController@delete');
+
+                        // Balance operations
                         $router->post('wallets/{id}/deposit', 'Internal\v1\WalletController@deposit');
                         $router->post('wallets/{id}/withdraw', 'Internal\v1\WalletController@withdraw');
                         $router->post('wallets/transfer', 'Internal\v1\WalletController@transfer');
+                        $router->post('wallets/{id}/topup', 'Internal\v1\WalletController@topUp');
+                        $router->post('wallets/{id}/payout', 'Internal\v1\WalletController@payout');
+
+                        // State management
+                        $router->post('wallets/{id}/freeze', 'Internal\v1\WalletController@freeze');
+                        $router->post('wallets/{id}/unfreeze', 'Internal\v1\WalletController@unfreeze');
+                        $router->post('wallets/{id}/recalculate', 'Internal\v1\WalletController@recalculate');
+
+                        // Transaction history for a specific wallet
+                        $router->get('wallets/{id}/transactions', 'Internal\v1\WalletController@getTransactions');
+
+                        // ------------------------------------------------------------
+                        // Wallet Transactions — Internal (standalone query endpoint)
+                        // ------------------------------------------------------------
+                        $router->get('wallet-transactions', 'Internal\v1\WalletTransactionController@query');
+                        $router->get('wallet-transactions/{id}', 'Internal\v1\WalletTransactionController@find');
 
                         // ------------------------------------------------------------
                         // Transactions (read-only view of core-api Transaction records)
@@ -122,8 +172,8 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                         // ------------------------------------------------------------
                         // Reports & Financial Statements
                         // ------------------------------------------------------------
-                        // Trial balance — debit/credit totals across all accounts
                         $router->get('reports/trial-balance', 'Internal\v1\ReportController@trialBalance');
+                        $router->get('reports/wallet-summary', 'Internal\v1\ReportController@walletSummary');
                     }
                 );
             }
