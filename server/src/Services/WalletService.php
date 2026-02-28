@@ -53,8 +53,12 @@ class WalletService
     /**
      * Deposit funds into a wallet.
      *
+     * Correct double-entry accounting treatment for a wallet deposit:
+     *   DEBIT  Cash / Source Account  (asset increases — money received)
+     *   CREDIT Wallet Liability       (liability increases — we owe more to wallet holder)
+     *
      * @param Wallet $wallet
-     * @param int    $amount
+     * @param int    $amount      Amount in smallest currency unit (e.g. cents)
      * @param string $description
      * @param array  $options
      *
@@ -67,20 +71,21 @@ class WalletService
         }
 
         return DB::transaction(function () use ($wallet, $amount, $description, $options) {
-            // Get or create the wallet liability account
+            // Debit: Cash / source account (asset increases — money received)
+            $cashAccount = $options['source_account'] ?? $this->getDefaultCashAccount($wallet->company_uuid);
+
+            // Credit: Wallet liability account (liability increases — we owe more to the wallet holder)
             $walletAccount = $this->getWalletAccount($wallet);
 
-            // Get the source account (e.g., cash or bank account)
-            $sourceAccount = $options['source_account'] ?? $this->getDefaultCashAccount($wallet->company_uuid);
-
-            // Create journal entry: Debit Wallet Liability, Credit Source Account
+            // DEBIT Cash, CREDIT Wallet Liability
             $this->ledgerService->createJournalEntry(
-                $walletAccount,
-                $sourceAccount,
+                $cashAccount,    // debit  — asset increases
+                $walletAccount,  // credit — liability increases
                 $amount,
                 $description ?: "Deposit to wallet {$wallet->public_id}",
                 array_merge($options, [
                     'company_uuid' => $wallet->company_uuid,
+                    'currency'     => $wallet->currency,
                     'type'         => 'wallet_deposit',
                 ])
             );
@@ -96,8 +101,12 @@ class WalletService
     /**
      * Withdraw funds from a wallet.
      *
+     * Correct double-entry accounting treatment for a wallet withdrawal:
+     *   DEBIT  Wallet Liability       (liability decreases — we owe less to wallet holder)
+     *   CREDIT Cash / Dest Account    (asset decreases — money paid out)
+     *
      * @param Wallet $wallet
-     * @param int    $amount
+     * @param int    $amount      Amount in smallest currency unit (e.g. cents)
      * @param string $description
      * @param array  $options
      *
@@ -114,20 +123,21 @@ class WalletService
         }
 
         return DB::transaction(function () use ($wallet, $amount, $description, $options) {
-            // Get or create the wallet liability account
+            // Debit: Wallet liability account (liability decreases — we owe less to the wallet holder)
             $walletAccount = $this->getWalletAccount($wallet);
 
-            // Get the destination account (e.g., expense or cash account)
-            $destinationAccount = $options['destination_account'] ?? $this->getDefaultExpenseAccount($wallet->company_uuid);
+            // Credit: Cash / destination account (asset decreases — money paid out)
+            $cashAccount = $options['destination_account'] ?? $this->getDefaultCashAccount($wallet->company_uuid);
 
-            // Create journal entry: Debit Destination Account, Credit Wallet Liability
+            // DEBIT Wallet Liability, CREDIT Cash
             $this->ledgerService->createJournalEntry(
-                $destinationAccount,
-                $walletAccount,
+                $walletAccount,  // debit  — liability decreases
+                $cashAccount,    // credit — asset decreases
                 $amount,
                 $description ?: "Withdrawal from wallet {$wallet->public_id}",
                 array_merge($options, [
                     'company_uuid' => $wallet->company_uuid,
+                    'currency'     => $wallet->currency,
                     'type'         => 'wallet_withdrawal',
                 ])
             );
@@ -143,9 +153,13 @@ class WalletService
     /**
      * Transfer funds between two wallets.
      *
+     * Correct double-entry accounting treatment for a wallet-to-wallet transfer:
+     *   DEBIT  From Wallet Liability  (source liability decreases — we owe less to source holder)
+     *   CREDIT To Wallet Liability    (destination liability increases — we owe more to dest holder)
+     *
      * @param Wallet $fromWallet
      * @param Wallet $toWallet
-     * @param int    $amount
+     * @param int    $amount      Amount in smallest currency unit (e.g. cents)
      * @param string $description
      * @param array  $options
      *
@@ -162,18 +176,21 @@ class WalletService
         }
 
         return DB::transaction(function () use ($fromWallet, $toWallet, $amount, $description, $options) {
-            // Get wallet accounts
+            // Debit: From wallet liability (source liability decreases — we owe less to source holder)
             $fromAccount = $this->getWalletAccount($fromWallet);
-            $toAccount   = $this->getWalletAccount($toWallet);
 
-            // Create journal entry: Debit To Wallet, Credit From Wallet
+            // Credit: To wallet liability (destination liability increases — we owe more to dest holder)
+            $toAccount = $this->getWalletAccount($toWallet);
+
+            // DEBIT From Wallet Liability, CREDIT To Wallet Liability
             $journal = $this->ledgerService->createJournalEntry(
-                $toAccount,
-                $fromAccount,
+                $fromAccount,  // debit  — source liability decreases
+                $toAccount,    // credit — destination liability increases
                 $amount,
-                $description ?: "Transfer from {$fromWallet->public_id} to {$toWallet->public_id}",
+                $description ?: "Transfer from wallet {$fromWallet->public_id} to {$toWallet->public_id}",
                 array_merge($options, [
                     'company_uuid' => $fromWallet->company_uuid,
+                    'currency'     => $fromWallet->currency,
                     'type'         => 'wallet_transfer',
                 ])
             );
@@ -194,7 +211,10 @@ class WalletService
     }
 
     /**
-     * Get or create the ledger account for a wallet.
+     * Get or create the ledger liability account for a wallet.
+     *
+     * Each wallet has its own dedicated liability account in the chart of accounts.
+     * This account represents the amount the company owes to the wallet holder.
      *
      * @param Wallet $wallet
      *
@@ -218,7 +238,7 @@ class WalletService
     }
 
     /**
-     * Get the default cash account.
+     * Get or create the default cash account for a company.
      *
      * @param string $companyUuid
      *
@@ -240,26 +260,5 @@ class WalletService
         );
     }
 
-    /**
-     * Get the default expense account.
-     *
-     * @param string $companyUuid
-     *
-     * @return Account
-     */
-    protected function getDefaultExpenseAccount(string $companyUuid): Account
-    {
-        return Account::firstOrCreate(
-            [
-                'company_uuid' => $companyUuid,
-                'code'         => 'EXPENSE-WALLET',
-            ],
-            [
-                'name'              => 'Wallet Expenses',
-                'type'              => 'expense',
-                'description'       => 'Expenses from wallet withdrawals',
-                'is_system_account' => true,
-            ]
-        );
-    }
 }
+

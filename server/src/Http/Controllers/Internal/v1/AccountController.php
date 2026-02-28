@@ -5,6 +5,8 @@ namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Ledger\Http\Resources\v1\Account as AccountResource;
 use Fleetbase\Ledger\Models\Account;
+use Fleetbase\Ledger\Services\LedgerService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AccountController extends Controller
@@ -22,6 +24,23 @@ class AccountController extends Controller
      * @var \Fleetbase\Ledger\Models\Account
      */
     public $model = Account::class;
+
+    /**
+     * The ledger service instance.
+     *
+     * @var LedgerService
+     */
+    protected LedgerService $ledgerService;
+
+    /**
+     * Create a new AccountController instance.
+     *
+     * @param LedgerService $ledgerService
+     */
+    public function __construct(LedgerService $ledgerService)
+    {
+        $this->ledgerService = $ledgerService;
+    }
 
     /**
      * Query for accounts.
@@ -165,5 +184,37 @@ class AccountController extends Controller
         $account->updateBalance();
 
         return new AccountResource($account);
+    }
+
+    /**
+     * Return the general ledger for a specific account.
+     *
+     * Returns all journal entries where this account appears on either the debit
+     * or credit side, ordered chronologically. Supports optional date range filtering
+     * via `date_from` and `date_to` query parameters.
+     *
+     * @param string  $id
+     * @param Request $request
+     *
+     * @return JsonResponse
+     */
+    public function generalLedger($id, Request $request): JsonResponse
+    {
+        $account = Account::where('company_uuid', session('company'))
+            ->where(function ($query) use ($id) {
+                $query->where('uuid', $id)->orWhere('public_id', $id);
+            })
+            ->firstOrFail();
+
+        $entries = $this->ledgerService->getGeneralLedger(
+            $account,
+            $request->input('date_from'),
+            $request->input('date_to')
+        );
+
+        return response()->json([
+            'account' => new AccountResource($account),
+            'entries' => $entries,
+        ]);
     }
 }

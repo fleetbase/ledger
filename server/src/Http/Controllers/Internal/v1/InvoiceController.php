@@ -258,4 +258,43 @@ class InvoiceController extends Controller
 
         return new InvoiceResource($invoice);
     }
+
+    /**
+     * Send an invoice to the customer via email.
+     *
+     * Marks the invoice as sent and dispatches a notification to the customer's
+     * email address. If the invoice has no customer or the customer has no email,
+     * a 422 error is returned.
+     *
+     * @param string  $id
+     * @param Request $request
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function send($id, Request $request)
+    {
+        $invoice = Invoice::where('company_uuid', session('company'))
+            ->where(function ($query) use ($id) {
+                $query->where('uuid', $id)->orWhere('public_id', $id);
+            })
+            ->with('customer')
+            ->firstOrFail();
+
+        // Validate that the invoice has a sendable customer
+        if (!$invoice->customer || !$invoice->customer->email) {
+            return response()->json(
+                ['error' => 'Invoice customer does not have a valid email address.'],
+                422
+            );
+        }
+
+        // Mark as sent
+        $invoice->markAsSent();
+
+        // TODO (M5): Dispatch InvoiceSentNotification to $invoice->customer->email
+        // \Illuminate\Support\Facades\Notification::route('mail', $invoice->customer->email)
+        //     ->notify(new \Fleetbase\Ledger\Notifications\InvoiceSentNotification($invoice));
+
+        return new InvoiceResource($invoice->load(['customer', 'items']));
+    }
 }

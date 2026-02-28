@@ -4,12 +4,12 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| Ledger API Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
+| All routes are prefixed with the configured ledger prefix (default: 'ledger')
+| and are protected by the 'fleetbase.protected' middleware which requires a
+| valid Fleetbase session or API key.
 |
 */
 
@@ -17,17 +17,21 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
     function ($router) {
         /*
         |--------------------------------------------------------------------------
-        | Internal Billing API Routes
+        | Internal Ledger API Routes
         |--------------------------------------------------------------------------
         |
-        | Primary internal routes for console.
+        | These routes are consumed by the Fleetbase console frontend (Ember engine).
+        | They are protected and require an authenticated session.
         */
         $router->prefix(config('ledger.api.routing.internal_prefix', 'int'))->group(
             function ($router) {
                 $router->group(
                     ['prefix' => 'v1', 'middleware' => ['fleetbase.protected']],
                     function ($router) {
-                        // Accounts
+
+                        // ------------------------------------------------------------
+                        // Accounts (Chart of Accounts)
+                        // ------------------------------------------------------------
                         $router->get('accounts', 'Internal\v1\AccountController@query');
                         $router->get('accounts/{id}', 'Internal\v1\AccountController@find');
                         $router->post('accounts', 'Internal\v1\AccountController@create');
@@ -35,7 +39,20 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                         $router->delete('accounts/{id}', 'Internal\v1\AccountController@delete');
                         $router->post('accounts/{id}/recalculate-balance', 'Internal\v1\AccountController@recalculateBalance');
 
+                        // General ledger for a specific account (all journal entries for that account)
+                        $router->get('accounts/{id}/ledger', 'Internal\v1\AccountController@generalLedger');
+
+                        // ------------------------------------------------------------
+                        // Journal Entries
+                        // ------------------------------------------------------------
+                        $router->get('journals', 'Internal\v1\JournalController@query');
+                        $router->get('journals/{id}', 'Internal\v1\JournalController@find');
+                        $router->post('journals', 'Internal\v1\JournalController@create');
+                        $router->delete('journals/{id}', 'Internal\v1\JournalController@delete');
+
+                        // ------------------------------------------------------------
                         // Invoices
+                        // ------------------------------------------------------------
                         $router->get('invoices', 'Internal\v1\InvoiceController@query');
                         $router->get('invoices/{id}', 'Internal\v1\InvoiceController@find');
                         $router->post('invoices', 'Internal\v1\InvoiceController@create');
@@ -44,8 +61,11 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                         $router->post('invoices/from-order', 'Internal\v1\InvoiceController@createFromOrder');
                         $router->post('invoices/{id}/record-payment', 'Internal\v1\InvoiceController@recordPayment');
                         $router->post('invoices/{id}/mark-as-sent', 'Internal\v1\InvoiceController@markAsSent');
+                        $router->post('invoices/{id}/send', 'Internal\v1\InvoiceController@send');
 
+                        // ------------------------------------------------------------
                         // Wallets
+                        // ------------------------------------------------------------
                         $router->get('wallets', 'Internal\v1\WalletController@query');
                         $router->get('wallets/{id}', 'Internal\v1\WalletController@find');
                         $router->post('wallets', 'Internal\v1\WalletController@create');
@@ -55,9 +75,17 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                         $router->post('wallets/{id}/withdraw', 'Internal\v1\WalletController@withdraw');
                         $router->post('wallets/transfer', 'Internal\v1\WalletController@transfer');
 
-                        // Transactions (System-wide viewer)
+                        // ------------------------------------------------------------
+                        // Transactions (read-only view of core-api Transaction records)
+                        // ------------------------------------------------------------
                         $router->get('transactions', 'Internal\v1\TransactionController@query');
                         $router->get('transactions/{id}', 'Internal\v1\TransactionController@find');
+
+                        // ------------------------------------------------------------
+                        // Reports & Financial Statements
+                        // ------------------------------------------------------------
+                        // Trial balance — debit/credit totals across all accounts
+                        $router->get('reports/trial-balance', 'Internal\v1\ReportController@trialBalance');
                     }
                 );
             }
