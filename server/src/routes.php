@@ -172,7 +172,25 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                         // ------------------------------------------------------------
                         // Reports & Financial Statements
                         // ------------------------------------------------------------
+                        // Dashboard — KPIs, revenue trend, recent journals, invoice counts
+                        $router->get('reports/dashboard', 'Internal\v1\ReportController@dashboard');
+
+                        // Trial Balance — all accounts with debit/credit totals as of a date
                         $router->get('reports/trial-balance', 'Internal\v1\ReportController@trialBalance');
+
+                        // Balance Sheet — Assets = Liabilities + Equity as of a date
+                        $router->get('reports/balance-sheet', 'Internal\v1\ReportController@balanceSheet');
+
+                        // Income Statement (P&L) — Revenue - Expenses = Net Income for a period
+                        $router->get('reports/income-statement', 'Internal\v1\ReportController@incomeStatement');
+
+                        // Cash Flow Summary — Operating / Financing / Investing activities for a period
+                        $router->get('reports/cash-flow', 'Internal\v1\ReportController@cashFlow');
+
+                        // AR Aging — Outstanding invoices bucketed by days overdue
+                        $router->get('reports/ar-aging', 'Internal\v1\ReportController@arAging');
+
+                        // Wallet Summary — wallet counts, balances, period stats, top wallets
                         $router->get('reports/wallet-summary', 'Internal\v1\ReportController@walletSummary');
                     }
                 );
