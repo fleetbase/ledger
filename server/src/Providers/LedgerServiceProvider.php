@@ -18,7 +18,9 @@ class LedgerServiceProvider extends CoreServiceProvider
      *
      * @var array
      */
-    public $observers = [];
+    public $observers = [
+        \Fleetbase\Ledger\Models\Invoice::class => \Fleetbase\Ledger\Observers\InvoiceObserver::class,
+    ];
 
     /**
      * Register any application services.
@@ -36,6 +38,11 @@ class LedgerServiceProvider extends CoreServiceProvider
     public function register()
     {
         $this->app->register(CoreServiceProvider::class);
+
+        // Register services
+        $this->app->singleton(\Fleetbase\Ledger\Services\LedgerService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\WalletService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\InvoiceService::class);
     }
 
     /**
