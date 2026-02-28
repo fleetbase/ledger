@@ -15,6 +15,22 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetbase\Ledger\Http\Controllers')->group(
     function ($router) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Webhook Routes (Public — No Auth Required)
+        |--------------------------------------------------------------------------
+        |
+        | These routes receive inbound webhook callbacks from payment gateways.
+        | They must be publicly accessible (no auth middleware) but each driver
+        | performs its own signature verification internally.
+        |
+        | Route: POST /ledger/webhooks/{driver}
+        | Example: POST /ledger/webhooks/stripe
+        |          POST /ledger/webhooks/qpay
+        */
+        $router->post('webhooks/{driver}', 'WebhookController@handle');
+
         /*
         |--------------------------------------------------------------------------
         | Internal Ledger API Routes
@@ -80,6 +96,28 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                         // ------------------------------------------------------------
                         $router->get('transactions', 'Internal\v1\TransactionController@query');
                         $router->get('transactions/{id}', 'Internal\v1\TransactionController@find');
+
+                        // ------------------------------------------------------------
+                        // Payment Gateways
+                        // ------------------------------------------------------------
+                        // Driver manifest — returns all available drivers with config schemas
+                        // Must be registered BEFORE the {id} route to avoid route conflicts
+                        $router->get('gateways/drivers', 'Internal\v1\GatewayController@drivers');
+
+                        // Gateway CRUD
+                        $router->get('gateways', 'Internal\v1\GatewayController@index');
+                        $router->post('gateways', 'Internal\v1\GatewayController@store');
+                        $router->get('gateways/{id}', 'Internal\v1\GatewayController@show');
+                        $router->put('gateways/{id}', 'Internal\v1\GatewayController@update');
+                        $router->delete('gateways/{id}', 'Internal\v1\GatewayController@destroy');
+
+                        // Gateway payment operations
+                        $router->post('gateways/{id}/charge', 'Internal\v1\GatewayController@charge');
+                        $router->post('gateways/{id}/refund', 'Internal\v1\GatewayController@refund');
+                        $router->post('gateways/{id}/setup-intent', 'Internal\v1\GatewayController@setupIntent');
+
+                        // Gateway transaction history
+                        $router->get('gateways/{id}/transactions', 'Internal\v1\GatewayController@transactions');
 
                         // ------------------------------------------------------------
                         // Reports & Financial Statements

@@ -2,14 +2,29 @@
 
 namespace Fleetbase\Ledger\Providers;
 
+use Fleetbase\Ledger\Events\PaymentFailed;
+use Fleetbase\Ledger\Events\PaymentSucceeded;
+use Fleetbase\Ledger\Events\RefundProcessed;
+use Fleetbase\Ledger\Listeners\HandleFailedPayment;
+use Fleetbase\Ledger\Listeners\HandleProcessedRefund;
+use Fleetbase\Ledger\Listeners\HandleSuccessfulPayment;
+use Fleetbase\Ledger\PaymentGatewayManager;
+use Fleetbase\Ledger\Services\InvoiceService;
+use Fleetbase\Ledger\Services\LedgerService;
+use Fleetbase\Ledger\Services\PaymentService;
+use Fleetbase\Ledger\Services\WalletService;
 use Fleetbase\Providers\CoreServiceProvider;
+use Illuminate\Support\Facades\Event;
 
 if (!class_exists(CoreServiceProvider::class)) {
     throw new \Exception('Ledger cannot be loaded without `fleetbase/core-api` installed!');
 }
 
 /**
- * Ledger extension service provider.
+ * LedgerServiceProvider
+ *
+ * Registers all Ledger services, the payment gateway manager,
+ * event-listener bindings, and bootstraps routes and migrations.
  */
 class LedgerServiceProvider extends CoreServiceProvider
 {
@@ -39,10 +54,24 @@ class LedgerServiceProvider extends CoreServiceProvider
     {
         $this->app->register(CoreServiceProvider::class);
 
-        // Register services
-        $this->app->singleton(\Fleetbase\Ledger\Services\LedgerService::class);
-        $this->app->singleton(\Fleetbase\Ledger\Services\WalletService::class);
-        $this->app->singleton(\Fleetbase\Ledger\Services\InvoiceService::class);
+        // Core accounting services
+        $this->app->singleton(LedgerService::class);
+        $this->app->singleton(WalletService::class);
+        $this->app->singleton(InvoiceService::class);
+
+        // Payment gateway system
+        // The PaymentGatewayManager is bound as a singleton and also aliased
+        // as 'ledger.gateway' for convenient facade-style access.
+        $this->app->singleton(PaymentGatewayManager::class, function ($app) {
+            return new PaymentGatewayManager($app);
+        });
+
+        $this->app->alias(PaymentGatewayManager::class, 'ledger.gateway');
+
+        // PaymentService depends on PaymentGatewayManager
+        $this->app->singleton(PaymentService::class, function ($app) {
+            return new PaymentService($app->make(PaymentGatewayManager::class));
+        });
     }
 
     /**
@@ -58,5 +87,23 @@ class LedgerServiceProvider extends CoreServiceProvider
         $this->registerExpansionsFrom(__DIR__ . '/../Expansions');
         $this->loadRoutesFrom(__DIR__ . '/../routes.php');
         $this->loadMigrationsFrom(__DIR__ . '/../../migrations');
+
+        // Register event-listener bindings for the payment gateway system
+        $this->registerPaymentEvents();
+    }
+
+    /**
+     * Register all payment-related event-listener pairs.
+     *
+     * All listeners implement ShouldQueue and will be processed
+     * asynchronously by the queue worker.
+     *
+     * @return void
+     */
+    private function registerPaymentEvents(): void
+    {
+        Event::listen(PaymentSucceeded::class, HandleSuccessfulPayment::class);
+        Event::listen(PaymentFailed::class,    HandleFailedPayment::class);
+        Event::listen(RefundProcessed::class,  HandleProcessedRefund::class);
     }
 }
