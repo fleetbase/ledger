@@ -1,0 +1,103 @@
+<div class="space-y-4 p-4">
+    {{! Gateway Name }}
+    <InputGroup @name="name" @label="Gateway Name" @placeholder="e.g. Stripe Production" @value={{this.name}} @onChange={{this.updateName}} />
+
+    {{! Driver selector }}
+    <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Driver</label>
+        <select
+            class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            {{on "change" (fn (action this.selectDriver) (pick "target.value"))}}
+        >
+            <option value="">Select a payment gateway…</option>
+            {{#each this.availableDrivers as |driver|}}
+                <option value={{driver.code}} selected={{eq this.selectedDriver driver.code}}>
+                    {{driver.name}}
+                </option>
+            {{/each}}
+        </select>
+        {{#if this.selectedDriver}}
+            {{#let (find-by "code" this.selectedDriver this.availableDrivers) as |driver|}}
+                {{#if driver.description}}
+                    <p class="text-xs text-gray-500 mt-1">{{driver.description}}</p>
+                {{/if}}
+                {{#if driver.capabilities}}
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        {{#each driver.capabilities as |cap|}}
+                            <Badge @color="blue" @size="xs">{{cap}}</Badge>
+                        {{/each}}
+                    </div>
+                {{/if}}
+            {{/let}}
+        {{/if}}
+    </div>
+
+    {{! Environment }}
+    <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Environment</label>
+        <select
+            class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            {{on "change" (fn (action this.updateEnvironment) (pick "target.value"))}}
+        >
+            {{#each this.environmentOptions as |opt|}}
+                <option value={{opt.value}} selected={{eq this.environment opt.value}}>{{opt.label}}</option>
+            {{/each}}
+        </select>
+    </div>
+
+    {{! Default toggle }}
+    <Toggle @label="Set as Default Gateway" @value={{this.isDefault}} @onChange={{this.toggleDefault}} />
+
+    {{! Dynamic config schema fields }}
+    {{#if this.configSchema.length}}
+        <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+            <h4 class="text-xs font-semibold text-gray-500 uppercase mb-3">Configuration</h4>
+            <div class="space-y-3">
+                {{#each this.configSchema as |field|}}
+                    {{#if (eq field.type "text")}}
+                        <InputGroup
+                            @name={{field.key}}
+                            @label={{field.label}}
+                            @placeholder={{field.placeholder}}
+                            @value={{get this.configValues field.key}}
+                            @helpText={{field.description}}
+                            @onChange={{fn this.updateConfigField field.key}}
+                        />
+                    {{else if (eq field.type "password")}}
+                        <InputGroup
+                            @name={{field.key}}
+                            @label={{field.label}}
+                            @placeholder={{field.placeholder}}
+                            @type="password"
+                            @value={{get this.configValues field.key}}
+                            @helpText={{field.description}}
+                            @onChange={{fn this.updateConfigField field.key}}
+                        />
+                    {{else if (eq field.type "select")}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{field.label}}</label>
+                            <select
+                                class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-800"
+                                {{on "change" (fn (action this.updateConfigField field.key) (pick "target.value"))}}
+                            >
+                                {{#each field.options as |opt|}}
+                                    <option value={{opt.value}} selected={{eq (get this.configValues field.key) opt.value}}>{{opt.label}}</option>
+                                {{/each}}
+                            </select>
+                            {{#if field.description}}
+                                <p class="text-xs text-gray-500 mt-1">{{field.description}}</p>
+                            {{/if}}
+                        </div>
+                    {{else if (eq field.type "boolean")}}
+                        <Toggle
+                            @label={{field.label}}
+                            @value={{get this.configValues field.key}}
+                            @helpText={{field.description}}
+                            @onChange={{fn this.updateConfigField field.key}}
+                        />
+                    {{/if}}
+                {{/each}}
+            </div>
+        </div>
+    {{/if}}
+</div>

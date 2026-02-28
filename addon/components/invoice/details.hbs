@@ -1,0 +1,60 @@
+<div class="p-4 space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+        <div class="field-info-container">
+            <label class="field-info-label">Invoice Number</label>
+            <p class="field-info-value">{{@invoice.number}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Status</label>
+            <Badge @status={{@invoice.status}} @color={{@invoice.status_badge_color}}>{{@invoice.status}}</Badge>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Customer</label>
+            <p class="field-info-value">{{@invoice.customer_name}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Customer Email</label>
+            <p class="field-info-value">{{or @invoice.customer_email "—"}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Due Date</label>
+            <p class="field-info-value">{{format-date @invoice.due_at format="MMM d, yyyy"}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Currency</label>
+            <p class="field-info-value">{{@invoice.currency}}</p>
+        </div>
+    </div>
+
+    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+        <div class="grid grid-cols-2 gap-4">
+            <div class="field-info-container">
+                <label class="field-info-label">Subtotal</label>
+                <p class="field-info-value">{{@invoice.formatted_subtotal}}</p>
+            </div>
+            <div class="field-info-container">
+                <label class="field-info-label">Tax</label>
+                <p class="field-info-value">{{@invoice.formatted_tax}}</p>
+            </div>
+            <div class="field-info-container">
+                <label class="field-info-label">Total</label>
+                <p class="field-info-value font-semibold">{{@invoice.formatted_total}}</p>
+            </div>
+            <div class="field-info-container">
+                <label class="field-info-label">Amount Paid</label>
+                <p class="field-info-value text-green-600">{{@invoice.formatted_amount_paid}}</p>
+            </div>
+            <div class="field-info-container">
+                <label class="field-info-label">Balance Due</label>
+                <p class="field-info-value font-semibold {{if @invoice.is_overdue "text-red-600"}}">{{@invoice.formatted_balance}}</p>
+            </div>
+        </div>
+    </div>
+
+    {{#if @invoice.notes}}
+        <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+            <label class="field-info-label">Notes</label>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{@invoice.notes}}</p>
+        </div>
+    {{/if}}
+</div>

@@ -1,0 +1,26 @@
+<div class="p-4">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-gray-200 dark:border-gray-700">
+                <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Description</th>
+                <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Qty</th>
+                <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each @invoice.line_items as |item|}}
+                <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0">
+                    <td class="py-2 text-gray-700 dark:text-gray-300">{{item.description}}</td>
+                    <td class="py-2 text-right text-gray-600">{{item.quantity}}</td>
+                    <td class="py-2 text-right text-gray-600">{{item.formatted_unit_price}}</td>
+                    <td class="py-2 text-right font-medium text-gray-900 dark:text-white">{{item.formatted_total}}</td>
+                </tr>
+            {{else}}
+                <tr>
+                    <td colspan="4" class="py-4 text-center text-gray-400 text-xs">No line items</td>
+                </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>

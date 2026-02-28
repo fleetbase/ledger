@@ -1,0 +1,42 @@
+<div class="p-4 space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+        <div class="field-info-container">
+            <label class="field-info-label">Reference ID</label>
+            <p class="field-info-value font-mono text-xs">{{@transaction.gateway_transaction_id}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Status</label>
+            <Badge @status={{@transaction.status}} @color={{@transaction.status_badge_color}}>{{@transaction.status}}</Badge>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Gateway</label>
+            <p class="field-info-value">{{@transaction.gateway_code}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Type</label>
+            <p class="field-info-value capitalize">{{@transaction.type}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Amount</label>
+            <p class="field-info-value font-semibold">{{@transaction.formatted_amount}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Currency</label>
+            <p class="field-info-value">{{@transaction.currency}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Customer</label>
+            <p class="field-info-value">{{or @transaction.customer_name "—"}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Date</label>
+            <p class="field-info-value">{{format-date @transaction.created_at format="MMM d, yyyy HH:mm"}}</p>
+        </div>
+    </div>
+    {{#if @transaction.description}}
+        <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+            <label class="field-info-label">Description</label>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{@transaction.description}}</p>
+        </div>
+    {{/if}}
+</div>

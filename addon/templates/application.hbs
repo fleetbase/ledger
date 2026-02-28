@@ -1,0 +1,29 @@
+<EmberWormhole @to="sidebar-menu-items">
+    <Layout::Sidebar::Panel @open={{true}} @title="Ledger">
+        <Layout::Sidebar::Item @route="console.ledger.home" @icon="chart-pie">Dashboard</Layout::Sidebar::Item>
+
+        <Layout::Sidebar::Section @title="Billing">
+            <Layout::Sidebar::Item @route="console.ledger.billing.invoices.index" @icon="file-invoice-dollar">Invoices</Layout::Sidebar::Item>
+            <Layout::Sidebar::Item @route="console.ledger.billing.transactions.index" @icon="exchange-alt">Transactions</Layout::Sidebar::Item>
+        </Layout::Sidebar::Section>
+
+        <Layout::Sidebar::Section @title="Wallets">
+            <Layout::Sidebar::Item @route="console.ledger.wallets.index" @icon="wallet">Wallets</Layout::Sidebar::Item>
+        </Layout::Sidebar::Section>
+
+        <Layout::Sidebar::Section @title="Accounting">
+            <Layout::Sidebar::Item @route="console.ledger.accounting.journal.index" @icon="book">Journal Entries</Layout::Sidebar::Item>
+            <Layout::Sidebar::Item @route="console.ledger.accounting.accounts.index" @icon="list-ol">Chart of Accounts</Layout::Sidebar::Item>
+        </Layout::Sidebar::Section>
+
+        <Layout::Sidebar::Item @route="console.ledger.reports.index" @icon="file-contract">Reports</Layout::Sidebar::Item>
+
+        <Layout::Sidebar::Section @title="Settings">
+            <Layout::Sidebar::Item @route="console.ledger.settings.gateways.index" @icon="credit-card">Payment Gateways</Layout::Sidebar::Item>
+        </Layout::Sidebar::Section>
+    </Layout::Sidebar::Panel>
+</EmberWormhole>
+
+<Layout::Section::Container>
+    {{outlet}}
+</Layout::Section::Container>

@@ -1,53 +1,76 @@
 import buildRoutes from 'ember-engines/routes';
 
 export default buildRoutes(function () {
+    // Dashboard
     this.route('home', { path: '/' });
-    this.route('products', function () {
-        this.route('index', { path: '/' }, function () {
-            this.route('new');
-            this.route('details', { path: '/:public_id' });
-            this.route('edit', { path: '/edit/:public_id' });
+
+    // Billing
+    this.route('billing', function () {
+        this.route('invoices', function () {
+            this.route('index', { path: '/' }, function () {
+                this.route('new');
+                this.route('details', { path: '/:public_id' }, function () {
+                    this.route('index', { path: '/' });
+                    this.route('line-items');
+                    this.route('transactions');
+                });
+            });
+        });
+        this.route('transactions', function () {
+            this.route('index', { path: '/' }, function () {
+                this.route('details', { path: '/:public_id' }, function () {
+                    this.route('index', { path: '/' });
+                });
+            });
         });
     });
-    this.route('inventory', function () {
-        this.route('low-stock');
-        this.route('expired-stock');
+
+    // Wallets
+    this.route('wallets', function () {
         this.route('index', { path: '/' }, function () {
-            this.route('new');
-            this.route('new-stock-adjustment');
-            this.route('details', { path: '/:public_id' });
-            this.route('edit', { path: '/edit/:public_id' });
+            this.route('details', { path: '/:public_id' }, function () {
+                this.route('index', { path: '/' });
+                this.route('transactions');
+            });
         });
     });
-    this.route('warehouses', function () {
-        this.route('index', { path: '/' }, function () {
-            this.route('new');
-            this.route('details', { path: '/:public_id' });
-            this.route('edit', { path: '/edit/:public_id' });
+
+    // Accounting
+    this.route('accounting', function () {
+        this.route('journal', function () {
+            this.route('index', { path: '/' }, function () {
+                this.route('new');
+                this.route('details', { path: '/:public_id' }, function () {
+                    this.route('index', { path: '/' });
+                });
+            });
+        });
+        this.route('accounts', function () {
+            this.route('index', { path: '/' }, function () {
+                this.route('new');
+                this.route('details', { path: '/:public_id' }, function () {
+                    this.route('index', { path: '/' });
+                    this.route('ledger');
+                });
+            });
         });
     });
-    this.route('suppliers', function () {
-        this.route('index', { path: '/' }, function () {
-            this.route('new');
-            this.route('details', { path: '/:public_id' });
-            this.route('edit', { path: '/edit/:public_id' });
+
+    // Reports
+    this.route('reports', function () {
+        this.route('index', { path: '/' });
+    });
+
+    // Settings
+    this.route('settings', function () {
+        this.route('gateways', function () {
+            this.route('index', { path: '/' }, function () {
+                this.route('new');
+                this.route('details', { path: '/:public_id' }, function () {
+                    this.route('index', { path: '/' });
+                    this.route('webhooks');
+                });
+            });
         });
     });
-    this.route('sales-orders', function () {
-        this.route('index', { path: '/' }, function () {
-            this.route('new');
-            this.route('details', { path: '/:public_id' });
-            this.route('edit', { path: '/edit/:public_id' });
-        });
-    });
-    this.route('purchase-orders', function () {
-        this.route('index', { path: '/' }, function () {
-            this.route('new');
-            this.route('details', { path: '/:public_id' });
-            this.route('edit', { path: '/edit/:public_id' });
-        });
-    });
-    this.route('batch', function () {});
-    this.route('audits', function () {});
-    this.route('reports', function () {});
 });
