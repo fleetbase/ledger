@@ -4,7 +4,7 @@ namespace Fleetbase\Ledger\Models;
 
 use Fleetbase\Casts\Json;
 use Fleetbase\Models\Model;
-use Fleetbase\Models\Transaction;
+use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasPublicId;

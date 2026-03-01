@@ -8,8 +8,8 @@ use Fleetbase\Support\Http;
 /**
  * Transaction Resource.
  *
- * Serializes the core-api Transaction model for Ledger API responses.
- * This is a read-only view — Ledger does not create or mutate Transaction records directly.
+ * Serializes the Ledger Transaction model (which extends the core-api Transaction)
+ * for Ledger API responses. The journal relationship is included when loaded.
  */
 class Transaction extends FleetbaseResource
 {
@@ -40,6 +40,7 @@ class Transaction extends FleetbaseResource
             'type'                   => $this->type,
             'status'                 => $this->status,
             'meta'                   => $this->meta,
+            'journal'                => $this->whenLoaded('journal', fn () => new Journal($this->journal)),
             'created_at'             => $this->created_at,
             'updated_at'             => $this->updated_at,
         ];
