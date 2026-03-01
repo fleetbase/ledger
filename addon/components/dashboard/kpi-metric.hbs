@@ -1,0 +1,17 @@
+<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{@title}}</span>
+        {{#if @icon}}
+            <FaIcon @icon={{@icon}} class="text-{{@color}}-400 w-4 h-4" />
+        {{/if}}
+    </div>
+    <div class="text-2xl font-bold text-gray-900 dark:text-white">
+        {{this.formattedValue}}
+    </div>
+    {{#if this.changeLabel}}
+        <div class="mt-1 flex items-center space-x-1">
+            <span class="text-xs font-medium text-{{this.changeColor}}-600">{{this.changeLabel}}</span>
+            <span class="text-xs text-gray-400">vs last period</span>
+        </div>
+    {{/if}}
+</div>

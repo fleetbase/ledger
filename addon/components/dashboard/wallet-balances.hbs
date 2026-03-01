@@ -1,0 +1,13 @@
+<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Wallet Balances</h3>
+    <div class="space-y-2">
+        {{#each @data as |item|}}
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">{{item.currency}}</span>
+                <span class="text-xs font-medium text-gray-900 dark:text-white">{{item.formatted_total}}</span>
+            </div>
+        {{else}}
+            <p class="text-xs text-gray-400">No wallet data</p>
+        {{/each}}
+    </div>
+</div>

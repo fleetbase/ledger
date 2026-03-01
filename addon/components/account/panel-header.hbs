@@ -1,0 +1,9 @@
+<div class="flex items-center space-x-3 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+    <div class="flex-1 min-w-0">
+        <p class="text-xs text-gray-500">{{@account.code}} · {{@account.type_label}}</p>
+    </div>
+    <div class="flex flex-col items-end">
+        <span class="text-sm font-semibold text-gray-900 dark:text-white">{{@account.formatted_balance}}</span>
+        <Badge @status={{@account.status_label}} @color={{if @account.is_active "green" "gray"}}>{{@account.status_label}}</Badge>
+    </div>
+</div>

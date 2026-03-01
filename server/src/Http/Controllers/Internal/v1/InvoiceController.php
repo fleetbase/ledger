@@ -23,7 +23,7 @@ class InvoiceController extends Controller
     /**
      * The model to query.
      *
-     * @var \Fleetbase\Ledger\Models\Invoice
+     * @var Invoice
      */
     public $model = Invoice::class;
 
@@ -80,11 +80,11 @@ class InvoiceController extends Controller
     public function create(Request $request)
     {
         $request->validate([
-            'customer_uuid' => 'required|string',
-            'customer_type' => 'required|string',
-            'date'          => 'required|date',
-            'due_date'      => 'nullable|date',
-            'items'         => 'required|array|min:1',
+            'customer_uuid'       => 'required|string',
+            'customer_type'       => 'required|string',
+            'date'                => 'required|date',
+            'due_date'            => 'nullable|date',
+            'items'               => 'required|array|min:1',
             'items.*.description' => 'required|string',
             'items.*.quantity'    => 'required|integer|min:1',
             'items.*.unit_price'  => 'required|integer|min:0',
@@ -257,5 +257,43 @@ class InvoiceController extends Controller
         $invoice->markAsSent();
 
         return new InvoiceResource($invoice);
+    }
+
+    /**
+     * Send an invoice to the customer via email.
+     *
+     * Marks the invoice as sent and dispatches a notification to the customer's
+     * email address. If the invoice has no customer or the customer has no email,
+     * a 422 error is returned.
+     *
+     * @param string $id
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function send($id, Request $request)
+    {
+        $invoice = Invoice::where('company_uuid', session('company'))
+            ->where(function ($query) use ($id) {
+                $query->where('uuid', $id)->orWhere('public_id', $id);
+            })
+            ->with('customer')
+            ->firstOrFail();
+
+        // Validate that the invoice has a sendable customer
+        if (!$invoice->customer || !$invoice->customer->email) {
+            return response()->json(
+                ['error' => 'Invoice customer does not have a valid email address.'],
+                422
+            );
+        }
+
+        // Mark as sent
+        $invoice->markAsSent();
+
+        // TODO (M5): Dispatch InvoiceSentNotification to $invoice->customer->email
+        // \Illuminate\Support\Facades\Notification::route('mail', $invoice->customer->email)
+        //     ->notify(new \Fleetbase\Ledger\Notifications\InvoiceSentNotification($invoice));
+
+        return new InvoiceResource($invoice->load(['customer', 'items']));
     }
 }

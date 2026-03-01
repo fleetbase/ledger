@@ -1,0 +1,15 @@
+<Layout::Section::Body>
+    <Table
+        @rows={{@model}}
+        @columns={{this.columns}}
+        @selectable={{true}}
+        @canSelectAll={{true}}
+        @onSetup={{fn (mut this.table)}}
+        @pagination={{true}}
+        @paginationMeta={{@model.meta}}
+        @page={{this.page}}
+        @onPageChange={{fn (mut this.page)}}
+        @onRowClick={{this.viewWallet}}
+    />
+</Layout::Section::Body>
+{{outlet}}

@@ -1,0 +1,52 @@
+<div class="p-4">
+    {{#if this.loadLedger.isRunning}}
+        <LoadingIndicator />
+    {{else}}
+        {{#if this.summary}}
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
+                    <p class="text-xs text-gray-500 mb-1">Total Debits</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{this.summary.formatted_total_debits}}</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
+                    <p class="text-xs text-gray-500 mb-1">Total Credits</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{this.summary.formatted_total_credits}}</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
+                    <p class="text-xs text-gray-500 mb-1">Net Balance</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{this.summary.formatted_net_balance}}</p>
+                </div>
+            </div>
+        {{/if}}
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                    <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Description</th>
+                    <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Debit</th>
+                    <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Credit</th>
+                    <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each this.entries as |entry|}}
+                    <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0">
+                        <td class="py-2 text-gray-600 text-xs">{{format-date entry.date format="MMM d, yyyy"}}</td>
+                        <td class="py-2 text-gray-700 dark:text-gray-300 text-xs">{{entry.description}}</td>
+                        <td class="py-2 text-right text-xs {{if entry.debit_amount "text-gray-900" "text-gray-300"}}">
+                            {{or entry.formatted_debit "—"}}
+                        </td>
+                        <td class="py-2 text-right text-xs {{if entry.credit_amount "text-gray-900" "text-gray-300"}}">
+                            {{or entry.formatted_credit "—"}}
+                        </td>
+                        <td class="py-2 text-right text-xs font-medium text-gray-900 dark:text-white">{{entry.formatted_running_balance}}</td>
+                    </tr>
+                {{else}}
+                    <tr>
+                        <td colspan="5" class="py-4 text-center text-gray-400 text-xs">No entries</td>
+                    </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    {{/if}}
+</div>

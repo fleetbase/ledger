@@ -7,6 +7,7 @@ use Fleetbase\Models\Model;
 use Fleetbase\Models\Transaction;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasMetaAttributes;
+use Fleetbase\Traits\HasPublicId;
 use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\TracksApiCredential;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,9 +15,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Journal extends Model
 {
     use HasUuid;
+    use HasPublicId;
     use HasApiModelBehavior;
     use HasMetaAttributes;
     use TracksApiCredential;
+
+    /**
+     * The prefix used when auto-generating public IDs for journal entries.
+     *
+     * @var string
+     */
+    public $publicIdPrefix = 'journal';
 
     /**
      * The database table used by the model.
@@ -32,6 +41,7 @@ class Journal extends Model
      */
     protected $fillable = [
         '_key',
+        'public_id',
         'company_uuid',
         'transaction_uuid',
         'debit_account_uuid',
@@ -59,7 +69,7 @@ class Journal extends Model
      *
      * @var array
      */
-    protected $appends = [];
+    protected $appends = ['public_id'];
 
     /**
      * The attributes excluded from the model's JSON form.

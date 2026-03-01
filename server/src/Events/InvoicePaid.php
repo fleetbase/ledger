@@ -15,15 +15,11 @@ class InvoicePaid
 
     /**
      * The invoice instance.
-     *
-     * @var \Fleetbase\Ledger\Models\Invoice
      */
     public Invoice $invoice;
 
     /**
      * Create a new event instance.
-     *
-     * @param Invoice $invoice
      *
      * @return void
      */

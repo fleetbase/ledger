@@ -1,0 +1,57 @@
+<Layout::Section::Header @title="Financial Dashboard" @hideActions={{true}} />
+<Layout::Section::Body>
+    <div class="p-4 space-y-6">
+        {{! KPI Row }}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Dashboard::KpiMetric
+                @title="Revenue"
+                @value={{@model.revenue.current}}
+                @previous={{@model.revenue.previous}}
+                @change={{@model.revenue.change_pct}}
+                @currency={{@model.currency}}
+                @icon="arrow-trend-up"
+                @color="green"
+            />
+            <Dashboard::KpiMetric
+                @title="Expenses"
+                @value={{@model.expenses.current}}
+                @previous={{@model.expenses.previous}}
+                @change={{@model.expenses.change_pct}}
+                @currency={{@model.currency}}
+                @icon="arrow-trend-down"
+                @color="red"
+                @inverse={{true}}
+            />
+            <Dashboard::KpiMetric
+                @title="Net Income"
+                @value={{@model.net_income.current}}
+                @previous={{@model.net_income.previous}}
+                @change={{@model.net_income.change_pct}}
+                @currency={{@model.currency}}
+                @icon="scale-balanced"
+                @color="blue"
+            />
+            <Dashboard::KpiMetric
+                @title="Outstanding AR"
+                @value={{@model.outstanding_ar}}
+                @currency={{@model.currency}}
+                @icon="file-invoice-dollar"
+                @color="yellow"
+            />
+        </div>
+
+        {{! Charts & Summary Row }}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2">
+                <Dashboard::RevenueChart @data={{@model.daily_revenue}} />
+            </div>
+            <div class="space-y-4">
+                <Dashboard::InvoiceSummary @data={{@model.invoice_counts}} />
+                <Dashboard::WalletBalances @data={{@model.wallet_totals}} />
+            </div>
+        </div>
+
+        {{! Recent Activity }}
+        <Dashboard::ActivityFeed @entries={{@model.recent_journals}} />
+    </div>
+</Layout::Section::Body>

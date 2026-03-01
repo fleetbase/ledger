@@ -75,8 +75,6 @@ class InvoiceItem extends Model
 
     /**
      * Calculate the line item amount.
-     *
-     * @return void
      */
     public function calculateAmount(): void
     {

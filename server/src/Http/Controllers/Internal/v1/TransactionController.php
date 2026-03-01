@@ -20,7 +20,7 @@ class TransactionController extends Controller
     /**
      * The model to query.
      *
-     * @var \Fleetbase\Models\Transaction
+     * @var Transaction
      */
     public $model = Transaction::class;
 

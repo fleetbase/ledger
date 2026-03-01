@@ -1,0 +1,75 @@
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Balance Sheet</h2>
+        {{#if @data.as_of}}
+            <span class="text-sm text-gray-500">As of {{format-date @data.as_of format="MMMM d, yyyy"}}</span>
+        {{/if}}
+        <Badge @color={{if @data.balanced "green" "red"}}>{{if @data.balanced "Balanced" "Unbalanced"}}</Badge>
+    </div>
+
+    {{! Assets }}
+    <div>
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2">Assets</h3>
+        <table class="w-full text-sm">
+            <tbody>
+                {{#each @data.assets as |item|}}
+                    <tr class="border-b border-gray-100 dark:border-gray-700">
+                        <td class="py-1.5 text-gray-700 dark:text-gray-300">{{item.name}}</td>
+                        <td class="py-1.5 text-xs text-gray-400">{{item.code}}</td>
+                        <td class="py-1.5 text-right font-medium text-gray-900 dark:text-white">{{item.formatted_balance}}</td>
+                    </tr>
+                {{/each}}
+            </tbody>
+            <tfoot>
+                <tr class="border-t-2 border-gray-300">
+                    <td colspan="2" class="py-2 font-semibold text-gray-900 dark:text-white">Total Assets</td>
+                    <td class="py-2 text-right font-bold text-gray-900 dark:text-white">{{@data.formatted_total_assets}}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {{! Liabilities }}
+    <div>
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2">Liabilities</h3>
+        <table class="w-full text-sm">
+            <tbody>
+                {{#each @data.liabilities as |item|}}
+                    <tr class="border-b border-gray-100 dark:border-gray-700">
+                        <td class="py-1.5 text-gray-700 dark:text-gray-300">{{item.name}}</td>
+                        <td class="py-1.5 text-xs text-gray-400">{{item.code}}</td>
+                        <td class="py-1.5 text-right font-medium text-gray-900 dark:text-white">{{item.formatted_balance}}</td>
+                    </tr>
+                {{/each}}
+            </tbody>
+            <tfoot>
+                <tr class="border-t-2 border-gray-300">
+                    <td colspan="2" class="py-2 font-semibold text-gray-900 dark:text-white">Total Liabilities</td>
+                    <td class="py-2 text-right font-bold text-gray-900 dark:text-white">{{@data.formatted_total_liabilities}}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {{! Equity }}
+    <div>
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2">Equity</h3>
+        <table class="w-full text-sm">
+            <tbody>
+                {{#each @data.equity as |item|}}
+                    <tr class="border-b border-gray-100 dark:border-gray-700">
+                        <td class="py-1.5 text-gray-700 dark:text-gray-300">{{item.name}}</td>
+                        <td class="py-1.5 text-xs text-gray-400">{{item.code}}</td>
+                        <td class="py-1.5 text-right font-medium text-gray-900 dark:text-white">{{item.formatted_balance}}</td>
+                    </tr>
+                {{/each}}
+            </tbody>
+            <tfoot>
+                <tr class="border-t-2 border-gray-300">
+                    <td colspan="2" class="py-2 font-semibold text-gray-900 dark:text-white">Total Equity</td>
+                    <td class="py-2 text-right font-bold text-gray-900 dark:text-white">{{@data.formatted_total_equity}}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,16 @@
+<Layout::Section::Header @title="Invoices">
+    <:actions>
+        <div class="flex flex-row items-center space-x-1 pr-4">
+            <Layout::Resource::TabularActions
+                @columns={{this.childController.columns}}
+                @actionButtons={{this.childController.actionButtons}}
+                @bulkActions={{this.childController.bulkActions}}
+                @searchQuery={{this.childController.query}}
+                @onSearch={{perform this.childController.search}}
+                @table={{this.childController.table}}
+                @controller={{this.childController}}
+            />
+        </div>
+    </:actions>
+</Layout::Section::Header>
+{{outlet}}

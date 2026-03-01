@@ -1,0 +1,11 @@
+<Layout::Section::Body>
+    <Table
+        @rows={{@model}}
+        @columns={{this.columns}}
+        @selectable={{true}}
+        @canSelectAll={{true}}
+        @onSetup={{fn (mut this.table)}}
+        @onRowClick={{this.viewGateway}}
+    />
+</Layout::Section::Body>
+{{outlet}}

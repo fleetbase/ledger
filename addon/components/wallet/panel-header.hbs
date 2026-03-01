@@ -1,0 +1,10 @@
+<div class="flex items-center space-x-3 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+    <div class="flex-1 min-w-0">
+        <p class="text-xs text-gray-500">{{@wallet.type_label}} Wallet</p>
+        <p class="text-xs text-gray-400">{{@wallet.currency}}</p>
+    </div>
+    <div class="flex flex-col items-end">
+        <span class="text-sm font-semibold text-gray-900 dark:text-white">{{@wallet.formatted_balance}}</span>
+        <Badge @status={{@wallet.status_label}} @color={{@wallet.status_badge_color}}>{{@wallet.status_label}}</Badge>
+    </div>
+</div>

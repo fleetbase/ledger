@@ -152,11 +152,6 @@ class Invoice extends Model
 
     /**
      * Generate a unique invoice number.
-     *
-     * @param string $prefix
-     * @param int    $length
-     *
-     * @return string
      */
     public static function generateNumber(string $prefix = 'INV', int $length = 6): string
     {
@@ -173,8 +168,6 @@ class Invoice extends Model
 
     /**
      * Calculate totals from line items.
-     *
-     * @return void
      */
     public function calculateTotals(): void
     {
@@ -186,8 +179,6 @@ class Invoice extends Model
 
     /**
      * Mark the invoice as sent.
-     *
-     * @return void
      */
     public function markAsSent(): void
     {
@@ -198,8 +189,6 @@ class Invoice extends Model
 
     /**
      * Mark the invoice as viewed.
-     *
-     * @return void
      */
     public function markAsViewed(): void
     {
@@ -211,8 +200,6 @@ class Invoice extends Model
 
     /**
      * Mark the invoice as paid.
-     *
-     * @return void
      */
     public function markAsPaid(): void
     {
@@ -225,8 +212,6 @@ class Invoice extends Model
 
     /**
      * Check if the invoice is overdue.
-     *
-     * @return bool
      */
     public function isOverdue(): bool
     {
@@ -235,8 +220,6 @@ class Invoice extends Model
 
     /**
      * Check if the invoice is paid.
-     *
-     * @return bool
      */
     public function isPaid(): bool
     {

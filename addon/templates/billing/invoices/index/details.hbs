@@ -1,0 +1,16 @@
+<Layout::Resource::Panel
+    @title={{@model.number}}
+    @actionButtons={{this.actionButtons}}
+    @onClose={{route-action "transitionTo" "console.ledger.billing.invoices.index"}}
+>
+    <:header>
+        <Invoice::PanelHeader @invoice={{@model}} />
+    </:header>
+    <:default>
+        <TabNavigation @tabs={{this.tabs}}>
+            <:default>
+                {{outlet}}
+            </:default>
+        </TabNavigation>
+    </:default>
+</Layout::Resource::Panel>

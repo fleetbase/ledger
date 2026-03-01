@@ -1,0 +1,28 @@
+<div class="p-4 space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+        <div class="field-info-container">
+            <label class="field-info-label">Wallet Name</label>
+            <p class="field-info-value">{{@wallet.name}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Type</label>
+            <p class="field-info-value">{{@wallet.type_label}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Balance</label>
+            <p class="field-info-value text-xl font-bold text-gray-900 dark:text-white">{{@wallet.formatted_balance}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Currency</label>
+            <p class="field-info-value">{{@wallet.currency}}</p>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Status</label>
+            <Badge @status={{@wallet.status_label}} @color={{@wallet.status_badge_color}}>{{@wallet.status_label}}</Badge>
+        </div>
+        <div class="field-info-container">
+            <label class="field-info-label">Created</label>
+            <p class="field-info-value">{{format-date @wallet.created_at format="MMM d, yyyy"}}</p>
+        </div>
+    </div>
+</div>

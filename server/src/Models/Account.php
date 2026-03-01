@@ -118,8 +118,6 @@ class Account extends Model
 
     /**
      * Calculate the current balance of the account.
-     *
-     * @return int
      */
     public function calculateBalance(): int
     {
@@ -137,8 +135,6 @@ class Account extends Model
 
     /**
      * Update the cached balance.
-     *
-     * @return void
      */
     public function updateBalance(): void
     {
@@ -148,8 +144,6 @@ class Account extends Model
 
     /**
      * Check if the account is an asset.
-     *
-     * @return bool
      */
     public function isAsset(): bool
     {
@@ -158,8 +152,6 @@ class Account extends Model
 
     /**
      * Check if the account is a liability.
-     *
-     * @return bool
      */
     public function isLiability(): bool
     {
@@ -168,8 +160,6 @@ class Account extends Model
 
     /**
      * Check if the account is equity.
-     *
-     * @return bool
      */
     public function isEquity(): bool
     {
@@ -178,8 +168,6 @@ class Account extends Model
 
     /**
      * Check if the account is revenue.
-     *
-     * @return bool
      */
     public function isRevenue(): bool
     {
@@ -188,8 +176,6 @@ class Account extends Model
 
     /**
      * Check if the account is an expense.
-     *
-     * @return bool
      */
     public function isExpense(): bool
     {

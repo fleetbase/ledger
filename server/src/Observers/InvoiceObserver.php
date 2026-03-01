@@ -11,8 +11,6 @@ class InvoiceObserver
     /**
      * Handle the Invoice "created" event.
      *
-     * @param Invoice $invoice
-     *
      * @return void
      */
     public function created(Invoice $invoice)
@@ -22,8 +20,6 @@ class InvoiceObserver
 
     /**
      * Handle the Invoice "updated" event.
-     *
-     * @param Invoice $invoice
      *
      * @return void
      */
