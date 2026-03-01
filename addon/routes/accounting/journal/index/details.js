@@ -5,8 +5,6 @@ export default class AccountingJournalIndexDetailsRoute extends Route {
     @service store;
 
     model({ id }) {
-        return this.store.findRecord('journal', id, {
-            adapterOptions: { namespace: 'ledger/int/v1' },
-        });
+        return this.store.findRecord('journal', id);
     }
 }

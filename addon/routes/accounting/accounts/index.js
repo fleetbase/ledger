@@ -13,6 +13,6 @@ export default class AccountingAccountsIndexRoute extends Route {
     };
 
     model(params) {
-        return this.store.query('account', { ...params, namespace: 'ledger/int/v1' });
+        return this.store.query('account', params);
     }
 }

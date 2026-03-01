@@ -5,8 +5,6 @@ export default class BillingInvoicesIndexDetailsRoute extends Route {
     @service store;
 
     model({ id }) {
-        return this.store.findRecord('invoice', id, {
-            adapterOptions: { namespace: 'ledger/int/v1' },
-        });
+        return this.store.findRecord('invoice', id);
     }
 }

@@ -5,8 +5,6 @@ export default class AccountingAccountsIndexDetailsRoute extends Route {
     @service store;
 
     model({ id }) {
-        return this.store.findRecord('account', id, {
-            adapterOptions: { namespace: 'ledger/int/v1' },
-        });
+        return this.store.findRecord('account', id);
     }
 }

@@ -5,6 +5,6 @@ export default class SettingsGatewaysIndexRoute extends Route {
     @service store;
 
     model() {
-        return this.store.query('gateway', { namespace: 'ledger/int/v1' });
+        return this.store.query('gateway');
     }
 }

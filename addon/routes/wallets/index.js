@@ -13,6 +13,6 @@ export default class WalletsIndexRoute extends Route {
     };
 
     model(params) {
-        return this.store.query('wallet', { ...params, namespace: 'ledger/int/v1' });
+        return this.store.query('wallet', params);
     }
 }
