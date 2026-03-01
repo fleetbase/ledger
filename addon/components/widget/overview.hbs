@@ -1,0 +1,26 @@
+<div class="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
+    {{#if this.loadData.isRunning}}
+        <div class="col-span-4 flex items-center justify-center py-6">
+            <Spinner />
+        </div>
+    {{else if this.data}}
+        <div class="flex flex-col gap-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <span class="text-xs text-gray-500 uppercase tracking-wide">Revenue</span>
+            <span class="text-xl font-bold text-green-600">{{this.data.revenue.current}}</span>
+        </div>
+        <div class="flex flex-col gap-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <span class="text-xs text-gray-500 uppercase tracking-wide">Expenses</span>
+            <span class="text-xl font-bold text-red-500">{{this.data.expenses.current}}</span>
+        </div>
+        <div class="flex flex-col gap-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <span class="text-xs text-gray-500 uppercase tracking-wide">Net Income</span>
+            <span class="text-xl font-bold text-blue-600">{{this.data.net_income.current}}</span>
+        </div>
+        <div class="flex flex-col gap-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <span class="text-xs text-gray-500 uppercase tracking-wide">Outstanding AR</span>
+            <span class="text-xl font-bold text-yellow-600">{{this.data.outstanding_ar}}</span>
+        </div>
+    {{else}}
+        <div class="col-span-4 text-center text-gray-400 py-6">No data available.</div>
+    {{/if}}
+</div>

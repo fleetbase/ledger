@@ -1,0 +1,14 @@
+<div class="p-4 space-y-2">
+    {{#if this.loadData.isRunning}}
+        <div class="flex items-center justify-center py-6"><Spinner /></div>
+    {{else if this.buckets}}
+        {{#each-in this.buckets as |bucket total|}}
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">{{bucket}}</span>
+                <span class="font-semibold text-gray-800 dark:text-gray-200">{{total}}</span>
+            </div>
+        {{/each-in}}
+    {{else}}
+        <div class="text-center text-gray-400 py-4">No AR aging data.</div>
+    {{/if}}
+</div>

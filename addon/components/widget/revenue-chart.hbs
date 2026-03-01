@@ -1,0 +1,19 @@
+<div class="p-4">
+    {{#if this.loadData.isRunning}}
+        <div class="flex items-center justify-center py-10"><Spinner /></div>
+    {{else if this.data.length}}
+        <div class="space-y-1">
+            {{#each this.data as |day|}}
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="w-20 text-gray-500 text-xs">{{day.date}}</span>
+                    <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: {{day.pct}}%"></div>
+                    </div>
+                    <span class="w-20 text-right text-gray-700 dark:text-gray-300 text-xs font-medium">{{day.amount}}</span>
+                </div>
+            {{/each}}
+        </div>
+    {{else}}
+        <div class="text-center text-gray-400 py-6">No revenue data for this period.</div>
+    {{/if}}
+</div>

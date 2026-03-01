@@ -1,0 +1,17 @@
+<div class="p-4 space-y-2">
+    {{#if this.loadData.isRunning}}
+        <div class="flex items-center justify-center py-6"><Spinner /></div>
+    {{else if this.wallets.length}}
+        {{#each this.wallets as |wallet index|}}
+            <div class="flex items-center gap-3 text-sm">
+                <span class="w-5 text-center text-gray-400 font-mono text-xs">{{add index 1}}</span>
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-gray-800 dark:text-gray-200 truncate">{{wallet.owner_name}}</p>
+                </div>
+                <span class="font-semibold text-green-600 flex-shrink-0">{{wallet.formatted_balance}}</span>
+            </div>
+        {{/each}}
+    {{else}}
+        <div class="text-center text-gray-400 py-4">No wallet data.</div>
+    {{/if}}
+</div>

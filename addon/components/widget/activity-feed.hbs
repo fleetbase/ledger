@@ -1,0 +1,18 @@
+<div class="p-4 space-y-2">
+    {{#if this.loadData.isRunning}}
+        <div class="flex items-center justify-center py-6"><Spinner /></div>
+    {{else if this.entries.length}}
+        {{#each this.entries as |entry|}}
+            <div class="flex items-start gap-3 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">
+                <FaIcon @icon="book" class="text-gray-400 mt-0.5 flex-shrink-0" />
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-gray-800 dark:text-gray-200 truncate">{{entry.description}}</p>
+                    <p class="text-xs text-gray-400">{{entry.created_at}}</p>
+                </div>
+                <span class="font-mono text-xs text-gray-500 flex-shrink-0">{{entry.amount}}</span>
+            </div>
+        {{/each}}
+    {{else}}
+        <div class="text-center text-gray-400 py-4">No recent journal entries.</div>
+    {{/if}}
+</div>
