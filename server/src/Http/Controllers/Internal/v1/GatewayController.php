@@ -2,211 +2,31 @@
 
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
-use Fleetbase\Http\Controllers\FleetbaseController;
 use Fleetbase\Ledger\DTO\PurchaseRequest;
 use Fleetbase\Ledger\DTO\RefundRequest;
-use Fleetbase\Ledger\Http\Resources\v1\Gateway as GatewayResource;
+use Fleetbase\Ledger\Http\Controllers\LedgerController;
+use Fleetbase\Ledger\Http\Resources\v1\GatewayTransaction as GatewayTransactionResource;
 use Fleetbase\Ledger\Models\Gateway;
 use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
-/**
- * GatewayController.
- *
- * Handles all CRUD operations for payment gateways and exposes the
- * driver manifest endpoint used by the frontend to render dynamic
- * gateway configuration forms.
- *
- * Routes:
- *   GET    /ledger/int/v1/gateways            → index (list all gateways for company)
- *   POST   /ledger/int/v1/gateways            → store (create new gateway)
- *   GET    /ledger/int/v1/gateways/{id}       → show (get single gateway)
- *   PUT    /ledger/int/v1/gateways/{id}       → update (update gateway config)
- *   DELETE /ledger/int/v1/gateways/{id}       → destroy (delete gateway)
- *   GET    /ledger/int/v1/gateways/drivers    → drivers (available driver manifest)
- *   POST   /ledger/int/v1/gateways/{id}/charge → charge (initiate a payment)
- *   POST   /ledger/int/v1/gateways/{id}/refund → refund (refund a transaction)
- *   POST   /ledger/int/v1/gateways/{id}/setup-intent → setupIntent (tokenize card)
- */
-class GatewayController extends FleetbaseController
+class GatewayController extends LedgerController
 {
     /**
-     * The resource model class.
-     */
-    protected string $resource = 'gateway';
-
-    /**
-     * The model class.
-     */
-    protected string $model = Gateway::class;
-
-    public function __construct(
-        protected PaymentService $paymentService,
-    ) {
-    }
-
-    /**
-     * List all gateways for the authenticated company.
-     */
-    public function index(Request $request): JsonResponse
-    {
-        $companyUuid = session('company');
-
-        $query = Gateway::where('company_uuid', $companyUuid);
-
-        // Optional filters
-        if ($request->has('driver')) {
-            $query->where('driver', $request->input('driver'));
-        }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        $gateways = $query->orderBy('created_at', 'desc')->get();
-
-        return response()->json([
-            'status'   => 'ok',
-            'gateways' => GatewayResource::collection($gateways),
-        ]);
-    }
-
-    /**
-     * Create a new payment gateway configuration.
-     */
-    public function store(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'name'       => 'required|string|max:191',
-            'driver'     => ['required', 'string', Rule::in(['stripe', 'qpay', 'cash'])],
-            'config'     => 'required|array',
-            'is_sandbox' => 'boolean',
-            'status'     => ['string', Rule::in(['active', 'inactive'])],
-            'return_url' => 'nullable|url',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'error'   => 'Validation failed.',
-                'details' => $validator->errors(),
-            ], 422);
-        }
-
-        $companyUuid = session('company');
-        $userUuid    = session('user');
-
-        // Resolve capabilities from the driver manifest
-        $manifest     = collect($this->paymentService->getDriverManifest());
-        $driverInfo   = $manifest->firstWhere('code', $request->input('driver'));
-        $capabilities = $driverInfo['capabilities'] ?? [];
-
-        $gateway = Gateway::create([
-            'company_uuid'    => $companyUuid,
-            'created_by_uuid' => $userUuid,
-            'name'            => $request->input('name'),
-            'driver'          => $request->input('driver'),
-            'description'     => $request->input('description'),
-            'config'          => $request->input('config'),   // Encrypted at rest by model cast
-            'capabilities'    => $capabilities,
-            'is_sandbox'      => $request->boolean('is_sandbox', false),
-            'status'          => $request->input('status', 'active'),
-            'return_url'      => $request->input('return_url'),
-            'webhook_url'     => url('/ledger/webhooks/' . $request->input('driver')),
-        ]);
-
-        return response()->json([
-            'status'  => 'ok',
-            'gateway' => new GatewayResource($gateway),
-        ], 201);
-    }
-
-    /**
-     * Get a single gateway by UUID or public_id.
-     */
-    public function show(string $id): JsonResponse
-    {
-        $gateway = Gateway::where('company_uuid', session('company'))
-            ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
-            ->firstOrFail();
-
-        return response()->json([
-            'status'  => 'ok',
-            'gateway' => new GatewayResource($gateway),
-        ]);
-    }
-
-    /**
-     * Update a gateway configuration.
-     */
-    public function update(Request $request, string $id): JsonResponse
-    {
-        $gateway = Gateway::where('company_uuid', session('company'))
-            ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
-            ->firstOrFail();
-
-        $validator = Validator::make($request->all(), [
-            'name'       => 'string|max:191',
-            'config'     => 'array',
-            'is_sandbox' => 'boolean',
-            'status'     => ['string', Rule::in(['active', 'inactive'])],
-            'return_url' => 'nullable|url',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'error'   => 'Validation failed.',
-                'details' => $validator->errors(),
-            ], 422);
-        }
-
-        $updateData = array_filter([
-            'name'        => $request->input('name'),
-            'description' => $request->input('description'),
-            'is_sandbox'  => $request->has('is_sandbox') ? $request->boolean('is_sandbox') : null,
-            'status'      => $request->input('status'),
-            'return_url'  => $request->input('return_url'),
-        ], fn ($v) => $v !== null);
-
-        // Only update config if explicitly provided (avoid overwriting credentials with null)
-        if ($request->has('config') && is_array($request->input('config'))) {
-            $updateData['config'] = array_merge(
-                $gateway->decryptedConfig(),
-                $request->input('config')
-            );
-        }
-
-        $gateway->update($updateData);
-
-        return response()->json([
-            'status'  => 'ok',
-            'gateway' => new GatewayResource($gateway->fresh()),
-        ]);
-    }
-
-    /**
-     * Delete a gateway configuration.
-     */
-    public function destroy(string $id): JsonResponse
-    {
-        $gateway = Gateway::where('company_uuid', session('company'))
-            ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
-            ->firstOrFail();
-
-        $gateway->delete();
-
-        return response()->json(['status' => 'ok', 'message' => 'Gateway deleted.']);
-    }
-
-    /**
-     * Return the full driver manifest.
+     * The resource to query.
      *
-     * This endpoint is used by the frontend to dynamically render the
-     * "Add Gateway" configuration form. It returns each registered driver's
-     * code, name, capabilities, and config schema.
+     * @var string
+     */
+    public $resource = 'gateway';
+
+    public function __construct(protected PaymentService $paymentService)
+    {
+    }
+
+    /**
+     * Return all available payment driver manifests (name, config schema, capabilities).
      */
     public function drivers(): JsonResponse
     {
@@ -218,23 +38,14 @@ class GatewayController extends FleetbaseController
 
     /**
      * Initiate a payment charge through a gateway.
-     *
-     * @param string $id Gateway UUID or public_id
      */
     public function charge(Request $request, string $id): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'amount'      => 'required|integer|min:1',
             'currency'    => 'required|string|size:3',
             'description' => 'required|string|max:500',
         ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'error'   => 'Validation failed.',
-                'details' => $validator->errors(),
-            ], 422);
-        }
 
         $purchaseRequest = new PurchaseRequest(
             amount: $request->integer('amount'),
@@ -253,33 +64,24 @@ class GatewayController extends FleetbaseController
         $response = $this->paymentService->charge($id, $purchaseRequest);
 
         return response()->json([
-            'status'                  => $response->status,
-            'successful'              => $response->successful,
-            'gateway_transaction_id'  => $response->gatewayTransactionId,
-            'message'                 => $response->message,
-            'data'                    => $response->data,
+            'status'                 => $response->status,
+            'successful'             => $response->successful,
+            'gateway_transaction_id' => $response->gatewayTransactionId,
+            'message'                => $response->message,
+            'data'                   => $response->data,
         ], $response->isSuccessful() ? 200 : 422);
     }
 
     /**
      * Refund a previously captured transaction.
-     *
-     * @param string $id Gateway UUID or public_id
      */
     public function refund(Request $request, string $id): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'gateway_transaction_id' => 'required|string',
             'amount'                 => 'required|integer|min:1',
             'currency'               => 'required|string|size:3',
         ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'error'   => 'Validation failed.',
-                'details' => $validator->errors(),
-            ], 422);
-        }
 
         $refundRequest = new RefundRequest(
             gatewayTransactionId: $request->input('gateway_transaction_id'),
@@ -301,9 +103,7 @@ class GatewayController extends FleetbaseController
     }
 
     /**
-     * Create a setup intent for payment method tokenization (e.g., Stripe SetupIntent).
-     *
-     * @param string $id Gateway UUID or public_id
+     * Create a setup intent for payment method tokenization (e.g. Stripe SetupIntent).
      */
     public function setupIntent(Request $request, string $id): JsonResponse
     {
@@ -319,28 +119,19 @@ class GatewayController extends FleetbaseController
 
     /**
      * List gateway transactions for a specific gateway.
-     *
-     * @param string $id Gateway UUID or public_id
      */
-    public function transactions(Request $request, string $id): JsonResponse
+    public function transactions(Request $request, string $id): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
     {
         $gateway = Gateway::where('company_uuid', session('company'))
             ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
             ->firstOrFail();
 
-        $query = GatewayTransaction::where('gateway_uuid', $gateway->uuid);
-
-        if ($request->has('type')) {
-            $query->where('type', $request->input('type'));
-        }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        $transactions = $query->orderBy('created_at', 'desc')
+        $transactions = GatewayTransaction::where('gateway_uuid', $gateway->uuid)
+            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->input('type')))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
+            ->orderBy('created_at', 'desc')
             ->paginate($request->integer('per_page', 25));
 
-        return response()->json($transactions);
+        return GatewayTransactionResource::collection($transactions);
     }
 }

@@ -2,103 +2,31 @@
 
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
-use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Ledger\Http\Controllers\LedgerController;
+use Fleetbase\Ledger\Http\Resources\v1\Journal as JournalResource;
 use Fleetbase\Ledger\Models\Journal;
 use Fleetbase\Ledger\Services\LedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class JournalController extends Controller
+class JournalController extends LedgerController
 {
     /**
-     * The ledger service instance.
-     */
-    protected LedgerService $ledgerService;
-
-    /**
-     * Create a new JournalController instance.
-     */
-    public function __construct(LedgerService $ledgerService)
-    {
-        $this->ledgerService = $ledgerService;
-    }
-
-    /**
-     * Query journal entries for the authenticated company.
+     * The resource to query.
      *
-     * Supports filtering by:
-     *   - debit_account_uuid  — entries where this account was debited
-     *   - credit_account_uuid — entries where this account was credited
-     *   - account_uuid        — entries where this account appears on either side
-     *   - date_from           — inclusive start date (ISO format)
-     *   - date_to             — inclusive end date (ISO format)
-     *   - search              — partial match on description
+     * @var string
      */
-    public function query(Request $request): JsonResponse
-    {
-        $query = Journal::with(['transaction', 'debitAccount', 'creditAccount'])
-            ->where('company_uuid', session('company'));
-
-        // Filter by a specific account on either side of the entry
-        if ($request->filled('account_uuid')) {
-            $accountUuid = $request->input('account_uuid');
-            $query->where(function ($q) use ($accountUuid) {
-                $q->where('debit_account_uuid', $accountUuid)
-                    ->orWhere('credit_account_uuid', $accountUuid);
-            });
-        }
-
-        if ($request->filled('debit_account_uuid')) {
-            $query->where('debit_account_uuid', $request->input('debit_account_uuid'));
-        }
-
-        if ($request->filled('credit_account_uuid')) {
-            $query->where('credit_account_uuid', $request->input('credit_account_uuid'));
-        }
-
-        if ($request->filled('date_from')) {
-            $query->where('date', '>=', $request->input('date_from'));
-        }
-
-        if ($request->filled('date_to')) {
-            $query->where('date', '<=', $request->input('date_to'));
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where('description', 'like', "%{$search}%");
-        }
-
-        $results = $query
-            ->orderBy($request->input('sort', 'date'), $request->input('order', 'desc'))
-            ->orderBy('created_at', 'desc')
-            ->paginate($request->input('limit', 15));
-
-        return response()->json($results);
-    }
-
-    /**
-     * Find a single journal entry by UUID or public_id.
-     */
-    public function find(string $id, Request $request): JsonResponse
-    {
-        $journal = Journal::with(['transaction', 'debitAccount', 'creditAccount'])
-            ->where('company_uuid', session('company'))
-            ->where(function ($query) use ($id) {
-                $query->where('uuid', $id)->orWhere('public_id', $id);
-            })
-            ->firstOrFail();
-
-        return response()->json($journal);
-    }
+    public $resource = 'journal';
 
     /**
      * Create a manual journal entry.
      *
      * Manual entries allow operators to record adjustments, corrections, or
      * opening balances that are not generated automatically by system events.
+     * This action supplements the standard createRecord() provided by the trait
+     * because it requires custom validation and service-layer orchestration.
      */
-    public function create(Request $request): JsonResponse
+    public function createManual(Request $request): JsonResponse
     {
         $request->validate([
             'debit_account_uuid'  => 'required|uuid|exists:ledger_accounts,uuid',
@@ -109,7 +37,7 @@ class JournalController extends Controller
             'date'                => 'nullable|date',
         ]);
 
-        $debitAccount  = \Fleetbase\Ledger\Models\Account::where('company_uuid', session('company'))
+        $debitAccount = \Fleetbase\Ledger\Models\Account::where('company_uuid', session('company'))
             ->where('uuid', $request->input('debit_account_uuid'))
             ->firstOrFail();
 
@@ -117,7 +45,7 @@ class JournalController extends Controller
             ->where('uuid', $request->input('credit_account_uuid'))
             ->firstOrFail();
 
-        $journal = $this->ledgerService->createJournalEntry(
+        $journal = app(LedgerService::class)->createJournalEntry(
             $debitAccount,
             $creditAccount,
             (int) $request->input('amount'),
@@ -130,46 +58,9 @@ class JournalController extends Controller
             ]
         );
 
-        return response()->json($journal->load(['transaction', 'debitAccount', 'creditAccount']), 201);
-    }
-
-    /**
-     * Delete a journal entry.
-     *
-     * Only non-system-generated entries (type = 'manual_entry') may be deleted.
-     * Deleting a journal entry does not reverse the associated Transaction record
-     * but does recalculate the affected account balances.
-     */
-    public function delete(string $id, Request $request): JsonResponse
-    {
-        $journal = Journal::where('company_uuid', session('company'))
-            ->where(function ($query) use ($id) {
-                $query->where('uuid', $id)->orWhere('public_id', $id);
-            })
-            ->firstOrFail();
-
-        // Prevent deletion of system-generated entries
-        if ($journal->transaction && $journal->transaction->type !== 'manual_entry') {
-            return response()->json(
-                ['error' => 'Only manual journal entries may be deleted. System-generated entries are immutable.'],
-                422
-            );
-        }
-
-        // Capture accounts before deletion so we can recalculate their balances
-        $debitAccount  = $journal->debitAccount;
-        $creditAccount = $journal->creditAccount;
-
-        $journal->delete();
-
-        // Recalculate balances on both affected accounts
-        if ($debitAccount) {
-            $debitAccount->updateBalance();
-        }
-        if ($creditAccount) {
-            $creditAccount->updateBalance();
-        }
-
-        return response()->json(['status' => 'ok']);
+        return response()->json(
+            new JournalResource($journal->load(['debitAccount', 'creditAccount'])),
+            201
+        );
     }
 }

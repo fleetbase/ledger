@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Route;
 | valid Fleetbase session or API key.
 |
 */
-
 Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetbase\Ledger\Http\Controllers')->group(
     function ($router) {
         /*
@@ -25,8 +24,6 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
         | performs its own signature verification internally.
         |
         | Route: POST /ledger/webhooks/{driver}
-        | Example: POST /ledger/webhooks/stripe
-        |          POST /ledger/webhooks/qpay
         */
         $router->post('webhooks/{driver}', 'WebhookController@handle');
 
@@ -34,24 +31,12 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
         |--------------------------------------------------------------------------
         | Public API Routes (Authenticated via API Key — Customer / Driver facing)
         |--------------------------------------------------------------------------
-        |
-        | These routes are accessible to Fleetbase API consumers (customers, drivers)
-        | authenticated via their API key. Each consumer can only access their own wallet.
-        |
-        | Prefix: /ledger/v1/...
         */
         $router->prefix(config('ledger.api.routing.version_prefix', 'v1'))->group(
             function ($router) {
                 $router->group(
                     ['middleware' => ['fleetbase.api']],
                     function ($router) {
-                        // ------------------------------------------------------------
-                        // Wallet — Public (Customer / Driver)
-                        // ------------------------------------------------------------
-                        // GET  /ledger/v1/wallet              — Get own wallet (auto-provisions if needed)
-                        // GET  /ledger/v1/wallet/balance      — Get own wallet balance
-                        // GET  /ledger/v1/wallet/transactions — Get own wallet transaction history
-                        // POST /ledger/v1/wallet/topup        — Top up own wallet via payment gateway
                         $router->get('wallet', 'Api\v1\WalletApiController@getWallet');
                         $router->get('wallet/balance', 'Api\v1\WalletApiController@getBalance');
                         $router->get('wallet/transactions', 'Api\v1\WalletApiController@getTransactions');
@@ -63,132 +48,105 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
 
         /*
         |--------------------------------------------------------------------------
-        | Internal Ledger API Routes
+        | Internal Routes (Authenticated via Fleetbase Session — Console)
         |--------------------------------------------------------------------------
-        |
-        | These routes are consumed by the Fleetbase console frontend (Ember engine).
-        | They are protected and require an authenticated session.
         */
-        $router->prefix(config('ledger.api.routing.internal_prefix', 'int'))->group(
+        $router->prefix(config('ledger.api.routing.internal_prefix', 'int'))->namespace('Internal')->group(
             function ($router) {
-                $router->group(
-                    ['prefix' => 'v1', 'middleware' => ['fleetbase.protected']],
+                $router->prefix(config('ledger.api.routing.version_prefix', 'v1'))->namespace('v1')->group(
                     function ($router) {
-                        // ------------------------------------------------------------
-                        // Accounts (Chart of Accounts)
-                        // ------------------------------------------------------------
-                        $router->get('accounts', 'Internal\v1\AccountController@query');
-                        $router->get('accounts/{id}', 'Internal\v1\AccountController@find');
-                        $router->post('accounts', 'Internal\v1\AccountController@create');
-                        $router->put('accounts/{id}', 'Internal\v1\AccountController@update');
-                        $router->delete('accounts/{id}', 'Internal\v1\AccountController@delete');
-                        $router->post('accounts/{id}/recalculate-balance', 'Internal\v1\AccountController@recalculateBalance');
+                        $router->group(
+                            ['middleware' => ['fleetbase.protected']],
+                            function ($router) {
+                                // ----------------------------------------------------------------
+                                // Chart of Accounts
+                                // ----------------------------------------------------------------
+                                $router->fleetbaseRoutes(
+                                    'accounts',
+                                    function ($router, $controller) {
+                                        $router->get('{id}/general-ledger', $controller('generalLedger'));
+                                        $router->post('{id}/recalculate-balance', $controller('recalculateBalance'));
+                                    }
+                                );
 
-                        // General ledger for a specific account (all journal entries for that account)
-                        $router->get('accounts/{id}/ledger', 'Internal\v1\AccountController@generalLedger');
+                                // ----------------------------------------------------------------
+                                // Invoices
+                                // ----------------------------------------------------------------
+                                $router->fleetbaseRoutes(
+                                    'invoices',
+                                    function ($router, $controller) {
+                                        $router->post('create-from-order', $controller('createFromOrder'));
+                                        $router->post('{id}/record-payment', $controller('recordPayment'));
+                                        $router->post('{id}/mark-as-sent', $controller('markAsSent'));
+                                        $router->post('{id}/send', $controller('send'));
+                                    }
+                                );
 
-                        // ------------------------------------------------------------
-                        // Journal Entries
-                        // ------------------------------------------------------------
-                        $router->get('journals', 'Internal\v1\JournalController@query');
-                        $router->get('journals/{id}', 'Internal\v1\JournalController@find');
-                        $router->post('journals', 'Internal\v1\JournalController@create');
-                        $router->delete('journals/{id}', 'Internal\v1\JournalController@delete');
+                                // ----------------------------------------------------------------
+                                // Journal Entries
+                                // ----------------------------------------------------------------
+                                $router->fleetbaseRoutes(
+                                    'journals',
+                                    function ($router, $controller) {
+                                        $router->post('manual', $controller('createManual'));
+                                    }
+                                );
 
-                        // ------------------------------------------------------------
-                        // Invoices
-                        // ------------------------------------------------------------
-                        $router->get('invoices', 'Internal\v1\InvoiceController@query');
-                        $router->get('invoices/{id}', 'Internal\v1\InvoiceController@find');
-                        $router->post('invoices', 'Internal\v1\InvoiceController@create');
-                        $router->put('invoices/{id}', 'Internal\v1\InvoiceController@update');
-                        $router->delete('invoices/{id}', 'Internal\v1\InvoiceController@delete');
-                        $router->post('invoices/from-order', 'Internal\v1\InvoiceController@createFromOrder');
-                        $router->post('invoices/{id}/record-payment', 'Internal\v1\InvoiceController@recordPayment');
-                        $router->post('invoices/{id}/mark-as-sent', 'Internal\v1\InvoiceController@markAsSent');
-                        $router->post('invoices/{id}/send', 'Internal\v1\InvoiceController@send');
+                                // ----------------------------------------------------------------
+                                // Wallets
+                                // ----------------------------------------------------------------
+                                $router->fleetbaseRoutes(
+                                    'wallets',
+                                    function ($router, $controller) {
+                                        $router->post('{id}/transfer', $controller('transfer'));
+                                        $router->post('{id}/topup', $controller('topUp'));
+                                        $router->post('{id}/payout', $controller('payout'));
+                                        $router->post('{id}/freeze', $controller('freeze'));
+                                        $router->post('{id}/unfreeze', $controller('unfreeze'));
+                                        $router->post('{id}/recalculate', $controller('recalculate'));
+                                        $router->get('{id}/transactions', $controller('getTransactions'));
+                                    }
+                                );
 
-                        // ------------------------------------------------------------
-                        // Wallets — Internal (Operator / Admin)
-                        // ------------------------------------------------------------
-                        $router->get('wallets', 'Internal\v1\WalletController@query');
-                        $router->get('wallets/{id}', 'Internal\v1\WalletController@find');
-                        $router->post('wallets', 'Internal\v1\WalletController@create');
-                        $router->put('wallets/{id}', 'Internal\v1\WalletController@update');
-                        $router->delete('wallets/{id}', 'Internal\v1\WalletController@delete');
+                                // ----------------------------------------------------------------
+                                // Wallet Transactions (company-wide read-only feed)
+                                // ----------------------------------------------------------------
+                                $router->fleetbaseRoutes('wallet-transactions');
 
-                        // Balance operations
-                        $router->post('wallets/{id}/deposit', 'Internal\v1\WalletController@deposit');
-                        $router->post('wallets/{id}/withdraw', 'Internal\v1\WalletController@withdraw');
-                        $router->post('wallets/transfer', 'Internal\v1\WalletController@transfer');
-                        $router->post('wallets/{id}/topup', 'Internal\v1\WalletController@topUp');
-                        $router->post('wallets/{id}/payout', 'Internal\v1\WalletController@payout');
+                                // ----------------------------------------------------------------
+                                // Transactions (core-api Transaction records — read-only)
+                                // ----------------------------------------------------------------
+                                $router->fleetbaseRoutes('transactions');
 
-                        // State management
-                        $router->post('wallets/{id}/freeze', 'Internal\v1\WalletController@freeze');
-                        $router->post('wallets/{id}/unfreeze', 'Internal\v1\WalletController@unfreeze');
-                        $router->post('wallets/{id}/recalculate', 'Internal\v1\WalletController@recalculate');
+                                // ----------------------------------------------------------------
+                                // Payment Gateways
+                                // ----------------------------------------------------------------
+                                // The 'drivers' static route must be registered BEFORE fleetbaseRoutes
+                                // to avoid being swallowed by the /{id} find route.
+                                $router->get('gateways/drivers', 'GatewayController@drivers');
 
-                        // Transaction history for a specific wallet
-                        $router->get('wallets/{id}/transactions', 'Internal\v1\WalletController@getTransactions');
+                                $router->fleetbaseRoutes(
+                                    'gateways',
+                                    function ($router, $controller) {
+                                        $router->post('{id}/charge', $controller('charge'));
+                                        $router->post('{id}/refund', $controller('refund'));
+                                        $router->post('{id}/setup-intent', $controller('setupIntent'));
+                                        $router->get('{id}/transactions', $controller('transactions'));
+                                    }
+                                );
 
-                        // ------------------------------------------------------------
-                        // Wallet Transactions — Internal (standalone query endpoint)
-                        // ------------------------------------------------------------
-                        $router->get('wallet-transactions', 'Internal\v1\WalletTransactionController@query');
-                        $router->get('wallet-transactions/{id}', 'Internal\v1\WalletTransactionController@find');
-
-                        // ------------------------------------------------------------
-                        // Transactions (read-only view of core-api Transaction records)
-                        // ------------------------------------------------------------
-                        $router->get('transactions', 'Internal\v1\TransactionController@query');
-                        $router->get('transactions/{id}', 'Internal\v1\TransactionController@find');
-
-                        // ------------------------------------------------------------
-                        // Payment Gateways
-                        // ------------------------------------------------------------
-                        // Driver manifest — returns all available drivers with config schemas
-                        // Must be registered BEFORE the {id} route to avoid route conflicts
-                        $router->get('gateways/drivers', 'Internal\v1\GatewayController@drivers');
-
-                        // Gateway CRUD
-                        $router->get('gateways', 'Internal\v1\GatewayController@index');
-                        $router->post('gateways', 'Internal\v1\GatewayController@store');
-                        $router->get('gateways/{id}', 'Internal\v1\GatewayController@show');
-                        $router->put('gateways/{id}', 'Internal\v1\GatewayController@update');
-                        $router->delete('gateways/{id}', 'Internal\v1\GatewayController@destroy');
-
-                        // Gateway payment operations
-                        $router->post('gateways/{id}/charge', 'Internal\v1\GatewayController@charge');
-                        $router->post('gateways/{id}/refund', 'Internal\v1\GatewayController@refund');
-                        $router->post('gateways/{id}/setup-intent', 'Internal\v1\GatewayController@setupIntent');
-
-                        // Gateway transaction history
-                        $router->get('gateways/{id}/transactions', 'Internal\v1\GatewayController@transactions');
-
-                        // ------------------------------------------------------------
-                        // Reports & Financial Statements
-                        // ------------------------------------------------------------
-                        // Dashboard — KPIs, revenue trend, recent journals, invoice counts
-                        $router->get('reports/dashboard', 'Internal\v1\ReportController@dashboard');
-
-                        // Trial Balance — all accounts with debit/credit totals as of a date
-                        $router->get('reports/trial-balance', 'Internal\v1\ReportController@trialBalance');
-
-                        // Balance Sheet — Assets = Liabilities + Equity as of a date
-                        $router->get('reports/balance-sheet', 'Internal\v1\ReportController@balanceSheet');
-
-                        // Income Statement (P&L) — Revenue - Expenses = Net Income for a period
-                        $router->get('reports/income-statement', 'Internal\v1\ReportController@incomeStatement');
-
-                        // Cash Flow Summary — Operating / Financing / Investing activities for a period
-                        $router->get('reports/cash-flow', 'Internal\v1\ReportController@cashFlow');
-
-                        // AR Aging — Outstanding invoices bucketed by days overdue
-                        $router->get('reports/ar-aging', 'Internal\v1\ReportController@arAging');
-
-                        // Wallet Summary — wallet counts, balances, period stats, top wallets
-                        $router->get('reports/wallet-summary', 'Internal\v1\ReportController@walletSummary');
+                                // ----------------------------------------------------------------
+                                // Reports & Financial Statements
+                                // ----------------------------------------------------------------
+                                $router->get('reports/dashboard', 'ReportController@dashboard');
+                                $router->get('reports/trial-balance', 'ReportController@trialBalance');
+                                $router->get('reports/balance-sheet', 'ReportController@balanceSheet');
+                                $router->get('reports/income-statement', 'ReportController@incomeStatement');
+                                $router->get('reports/cash-flow', 'ReportController@cashFlow');
+                                $router->get('reports/ar-aging', 'ReportController@arAging');
+                                $router->get('reports/wallet-summary', 'ReportController@walletSummary');
+                            }
+                        );
                     }
                 );
             }

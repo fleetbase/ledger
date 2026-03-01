@@ -2,16 +2,13 @@
 
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
-use Fleetbase\FleetOps\Models\Order;
-use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Ledger\Http\Controllers\LedgerController;
 use Fleetbase\Ledger\Http\Resources\v1\Invoice as InvoiceResource;
 use Fleetbase\Ledger\Models\Invoice;
-use Fleetbase\Ledger\Models\InvoiceItem;
 use Fleetbase\Ledger\Services\InvoiceService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
-class InvoiceController extends Controller
+class InvoiceController extends LedgerController
 {
     /**
      * The resource to query.
@@ -21,237 +18,48 @@ class InvoiceController extends Controller
     public $resource = 'invoice';
 
     /**
-     * The model to query.
-     *
-     * @var Invoice
+     * Create an invoice from an existing order.
      */
-    public $model = Invoice::class;
-
-    /**
-     * Query for invoices.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function query(Request $request)
-    {
-        $results = Invoice::where('company_uuid', session('company'))
-            ->with(['customer', 'items'])
-            ->when($request->filled('status'), function ($query) use ($request) {
-                $query->where('status', $request->input('status'));
-            })
-            ->when($request->filled('customer'), function ($query) use ($request) {
-                $query->where('customer_uuid', $request->input('customer'));
-            })
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $search = $request->input('search');
-                $query->where(function ($q) use ($search) {
-                    $q->where('number', 'like', "%{$search}%")
-                        ->orWhere('public_id', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy($request->input('sort', 'created_at'), $request->input('order', 'desc'))
-            ->paginate($request->input('limit', 15));
-
-        return InvoiceResource::collection($results);
-    }
-
-    /**
-     * Find a single invoice.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function find($id, Request $request)
-    {
-        $invoice = Invoice::where('company_uuid', session('company'))
-            ->with(['customer', 'items', 'order'])
-            ->where(function ($query) use ($id) {
-                $query->where('uuid', $id)->orWhere('public_id', $id)->orWhere('number', $id);
-            })
-            ->firstOrFail();
-
-        return new InvoiceResource($invoice);
-    }
-
-    /**
-     * Create a new invoice.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create(Request $request)
-    {
-        $request->validate([
-            'customer_uuid'       => 'required|string',
-            'customer_type'       => 'required|string',
-            'date'                => 'required|date',
-            'due_date'            => 'nullable|date',
-            'items'               => 'required|array|min:1',
-            'items.*.description' => 'required|string',
-            'items.*.quantity'    => 'required|integer|min:1',
-            'items.*.unit_price'  => 'required|integer|min:0',
-        ]);
-
-        return DB::transaction(function () use ($request) {
-            $invoice = Invoice::create([
-                'company_uuid'  => session('company'),
-                'customer_uuid' => $request->input('customer_uuid'),
-                'customer_type' => $request->input('customer_type'),
-                'order_uuid'    => $request->input('order_uuid'),
-                'number'        => Invoice::generateNumber(),
-                'date'          => $request->input('date'),
-                'due_date'      => $request->input('due_date'),
-                'currency'      => $request->input('currency', 'USD'),
-                'status'        => 'draft',
-                'notes'         => $request->input('notes'),
-                'terms'         => $request->input('terms'),
-            ]);
-
-            // Create invoice items
-            foreach ($request->input('items', []) as $itemData) {
-                $item = new InvoiceItem([
-                    'description' => $itemData['description'],
-                    'quantity'    => $itemData['quantity'],
-                    'unit_price'  => $itemData['unit_price'],
-                    'tax_rate'    => $itemData['tax_rate'] ?? 0,
-                ]);
-                $item->calculateAmount();
-                $invoice->items()->save($item);
-            }
-
-            // Calculate totals
-            $invoice->calculateTotals();
-            $invoice->save();
-
-            return new InvoiceResource($invoice->load(['customer', 'items']));
-        });
-    }
-
-    /**
-     * Update an invoice.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function update($id, Request $request)
-    {
-        $invoice = Invoice::where('company_uuid', session('company'))
-            ->where(function ($query) use ($id) {
-                $query->where('uuid', $id)->orWhere('public_id', $id);
-            })
-            ->firstOrFail();
-
-        return DB::transaction(function () use ($invoice, $request) {
-            $invoice->update($request->only([
-                'customer_uuid',
-                'customer_type',
-                'date',
-                'due_date',
-                'notes',
-                'terms',
-                'status',
-            ]));
-
-            // Update items if provided
-            if ($request->has('items')) {
-                // Delete existing items
-                $invoice->items()->delete();
-
-                // Create new items
-                foreach ($request->input('items', []) as $itemData) {
-                    $item = new InvoiceItem([
-                        'description' => $itemData['description'],
-                        'quantity'    => $itemData['quantity'],
-                        'unit_price'  => $itemData['unit_price'],
-                        'tax_rate'    => $itemData['tax_rate'] ?? 0,
-                    ]);
-                    $item->calculateAmount();
-                    $invoice->items()->save($item);
-                }
-
-                // Recalculate totals
-                $invoice->calculateTotals();
-                $invoice->save();
-            }
-
-            return new InvoiceResource($invoice->load(['customer', 'items']));
-        });
-    }
-
-    /**
-     * Delete an invoice.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function delete($id, Request $request)
-    {
-        $invoice = Invoice::where('company_uuid', session('company'))
-            ->where(function ($query) use ($id) {
-                $query->where('uuid', $id)->orWhere('public_id', $id);
-            })
-            ->firstOrFail();
-
-        if ($invoice->status === 'paid') {
-            return response()->json(['error' => 'Cannot delete paid invoice'], 400);
-        }
-
-        $invoice->delete();
-
-        return response()->json(['status' => 'ok']);
-    }
-
-    /**
-     * Create an invoice from an order.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function createFromOrder(Request $request)
+    public function createFromOrder(Request $request): InvoiceResource
     {
         $request->validate([
             'order_uuid' => 'required|string|exists:orders,uuid',
         ]);
 
-        $order = Order::where('company_uuid', session('company'))
+        $order = \Fleetbase\FleetOps\Models\Order::where('company_uuid', session('company'))
             ->where('uuid', $request->input('order_uuid'))
             ->firstOrFail();
 
-        $invoiceService = app(InvoiceService::class);
-        $invoice        = $invoiceService->createFromOrder($order);
+        $invoice = app(InvoiceService::class)->createFromOrder($order);
 
         return new InvoiceResource($invoice->load(['customer', 'items']));
     }
 
     /**
-     * Record a payment for an invoice.
-     *
-     * @return \Illuminate\Http\Response
+     * Record a payment against an invoice.
      */
-    public function recordPayment($id, Request $request)
+    public function recordPayment(string $id, Request $request): InvoiceResource
     {
         $request->validate([
             'amount' => 'required|integer|min:1',
         ]);
 
         $invoice = Invoice::where('company_uuid', session('company'))
-            ->where(function ($query) use ($id) {
-                $query->where('uuid', $id)->orWhere('public_id', $id);
-            })
+            ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
             ->firstOrFail();
 
-        $invoiceService = app(InvoiceService::class);
-        $invoice        = $invoiceService->recordPayment($invoice, $request->input('amount'));
+        $invoice = app(InvoiceService::class)->recordPayment($invoice, $request->input('amount'));
 
         return new InvoiceResource($invoice->load(['customer', 'items']));
     }
 
     /**
-     * Mark an invoice as sent.
-     *
-     * @return \Illuminate\Http\Response
+     * Mark an invoice as sent (without dispatching a notification).
      */
-    public function markAsSent($id, Request $request)
+    public function markAsSent(string $id, Request $request): InvoiceResource
     {
         $invoice = Invoice::where('company_uuid', session('company'))
-            ->where(function ($query) use ($id) {
-                $query->where('uuid', $id)->orWhere('public_id', $id);
-            })
+            ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
             ->firstOrFail();
 
         $invoice->markAsSent();
@@ -260,39 +68,22 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Send an invoice to the customer via email.
-     *
-     * Marks the invoice as sent and dispatches a notification to the customer's
-     * email address. If the invoice has no customer or the customer has no email,
-     * a 422 error is returned.
-     *
-     * @param string $id
-     *
-     * @return \Illuminate\Http\Response
+     * Send an invoice to the customer via email and mark it as sent.
      */
-    public function send($id, Request $request)
+    public function send(string $id, Request $request): InvoiceResource
     {
         $invoice = Invoice::where('company_uuid', session('company'))
-            ->where(function ($query) use ($id) {
-                $query->where('uuid', $id)->orWhere('public_id', $id);
-            })
+            ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
             ->with('customer')
             ->firstOrFail();
 
-        // Validate that the invoice has a sendable customer
         if (!$invoice->customer || !$invoice->customer->email) {
-            return response()->json(
-                ['error' => 'Invoice customer does not have a valid email address.'],
-                422
-            );
+            abort(422, 'Invoice customer does not have a valid email address.');
         }
 
-        // Mark as sent
         $invoice->markAsSent();
 
         // TODO (M5): Dispatch InvoiceSentNotification to $invoice->customer->email
-        // \Illuminate\Support\Facades\Notification::route('mail', $invoice->customer->email)
-        //     ->notify(new \Fleetbase\Ledger\Notifications\InvoiceSentNotification($invoice));
 
         return new InvoiceResource($invoice->load(['customer', 'items']));
     }
