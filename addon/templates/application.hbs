@@ -2,25 +2,20 @@
     <Layout::Sidebar::Panel @open={{true}} @title="Ledger">
         <Layout::Sidebar::Item @route="console.ledger.home" @icon="gauge-high">Dashboard</Layout::Sidebar::Item>
     </Layout::Sidebar::Panel>
-
     <Layout::Sidebar::Panel @open={{true}} @title="Billing">
         <Layout::Sidebar::Item @route="console.ledger.billing.invoices.index" @icon="file-invoice-dollar">Invoices</Layout::Sidebar::Item>
         <Layout::Sidebar::Item @route="console.ledger.billing.transactions.index" @icon="money-bill-transfer">Transactions</Layout::Sidebar::Item>
     </Layout::Sidebar::Panel>
-
     <Layout::Sidebar::Panel @open={{true}} @title="Wallets">
         <Layout::Sidebar::Item @route="console.ledger.wallets.index" @icon="wallet">Wallets</Layout::Sidebar::Item>
     </Layout::Sidebar::Panel>
-
     <Layout::Sidebar::Panel @open={{true}} @title="Accounting">
         <Layout::Sidebar::Item @route="console.ledger.accounting.journal.index" @icon="book">Journal Entries</Layout::Sidebar::Item>
         <Layout::Sidebar::Item @route="console.ledger.accounting.accounts.index" @icon="sitemap">Chart of Accounts</Layout::Sidebar::Item>
     </Layout::Sidebar::Panel>
-
     <Layout::Sidebar::Panel @open={{true}} @title="Reports">
         <Layout::Sidebar::Item @route="console.ledger.reports.index" @icon="chart-line">Reports</Layout::Sidebar::Item>
     </Layout::Sidebar::Panel>
-
     <Layout::Sidebar::Panel @open={{true}} @title="Settings">
         <Layout::Sidebar::Item @route="console.ledger.settings.gateways.index" @icon="credit-card">Payment Gateways</Layout::Sidebar::Item>
     </Layout::Sidebar::Panel>
@@ -29,4 +24,3 @@
 <Layout::Section::Container>
     {{outlet}}
 </Layout::Section::Container>
-<ContextPanel />
