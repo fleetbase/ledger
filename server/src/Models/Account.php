@@ -24,6 +24,15 @@ class Account extends Model
     use SoftDeletes;
 
     /**
+     * Account type constants.
+     */
+    const TYPE_ASSET     = 'asset';
+    const TYPE_LIABILITY = 'liability';
+    const TYPE_EQUITY    = 'equity';
+    const TYPE_REVENUE   = 'revenue';
+    const TYPE_EXPENSE   = 'expense';
+
+    /**
      * The database table used by the model.
      *
      * @var string
