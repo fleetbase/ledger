@@ -14,7 +14,7 @@ export default class WidgetInvoiceSummaryComponent extends Component {
 
     @task *loadData() {
         try {
-            const response = yield this.fetch.get('reports/dashboard', { namespace: 'ledger/int/v1' });
+            const response = yield this.fetch.get('reports/dashboard', {}, { namespace: 'ledger/int/v1' });
             this.counts = response?.data?.invoice_counts ?? null;
         } catch {
             this.counts = null;

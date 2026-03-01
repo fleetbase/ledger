@@ -14,7 +14,7 @@ export default class WidgetOverviewComponent extends Component {
 
     @task *loadData() {
         try {
-            const response = yield this.fetch.get('reports/dashboard', { namespace: 'ledger/int/v1' });
+            const response = yield this.fetch.get('reports/dashboard', {}, { namespace: 'ledger/int/v1' });
             this.data = response?.data ?? null;
         } catch {
             this.data = null;

@@ -14,7 +14,7 @@ export default class WidgetRevenueChartComponent extends Component {
 
     @task *loadData() {
         try {
-            const response = yield this.fetch.get('reports/dashboard', { namespace: 'ledger/int/v1' });
+            const response = yield this.fetch.get('reports/dashboard', {}, { namespace: 'ledger/int/v1' });
             this.data = response?.data?.daily_revenue ?? [];
         } catch {
             this.data = [];

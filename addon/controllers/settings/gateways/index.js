@@ -34,7 +34,7 @@ export default class SettingsGatewaysIndexController extends Controller {
 
     @task *loadDrivers() {
         try {
-            const result = yield this.fetch.get('gateways/drivers', { namespace: 'ledger/int/v1' });
+            const result = yield this.fetch.get('gateways/drivers', {}, { namespace: 'ledger/int/v1' });
             this.availableDrivers = result?.data ?? [];
         } catch {
             this.availableDrivers = [];

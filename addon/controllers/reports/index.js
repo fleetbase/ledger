@@ -36,7 +36,7 @@ export default class ReportsIndexController extends Controller {
                 'ar-aging': 'reports/ar-aging',
             };
 
-            const result = yield this.fetch.get(endpointMap[this.activeReport], { namespace: 'ledger/int/v1', params });
+            const result = yield this.fetch.get(endpointMap[this.activeReport], params, { namespace: 'ledger/int/v1' });
             this.reportData = result?.data ?? null;
         } catch {
             this.reportData = null;

@@ -14,7 +14,7 @@ export default class WidgetArAgingComponent extends Component {
 
     @task *loadData() {
         try {
-            const response = yield this.fetch.get('reports/ar-aging', { namespace: 'ledger/int/v1' });
+            const response = yield this.fetch.get('reports/ar-aging', {}, { namespace: 'ledger/int/v1' });
             this.buckets = response?.data?.summary ?? null;
         } catch {
             this.buckets = null;
