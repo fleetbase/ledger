@@ -45,7 +45,6 @@ return new class extends Migration
             $table->timestamp('viewed_at')->nullable();
             $table->timestamp('paid_at')->nullable();
 
-            $table->unique(['uuid']);
         });
     }
 

@@ -31,7 +31,6 @@ return new class extends Migration
             $table->timestamp('created_at')->nullable()->index();
             $table->timestamp('updated_at')->nullable();
 
-            $table->unique(['uuid']);
             $table->unique(['subject_uuid', 'subject_type']);
         });
     }

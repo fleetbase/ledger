@@ -18,7 +18,7 @@ return new class extends Migration
         Schema::create('ledger_gateways', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->char('uuid', 36)->unique();
-            $table->string('public_id', 191)->nullable()->unique()->index();
+            $table->string('public_id', 191)->nullable()->unique();
             $table->char('company_uuid', 36)->nullable()->index();
             $table->char('created_by_uuid', 36)->nullable()->index();
 
