@@ -26,6 +26,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->date('date')->index();
             $table->json('meta')->nullable();
+            $table->softDeletes();
             $table->timestamp('created_at')->nullable()->index();
             $table->timestamp('updated_at')->nullable();
 

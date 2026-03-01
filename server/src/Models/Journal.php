@@ -10,6 +10,7 @@ use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasPublicId;
 use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\TracksApiCredential;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Journal extends Model
@@ -19,6 +20,7 @@ class Journal extends Model
     use HasApiModelBehavior;
     use HasMetaAttributes;
     use TracksApiCredential;
+    use SoftDeletes;
 
     /**
      * The prefix used when auto-generating public IDs for journal entries.

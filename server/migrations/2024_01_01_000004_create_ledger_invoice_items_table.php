@@ -25,6 +25,7 @@ return new class extends Migration
             $table->decimal('tax_rate', 5, 2)->default(0.00); // percentage
             $table->integer('tax_amount')->default(0); // stored in cents
             $table->json('meta')->nullable();
+            $table->softDeletes();
             $table->timestamp('created_at')->nullable()->index();
             $table->timestamp('updated_at')->nullable();
 

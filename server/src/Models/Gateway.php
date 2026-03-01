@@ -6,6 +6,7 @@ use Fleetbase\Models\Model;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicId;
 use Fleetbase\Traits\HasUuid;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Gateway Model.
@@ -32,6 +33,7 @@ class Gateway extends Model
     use HasUuid;
     use HasPublicId;
     use HasApiModelBehavior;
+    use SoftDeletes;
 
     /**
      * The database table used by the model.
