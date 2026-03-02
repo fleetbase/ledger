@@ -7,12 +7,14 @@ export default class AccountingJournalIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'entry_source'];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'entry_source', 'currency'];
     @tracked page = 1;
     @tracked limit = 30;
-    @tracked sort = '-created_at';
+    @tracked sort = '-entry_date';
     @tracked query = null;
+    @tracked type = null;
     @tracked entry_source = null;
+    @tracked currency = null;
     @tracked table = null;
 
     get actionButtons() {
@@ -46,8 +48,8 @@ export default class AccountingJournalIndexController extends Controller {
         return [
             {
                 sticky: true,
-                label: this.intl.t('column.id'),
-                valuePath: 'public_id',
+                label: this.intl.t('column.number'),
+                valuePath: 'number',
                 cellComponent: 'table/cell/anchor',
                 action: this.journalActions.transition.view,
                 resizable: true,
@@ -60,14 +62,38 @@ export default class AccountingJournalIndexController extends Controller {
                 sortable: true,
             },
             {
-                label: this.intl.t('column.debit-account'),
-                valuePath: 'debit_account.name',
+                label: this.intl.t('column.type'),
+                valuePath: 'type',
                 resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'type',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'General', value: 'general' },
+                    { label: 'Payment', value: 'payment' },
+                    { label: 'Refund', value: 'refund' },
+                    { label: 'Adjustment', value: 'adjustment' },
+                    { label: 'Deposit', value: 'deposit' },
+                    { label: 'Withdrawal', value: 'withdrawal' },
+                    { label: 'Transfer', value: 'transfer' },
+                ],
+            },
+            {
+                label: this.intl.t('column.debit-account'),
+                valuePath: 'debit_account_name',
+                resizable: true,
+                filterable: true,
+                filterParam: 'debit_account',
+                filterComponent: 'filter/string',
             },
             {
                 label: this.intl.t('column.credit-account'),
-                valuePath: 'credit_account.name',
+                valuePath: 'credit_account_name',
                 resizable: true,
+                filterable: true,
+                filterParam: 'credit_account',
+                filterComponent: 'filter/string',
             },
             {
                 label: this.intl.t('column.amount'),
@@ -82,7 +108,11 @@ export default class AccountingJournalIndexController extends Controller {
                 sortable: true,
                 filterable: true,
                 filterParam: 'entry_source',
-                filterComponent: 'filter/string',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'System', value: 'system' },
+                    { label: 'Manual', value: 'manual' },
+                ],
             },
         ];
     }

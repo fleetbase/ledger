@@ -7,13 +7,14 @@ export default class AccountingAccountsIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status'];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status', 'currency'];
     @tracked page = 1;
     @tracked limit = 30;
-    @tracked sort = '-created_at';
+    @tracked sort = 'code';
     @tracked query = null;
     @tracked type = null;
     @tracked status = null;
+    @tracked currency = null;
     @tracked table = null;
 
     get actionButtons() {
@@ -47,21 +48,24 @@ export default class AccountingAccountsIndexController extends Controller {
         return [
             {
                 sticky: true,
-                label: this.intl.t('column.name'),
-                valuePath: 'name',
+                label: this.intl.t('column.code'),
+                valuePath: 'code',
                 cellComponent: 'table/cell/anchor',
                 action: this.accountActions.transition.view,
                 resizable: true,
                 sortable: true,
                 filterable: true,
-                filterParam: 'name',
+                filterParam: 'code',
                 filterComponent: 'filter/string',
             },
             {
-                label: this.intl.t('column.code'),
-                valuePath: 'code',
+                label: this.intl.t('column.name'),
+                valuePath: 'name',
                 resizable: true,
                 sortable: true,
+                filterable: true,
+                filterParam: 'name',
+                filterComponent: 'filter/string',
             },
             {
                 label: this.intl.t('column.type'),
@@ -70,6 +74,22 @@ export default class AccountingAccountsIndexController extends Controller {
                 sortable: true,
                 filterable: true,
                 filterParam: 'type',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'Asset', value: 'asset' },
+                    { label: 'Liability', value: 'liability' },
+                    { label: 'Equity', value: 'equity' },
+                    { label: 'Revenue', value: 'revenue' },
+                    { label: 'Expense', value: 'expense' },
+                ],
+            },
+            {
+                label: this.intl.t('column.currency'),
+                valuePath: 'currency',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'currency',
                 filterComponent: 'filter/string',
             },
             {
@@ -84,6 +104,13 @@ export default class AccountingAccountsIndexController extends Controller {
                 cellComponent: 'table/cell/status',
                 resizable: true,
                 sortable: true,
+                filterable: true,
+                filterParam: 'status',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'Active', value: 'active' },
+                    { label: 'Inactive', value: 'inactive' },
+                ],
             },
         ];
     }

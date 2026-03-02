@@ -7,12 +7,14 @@ export default class PaymentsGatewaysIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type'];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'driver', 'environment', 'status'];
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
     @tracked query = null;
-    @tracked type = null;
+    @tracked driver = null;
+    @tracked environment = null;
+    @tracked status = null;
     @tracked table = null;
 
     get actionButtons() {
@@ -62,7 +64,7 @@ export default class PaymentsGatewaysIndexController extends Controller {
                 resizable: true,
                 sortable: true,
                 filterable: true,
-                filterParam: 'type',
+                filterParam: 'driver',
                 filterComponent: 'filter/string',
             },
             {
@@ -70,6 +72,13 @@ export default class PaymentsGatewaysIndexController extends Controller {
                 valuePath: 'environment',
                 resizable: true,
                 sortable: true,
+                filterable: true,
+                filterParam: 'environment',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'Live', value: 'live' },
+                    { label: 'Sandbox', value: 'sandbox' },
+                ],
             },
             {
                 label: this.intl.t('column.default'),
@@ -83,6 +92,13 @@ export default class PaymentsGatewaysIndexController extends Controller {
                 cellComponent: 'table/cell/status',
                 resizable: true,
                 sortable: true,
+                filterable: true,
+                filterParam: 'status',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'Active', value: 'active' },
+                    { label: 'Inactive', value: 'inactive' },
+                ],
             },
         ];
     }

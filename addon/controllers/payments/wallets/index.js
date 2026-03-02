@@ -7,13 +7,14 @@ export default class PaymentsWalletsIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status'];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status', 'currency'];
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
     @tracked query = null;
     @tracked type = null;
     @tracked status = null;
+    @tracked currency = null;
     @tracked table = null;
 
     get actionButtons() {
@@ -64,13 +65,22 @@ export default class PaymentsWalletsIndexController extends Controller {
                 sortable: true,
                 filterable: true,
                 filterParam: 'type',
-                filterComponent: 'filter/string',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'Driver', value: 'driver' },
+                    { label: 'Customer', value: 'customer' },
+                    { label: 'Company', value: 'company' },
+                    { label: 'System', value: 'system' },
+                ],
             },
             {
                 label: this.intl.t('column.currency'),
                 valuePath: 'currency',
                 resizable: true,
                 sortable: true,
+                filterable: true,
+                filterParam: 'currency',
+                filterComponent: 'filter/string',
             },
             {
                 label: this.intl.t('column.balance'),
@@ -84,6 +94,14 @@ export default class PaymentsWalletsIndexController extends Controller {
                 cellComponent: 'table/cell/status',
                 resizable: true,
                 sortable: true,
+                filterable: true,
+                filterParam: 'status',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'Active', value: 'active' },
+                    { label: 'Inactive', value: 'inactive' },
+                    { label: 'Frozen', value: 'frozen' },
+                ],
             },
         ];
     }

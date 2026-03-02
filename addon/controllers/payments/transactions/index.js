@@ -7,13 +7,17 @@ export default class PaymentsTransactionsIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status'];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status', 'direction', 'currency', 'gateway', 'period'];
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
     @tracked query = null;
     @tracked type = null;
     @tracked status = null;
+    @tracked direction = null;
+    @tracked currency = null;
+    @tracked gateway = null;
+    @tracked period = null;
     @tracked table = null;
 
     get actionButtons() {
@@ -54,6 +58,19 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                label: this.intl.t('column.direction'),
+                valuePath: 'direction',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'direction',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'Credit', value: 'credit' },
+                    { label: 'Debit', value: 'debit' },
+                ],
+            },
+            {
                 label: this.intl.t('column.status'),
                 valuePath: 'status',
                 cellComponent: 'table/cell/status',
@@ -61,7 +78,15 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 sortable: true,
                 filterable: true,
                 filterParam: 'status',
-                filterComponent: 'filter/string',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'Pending', value: 'pending' },
+                    { label: 'Succeeded', value: 'succeeded' },
+                    { label: 'Failed', value: 'failed' },
+                    { label: 'Refunded', value: 'refunded' },
+                    { label: 'Voided', value: 'voided' },
+                    { label: 'Reversed', value: 'reversed' },
+                ],
             },
             {
                 label: this.intl.t('column.amount'),
@@ -72,6 +97,24 @@ export default class PaymentsTransactionsIndexController extends Controller {
             {
                 label: this.intl.t('column.currency'),
                 valuePath: 'currency',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'currency',
+                filterComponent: 'filter/string',
+            },
+            {
+                label: this.intl.t('column.gateway'),
+                valuePath: 'gateway',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'gateway',
+                filterComponent: 'filter/string',
+            },
+            {
+                label: this.intl.t('column.reference'),
+                valuePath: 'reference',
                 resizable: true,
                 sortable: true,
             },
