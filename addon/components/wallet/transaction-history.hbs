@@ -16,7 +16,7 @@
             <tbody>
                 {{#each this.transactions as |txn|}}
                     <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0">
-                        <td class="py-2 text-gray-600 text-xs">{{format-date txn.created_at format="MMM d, HH:mm"}}</td>
+                        <td class="py-2 text-gray-600 text-xs">{{txn.createdAtShort}}</td>
                         <td class="py-2 text-gray-600 capitalize text-xs">{{txn.type}}</td>
                         <td class="py-2 text-gray-600 text-xs">{{or txn.description "—"}}</td>
                         <td class="py-2 text-right font-medium text-xs text-{{txn.direction_color}}-600">

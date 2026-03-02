@@ -30,7 +30,7 @@
         </div>
         <div class="field-info-container">
             <label class="field-info-label">Date</label>
-            <p class="field-info-value">{{format-date @transaction.created_at format="MMM d, yyyy HH:mm"}}</p>
+            <p class="field-info-value">{{@transaction.createdAt}}</p>
         </div>
     </div>
     {{#if @transaction.description}}

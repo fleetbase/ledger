@@ -2,7 +2,7 @@
     <div class="flex items-center justify-between">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Balance Sheet</h2>
         {{#if @data.as_of}}
-            <span class="text-sm text-gray-500">As of {{format-date @data.as_of format="MMMM d, yyyy"}}</span>
+            <span class="text-sm text-gray-500">As of {{format-date-fns @data.as_of "MMMM d, yyyy"}}</span>
         {{/if}}
         <Badge @color={{if @data.balanced "green" "red"}}>{{if @data.balanced "Balanced" "Unbalanced"}}</Badge>
     </div>

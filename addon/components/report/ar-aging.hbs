@@ -2,7 +2,7 @@
     <div class="flex items-center justify-between">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Accounts Receivable Aging</h2>
         {{#if @data.as_of}}
-            <span class="text-sm text-gray-500">As of {{format-date @data.as_of format="MMMM d, yyyy"}}</span>
+            <span class="text-sm text-gray-500">As of {{format-date-fns @data.as_of "MMMM d, yyyy"}}</span>
         {{/if}}
     </div>
 
@@ -34,7 +34,7 @@
                 <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0">
                     <td class="py-2 text-blue-600 text-xs font-mono">{{row.number}}</td>
                     <td class="py-2 text-gray-700 dark:text-gray-300 text-xs">{{row.customer_name}}</td>
-                    <td class="py-2 text-gray-600 text-xs">{{format-date row.due_date format="MMM d, yyyy"}}</td>
+                    <td class="py-2 text-gray-600 text-xs">{{format-date-fns row.due_date "MMM d, yyyy"}}</td>
                     <td class="py-2 text-right font-medium text-xs text-red-600">{{row.formatted_balance}}</td>
                     <td class="py-2 text-right text-xs {{if (gt row.days_overdue 60) "text-red-600 font-semibold" "text-gray-600"}}">{{row.days_overdue}}</td>
                     <td class="py-2 text-xs">
