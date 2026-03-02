@@ -1,7 +1,7 @@
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
 
-export default class WalletsIndexRoute extends Route {
+export default class PaymentsWalletsIndexRoute extends Route {
     @service store;
 
     queryParams = {

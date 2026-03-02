@@ -1,2 +1,2 @@
 import Route from '@ember/routing/route';
-export default class WalletsIndexDetailsTransactionsRoute extends Route {}
+export default class PaymentsWalletsIndexDetailsTransactionsRoute extends Route {}
