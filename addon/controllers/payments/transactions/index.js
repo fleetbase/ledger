@@ -9,53 +9,12 @@ export default class PaymentsTransactionsIndexController extends Controller {
 
     @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status'];
     @tracked page = 1;
-    @tracked limit = null;
+    @tracked limit = 30;
     @tracked sort = '-created_at';
     @tracked query = null;
     @tracked type = null;
     @tracked status = null;
     @tracked table = null;
-    get columns() {
-        return [
-            {
-                sticky: true,
-                label: this.intl.t('column.id'),
-                valuePath: 'public_id',
-                cellComponent: 'table/cell/anchor',
-                action: this.transactionActions.transition.view,
-                resizable: true,
-                sortable: true,
-            },
-            {
-                label: this.intl.t('column.type'),
-                valuePath: 'type',
-                resizable: true,
-                sortable: true,
-                filterable: true,
-                filterParam: 'type',
-                filterComponent: 'filter/string',
-            },
-            {
-                label: this.intl.t('column.amount'),
-                valuePath: 'amount',
-                resizable: true,
-                sortable: true,
-            },
-            {
-                label: this.intl.t('column.status'),
-                valuePath: 'status',
-                cellComponent: 'table/cell/status',
-                resizable: true,
-                sortable: true,
-            },
-            {
-                label: this.intl.t('column.created-at'),
-                valuePath: 'createdAt',
-                resizable: true,
-                sortable: true,
-            },
-        ];
-    }
 
     get actionButtons() {
         return [
@@ -69,5 +28,59 @@ export default class PaymentsTransactionsIndexController extends Controller {
 
     get bulkActions() {
         return [];
+    }
+
+    get columns() {
+        return [
+            {
+                sticky: true,
+                label: this.intl.t('column.id'),
+                valuePath: 'public_id',
+                cellComponent: 'table/cell/anchor',
+                action: this.transactionActions.transition.view,
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'public_id',
+                filterComponent: 'filter/string',
+            },
+            {
+                label: this.intl.t('column.type'),
+                valuePath: 'type',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'type',
+                filterComponent: 'filter/string',
+            },
+            {
+                label: this.intl.t('column.status'),
+                valuePath: 'status',
+                cellComponent: 'table/cell/status',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'status',
+                filterComponent: 'filter/string',
+            },
+            {
+                label: this.intl.t('column.amount'),
+                valuePath: 'amount',
+                resizable: true,
+                sortable: true,
+            },
+            {
+                label: this.intl.t('column.currency'),
+                valuePath: 'currency',
+                resizable: true,
+                sortable: true,
+            },
+            {
+                label: this.intl.t('column.created-at'),
+                valuePath: 'createdAt',
+                resizable: true,
+                sortable: true,
+            },
+        ];
     }
 }

@@ -9,12 +9,40 @@ export default class BillingInvoicesIndexController extends Controller {
 
     @tracked queryParams = ['page', 'limit', 'sort', 'query', 'status', 'customer_uuid'];
     @tracked page = 1;
-    @tracked limit = null;
+    @tracked limit = 30;
     @tracked sort = '-created_at';
     @tracked query = null;
     @tracked status = null;
     @tracked customer_uuid = null;
     @tracked table = null;
+
+    get actionButtons() {
+        return [
+            {
+                icon: 'refresh',
+                onClick: this.invoiceActions.refresh,
+                helpText: this.intl.t('common.refresh'),
+            },
+            {
+                text: this.intl.t('common.new'),
+                type: 'primary',
+                icon: 'plus',
+                onClick: this.invoiceActions.transition.create,
+            },
+        ];
+    }
+
+    get bulkActions() {
+        const selected = this.tableContext.getSelectedRows();
+        return [
+            {
+                label: this.intl.t('common.delete-selected-count', { count: selected.length }),
+                class: 'text-red-500',
+                fn: this.invoiceActions.bulkDelete,
+            },
+        ];
+    }
+
     get columns() {
         return [
             {
@@ -56,33 +84,6 @@ export default class BillingInvoicesIndexController extends Controller {
                 valuePath: 'createdAt',
                 resizable: true,
                 sortable: true,
-            },
-        ];
-    }
-
-    get actionButtons() {
-        return [
-            {
-                icon: 'refresh',
-                onClick: this.invoiceActions.refresh,
-                helpText: this.intl.t('common.refresh'),
-            },
-            {
-                text: this.intl.t('common.new'),
-                type: 'primary',
-                icon: 'plus',
-                onClick: this.invoiceActions.transition.create,
-            },
-        ];
-    }
-
-    get bulkActions() {
-        const selected = this.tableContext.getSelectedRows();
-        return [
-            {
-                label: this.intl.t('common.delete-selected-count', { count: selected.length }),
-                class: 'text-red-500',
-                fn: this.invoiceActions.bulkDelete,
             },
         ];
     }

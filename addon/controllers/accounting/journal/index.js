@@ -9,11 +9,39 @@ export default class AccountingJournalIndexController extends Controller {
 
     @tracked queryParams = ['page', 'limit', 'sort', 'query', 'entry_source'];
     @tracked page = 1;
-    @tracked limit = null;
+    @tracked limit = 30;
     @tracked sort = '-created_at';
     @tracked query = null;
     @tracked entry_source = null;
     @tracked table = null;
+
+    get actionButtons() {
+        return [
+            {
+                icon: 'refresh',
+                onClick: this.journalActions.refresh,
+                helpText: this.intl.t('common.refresh'),
+            },
+            {
+                text: this.intl.t('common.new'),
+                type: 'primary',
+                icon: 'plus',
+                onClick: this.journalActions.transition.create,
+            },
+        ];
+    }
+
+    get bulkActions() {
+        const selected = this.tableContext.getSelectedRows();
+        return [
+            {
+                label: this.intl.t('common.delete-selected-count', { count: selected.length }),
+                class: 'text-red-500',
+                fn: this.journalActions.bulkDelete,
+            },
+        ];
+    }
+
     get columns() {
         return [
             {
@@ -55,33 +83,6 @@ export default class AccountingJournalIndexController extends Controller {
                 filterable: true,
                 filterParam: 'entry_source',
                 filterComponent: 'filter/string',
-            },
-        ];
-    }
-
-    get actionButtons() {
-        return [
-            {
-                icon: 'refresh',
-                onClick: this.journalActions.refresh,
-                helpText: this.intl.t('common.refresh'),
-            },
-            {
-                text: this.intl.t('common.new'),
-                type: 'primary',
-                icon: 'plus',
-                onClick: this.journalActions.transition.create,
-            },
-        ];
-    }
-
-    get bulkActions() {
-        const selected = this.tableContext.getSelectedRows();
-        return [
-            {
-                label: this.intl.t('common.delete-selected-count', { count: selected.length }),
-                class: 'text-red-500',
-                fn: this.journalActions.bulkDelete,
             },
         ];
     }

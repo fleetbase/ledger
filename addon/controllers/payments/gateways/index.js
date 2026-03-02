@@ -9,45 +9,11 @@ export default class PaymentsGatewaysIndexController extends Controller {
 
     @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type'];
     @tracked page = 1;
-    @tracked limit = null;
+    @tracked limit = 30;
     @tracked sort = '-created_at';
     @tracked query = null;
     @tracked type = null;
     @tracked table = null;
-    get columns() {
-        return [
-            {
-                sticky: true,
-                label: this.intl.t('column.name'),
-                valuePath: 'name',
-                cellComponent: 'table/cell/anchor',
-                action: this.gatewayActions.transition.view,
-                resizable: true,
-                sortable: true,
-                filterable: true,
-                filterParam: 'name',
-                filterComponent: 'filter/string',
-            },
-            {
-                label: this.intl.t('column.type'),
-                valuePath: 'type',
-                resizable: true,
-                sortable: true,
-            },
-            {
-                label: this.intl.t('column.sandbox'),
-                valuePath: 'sandbox',
-                cellComponent: 'table/cell/boolean',
-                resizable: true,
-            },
-            {
-                label: this.intl.t('column.created-at'),
-                valuePath: 'createdAt',
-                resizable: true,
-                sortable: true,
-            },
-        ];
-    }
 
     get actionButtons() {
         return [
@@ -72,6 +38,51 @@ export default class PaymentsGatewaysIndexController extends Controller {
                 label: this.intl.t('common.delete-selected-count', { count: selected.length }),
                 class: 'text-red-500',
                 fn: this.gatewayActions.bulkDelete,
+            },
+        ];
+    }
+
+    get columns() {
+        return [
+            {
+                sticky: true,
+                label: this.intl.t('column.name'),
+                valuePath: 'name',
+                cellComponent: 'table/cell/anchor',
+                action: this.gatewayActions.transition.view,
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'name',
+                filterComponent: 'filter/string',
+            },
+            {
+                label: this.intl.t('column.driver'),
+                valuePath: 'driver',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'type',
+                filterComponent: 'filter/string',
+            },
+            {
+                label: this.intl.t('column.environment'),
+                valuePath: 'environment',
+                resizable: true,
+                sortable: true,
+            },
+            {
+                label: this.intl.t('column.default'),
+                valuePath: 'is_default',
+                cellComponent: 'table/cell/boolean',
+                resizable: true,
+            },
+            {
+                label: this.intl.t('column.status'),
+                valuePath: 'status',
+                cellComponent: 'table/cell/status',
+                resizable: true,
+                sortable: true,
             },
         ];
     }
