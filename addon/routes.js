@@ -8,6 +8,7 @@ export default buildRoutes(function () {
         this.route('invoices', function () {
             this.route('index', { path: '/' }, function () {
                 this.route('new');
+                this.route('edit', { path: '/:id/edit' });
                 this.route('details', { path: '/:id' }, function () {
                     this.route('index', { path: '/' });
                     this.route('line-items');
@@ -28,6 +29,8 @@ export default buildRoutes(function () {
         });
         this.route('wallets', function () {
             this.route('index', { path: '/' }, function () {
+                this.route('new');
+                this.route('edit', { path: '/:id/edit' });
                 this.route('details', { path: '/:id' }, function () {
                     this.route('index', { path: '/' });
                     this.route('transactions');
@@ -37,6 +40,7 @@ export default buildRoutes(function () {
         this.route('gateways', function () {
             this.route('index', { path: '/' }, function () {
                 this.route('new');
+                this.route('edit', { path: '/:id/edit' });
                 this.route('details', { path: '/:id' }, function () {
                     this.route('index', { path: '/' });
                     this.route('webhooks');
@@ -50,6 +54,7 @@ export default buildRoutes(function () {
         this.route('accounts', function () {
             this.route('index', { path: '/' }, function () {
                 this.route('new');
+                this.route('edit', { path: '/:id/edit' });
                 this.route('details', { path: '/:id' }, function () {
                     this.route('index', { path: '/' });
                     this.route('ledger');
@@ -59,6 +64,7 @@ export default buildRoutes(function () {
         this.route('journal', function () {
             this.route('index', { path: '/' }, function () {
                 this.route('new');
+                this.route('edit', { path: '/:id/edit' });
                 this.route('details', { path: '/:id' }, function () {
                     this.route('index', { path: '/' });
                 });
