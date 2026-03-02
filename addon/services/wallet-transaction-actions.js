@@ -9,7 +9,7 @@ export default class WalletTransactionActionsService extends ResourceActionServi
         });
     }
     transition = {
-        view: (wallet-transaction) => this.transitionTo('console.ledger.payments.wallets.index.details.transactions', wallet-transaction),
+        view: (walletTransaction) => this.transitionTo('console.ledger.payments.wallets.index.details.transactions', walletTransaction),
     };
     panel = {
         view: (walletTransaction, options = {}) => {
