@@ -28,14 +28,8 @@ class CompanyObserver
      */
     public function created(Company $company): void
     {
-        // 1. Seed the default chart of accounts for this company.
-        //    Require the file directly — the seeders/ directory may not be in
-        //    the host app's autoloader in local path-repository dev setups.
+        // 1. Seed the default chart of accounts for this company
         try {
-            $seederPath = realpath(__DIR__ . '/../../seeders/LedgerSeeder.php');
-            if ($seederPath && file_exists($seederPath)) {
-                require_once $seederPath;
-            }
             (new LedgerSeeder())->runForCompany($company->uuid);
         } catch (\Throwable $e) {
             Log::error('[Ledger] Failed to seed default accounts for company ' . $company->uuid . ': ' . $e->getMessage());
