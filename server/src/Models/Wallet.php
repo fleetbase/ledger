@@ -43,6 +43,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int    $balance      Balance in smallest currency unit (cents)
  * @property string $currency
  * @property string $status       'active', 'frozen', 'closed'
+ * @property string $name
+ * @property string $description
+ * @property bool   $is_frozen
  * @property array  $meta
  */
 class Wallet extends Model
@@ -73,7 +76,7 @@ class Wallet extends Model
     /**
      * The attributes that can be queried.
      */
-    protected $searchableColumns = ['public_id'];
+    protected $searchableColumns = ['public_id', 'name'];
 
     /**
      * The attributes that are mass assignable.
@@ -86,9 +89,12 @@ class Wallet extends Model
         'updated_by_uuid',
         'subject_uuid',
         'subject_type',
+        'name',
+        'description',
         'balance',
         'currency',
         'status',
+        'is_frozen',
         'meta',
     ];
 
@@ -97,6 +103,7 @@ class Wallet extends Model
      */
     protected $casts = [
         'balance'      => 'integer',
+        'is_frozen'    => 'boolean',
         'subject_type' => PolymorphicType::class,
         'meta'         => Json::class,
     ];
