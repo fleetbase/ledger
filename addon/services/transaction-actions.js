@@ -8,9 +8,11 @@ export default class TransactionActionsService extends ResourceActionService {
             mountPrefix: 'console.ledger',
         });
     }
+
     transition = {
         view: (transaction) => this.transitionTo('console.ledger.payments.transactions.index.details', transaction),
     };
+
     panel = {
         view: (transaction, options = {}) => {
             return this.resourceContextPanel.open({

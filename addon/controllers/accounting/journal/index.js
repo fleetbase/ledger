@@ -14,7 +14,7 @@ export default class AccountingJournalIndexController extends Controller {
     @tracked query = null;
     @tracked entry_source = null;
     @tracked table = null;
-get columns() {
+    get columns() {
         return [
             {
                 sticky: true,
@@ -59,7 +59,7 @@ get columns() {
         ];
     }
 
-get actionButtons() {
+    get actionButtons() {
         return [
             {
                 icon: 'refresh',
@@ -75,7 +75,7 @@ get actionButtons() {
         ];
     }
 
-get bulkActions() {
+    get bulkActions() {
         const selected = this.tableContext.getSelectedRows();
         return [
             {

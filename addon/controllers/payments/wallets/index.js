@@ -15,7 +15,7 @@ export default class PaymentsWalletsIndexController extends Controller {
     @tracked type = null;
     @tracked status = null;
     @tracked table = null;
-get columns() {
+    get columns() {
         return [
             {
                 sticky: true,
@@ -57,7 +57,7 @@ get columns() {
         ];
     }
 
-get actionButtons() {
+    get actionButtons() {
         return [
             {
                 icon: 'refresh',
@@ -67,7 +67,7 @@ get actionButtons() {
         ];
     }
 
-get bulkActions() {
+    get bulkActions() {
         const selected = this.tableContext.getSelectedRows();
         return [
             {

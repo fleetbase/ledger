@@ -31,6 +31,8 @@ export default class LedgerSerializer extends LedgerSerializerBase {
      * snake_case to match what the backend expects.
      */
     payloadKeyFromModelName(modelName) {
-        return underscore(modelName).replace(/^ledger_/, '').toLowerCase();
+        return underscore(modelName)
+            .replace(/^ledger_/, '')
+            .toLowerCase();
     }
 }

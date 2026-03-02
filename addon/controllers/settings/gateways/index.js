@@ -23,9 +23,7 @@ export default class SettingsGatewaysIndexController extends Controller {
     ];
 
     get actionButtons() {
-        return [
-            { label: 'Add Gateway', icon: 'plus', type: 'primary', onClick: this.addGateway },
-        ];
+        return [{ label: 'Add Gateway', icon: 'plus', type: 'primary', onClick: this.addGateway }];
     }
 
     @task({ restartable: true }) *search(query) {

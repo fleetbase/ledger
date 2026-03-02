@@ -15,7 +15,7 @@ export default class BillingInvoicesIndexController extends Controller {
     @tracked status = null;
     @tracked customer_uuid = null;
     @tracked table = null;
-get columns() {
+    get columns() {
         return [
             {
                 sticky: true,
@@ -60,7 +60,7 @@ get columns() {
         ];
     }
 
-get actionButtons() {
+    get actionButtons() {
         return [
             {
                 icon: 'refresh',
@@ -76,7 +76,7 @@ get actionButtons() {
         ];
     }
 
-get bulkActions() {
+    get bulkActions() {
         const selected = this.tableContext.getSelectedRows();
         return [
             {
