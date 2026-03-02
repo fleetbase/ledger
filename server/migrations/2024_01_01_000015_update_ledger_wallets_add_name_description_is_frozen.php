@@ -33,9 +33,17 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('ledger_wallets', function (Blueprint $table) {
+            // Drop the composite unique index added in up()
             $table->dropUnique('ledger_wallets_company_subject_name_unique');
+
+            // Remove the columns added in up()
             $table->dropColumn(['name', 'description', 'is_frozen']);
-            $table->unique(['subject_uuid', 'subject_type']);
+
+            // NOTE: We intentionally do NOT restore the old unique(subject_uuid, subject_type)
+            // constraint here. By the time up() ran, multiple wallets per subject already
+            // existed (e.g. company operating + revenue + payout + refund wallets), so
+            // re-adding that constraint would always produce a duplicate-entry violation.
+            // The original constraint was a design mistake and should not be reinstated.
         });
     }
 };
