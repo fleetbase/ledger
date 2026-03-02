@@ -1,8 +1,7 @@
 <Layout::Resource::Panel
-    @resource=@model
+    @resource={{@model}}
     @controller={{this}}
     @headerComponent={{component "account/panel-header" account=@model}}
-    @headerTitle=@model.name
     @actionButtons={{this.actionButtons}}
     @onPressCancel={{transition-to "accounting.accounts.index"}}
     @onOverlayReady={{fn (mut this.overlay)}}

@@ -1,8 +1,7 @@
 <Layout::Resource::Panel
-    @resource=@model
+    @resource={{@model}}
     @controller={{this}}
     @headerComponent={{component "gateway/panel-header" gateway=@model}}
-    @headerTitle=@model.name
     @actionButtons={{this.actionButtons}}
     @onPressCancel={{transition-to "payments.gateways.index"}}
     @onOverlayReady={{fn (mut this.overlay)}}
