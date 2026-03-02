@@ -4,14 +4,13 @@ namespace Fleetbase\Ledger\Models;
 
 use Fleetbase\Casts\Json;
 use Fleetbase\Models\Model;
-use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasPublicId;
 use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\TracksApiCredential;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Journal extends Model
 {

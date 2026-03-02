@@ -2,13 +2,13 @@
 
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
-use Fleetbase\Ledger\Http\Controllers\LedgerController;
+use Fleetbase\Ledger\Http\Controllers\LedgerResourceController;
 use Fleetbase\Ledger\Http\Resources\v1\Invoice as InvoiceResource;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Services\InvoiceService;
 use Illuminate\Http\Request;
 
-class InvoiceController extends LedgerController
+class InvoiceController extends LedgerResourceController
 {
     /**
      * The resource to query.

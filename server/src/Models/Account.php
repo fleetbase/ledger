@@ -26,11 +26,11 @@ class Account extends Model
     /**
      * Account type constants.
      */
-    const TYPE_ASSET     = 'asset';
-    const TYPE_LIABILITY = 'liability';
-    const TYPE_EQUITY    = 'equity';
-    const TYPE_REVENUE   = 'revenue';
-    const TYPE_EXPENSE   = 'expense';
+    public const TYPE_ASSET     = 'asset';
+    public const TYPE_LIABILITY = 'liability';
+    public const TYPE_EQUITY    = 'equity';
+    public const TYPE_REVENUE   = 'revenue';
+    public const TYPE_EXPENSE   = 'expense';
 
     /**
      * The database table used by the model.

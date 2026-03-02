@@ -2,14 +2,14 @@
 
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
-use Fleetbase\Ledger\Http\Controllers\LedgerController;
+use Fleetbase\Ledger\Http\Controllers\LedgerResourceController;
 use Fleetbase\Ledger\Http\Resources\v1\Journal as JournalResource;
 use Fleetbase\Ledger\Models\Journal;
 use Fleetbase\Ledger\Services\LedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class JournalController extends LedgerController
+class JournalController extends LedgerResourceController
 {
     /**
      * The resource to query.

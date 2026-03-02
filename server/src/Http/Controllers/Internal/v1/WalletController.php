@@ -2,7 +2,7 @@
 
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
-use Fleetbase\Ledger\Http\Controllers\LedgerController;
+use Fleetbase\Ledger\Http\Controllers\LedgerResourceController;
 use Fleetbase\Ledger\Http\Resources\v1\Wallet as WalletResource;
 use Fleetbase\Ledger\Http\Resources\v1\WalletTransaction as WalletTransactionResource;
 use Fleetbase\Ledger\Models\Wallet;
@@ -12,7 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class WalletController extends LedgerController
+class WalletController extends LedgerResourceController
 {
     /**
      * The resource to query.

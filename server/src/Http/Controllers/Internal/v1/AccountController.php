@@ -2,14 +2,14 @@
 
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
-use Fleetbase\Ledger\Http\Controllers\LedgerController;
+use Fleetbase\Ledger\Http\Controllers\LedgerResourceController;
 use Fleetbase\Ledger\Http\Resources\v1\Account as AccountResource;
 use Fleetbase\Ledger\Models\Account;
 use Fleetbase\Ledger\Services\LedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class AccountController extends LedgerController
+class AccountController extends LedgerResourceController
 {
     /**
      * The resource to query.

@@ -4,7 +4,7 @@ namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
 use Fleetbase\Ledger\DTO\PurchaseRequest;
 use Fleetbase\Ledger\DTO\RefundRequest;
-use Fleetbase\Ledger\Http\Controllers\LedgerController;
+use Fleetbase\Ledger\Http\Controllers\LedgerResourceController;
 use Fleetbase\Ledger\Http\Resources\v1\GatewayTransaction as GatewayTransactionResource;
 use Fleetbase\Ledger\Models\Gateway;
 use Fleetbase\Ledger\Models\GatewayTransaction;
@@ -12,7 +12,7 @@ use Fleetbase\Ledger\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class GatewayController extends LedgerController
+class GatewayController extends LedgerResourceController
 {
     /**
      * The resource to query.
