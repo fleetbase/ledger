@@ -258,7 +258,7 @@ class LedgerService
         $asOfDate = $asOfDate ?? now()->toDateString();
 
         $accounts = Account::where('company_uuid', $companyUuid)
-            ->where('is_active', true)
+            ->where('status', 'active')
             ->orderBy('code')
             ->get()
             ->map(function (Account $account) use ($asOfDate) {
@@ -305,7 +305,7 @@ class LedgerService
         $asOfDate = $asOfDate ?? now()->toDateString();
 
         $accounts = Account::where('company_uuid', $companyUuid)
-            ->where('is_active', true)
+            ->where('status', 'active')
             ->orderBy('code')
             ->get();
 
@@ -378,7 +378,7 @@ class LedgerService
         $endDate   = $endDate ?? now()->toDateString();
 
         $accounts = Account::where('company_uuid', $companyUuid)
-            ->where('is_active', true)
+            ->where('status', 'active')
             ->whereIn('type', [Account::TYPE_REVENUE, Account::TYPE_EXPENSE])
             ->orderBy('code')
             ->get();
