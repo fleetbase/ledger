@@ -3,10 +3,10 @@
 namespace Fleetbase\Ledger\Http\Controllers\Api\v1;
 
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Ledger\Http\Resources\v1\Transaction as TransactionResource;
 use Fleetbase\Ledger\Http\Resources\v1\Wallet as WalletResource;
-use Fleetbase\Ledger\Http\Resources\v1\WalletTransaction as WalletTransactionResource;
+use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Ledger\Models\Wallet;
-use Fleetbase\Ledger\Models\WalletTransaction;
 use Fleetbase\Ledger\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,10 +51,10 @@ class WalletApiController extends Controller
      * GET /api/v1/ledger/wallet/balance
      *
      * Returns:
-     *   - balance          (int)    Balance in smallest currency unit (cents)
+     *   - balance           (int)    Balance in smallest currency unit (cents)
      *   - formatted_balance (string) Human-readable balance (e.g., "10.50")
-     *   - currency         (string) ISO 4217 currency code
-     *   - status           (string) Wallet status
+     *   - currency          (string) ISO 4217 currency code
+     *   - status            (string) Wallet status
      */
     public function getBalance(Request $request): JsonResponse
     {
@@ -82,7 +82,7 @@ class WalletApiController extends Controller
         $subject = $this->resolveSubject($request);
         $wallet  = $this->walletService->getOrCreateWallet($subject);
 
-        $transactions = WalletTransaction::where('wallet_uuid', $wallet->uuid)
+        $transactions = Transaction::where('owner_uuid', $wallet->uuid)
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->input('type')))
             ->when($request->filled('direction'), fn ($q) => $q->where('direction', $request->input('direction')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
@@ -91,7 +91,7 @@ class WalletApiController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($request->input('limit', 25));
 
-        return WalletTransactionResource::collection($transactions);
+        return TransactionResource::collection($transactions);
     }
 
     /**
@@ -139,7 +139,7 @@ class WalletApiController extends Controller
             ];
 
             if ($result['transaction']) {
-                $response['transaction'] = new WalletTransactionResource($result['transaction']);
+                $response['transaction'] = new TransactionResource($result['transaction']);
             }
 
             return response()->json($response);

@@ -7,7 +7,7 @@ export default class LedgerAdapter extends ApplicationAdapter {
 
     /**
      * Strip the 'ledger-' prefix from the model name before building the URL path.
-     * e.g. 'ledger-account' -> 'accounts', 'ledger-wallet-transaction' -> 'wallet-transactions'
+     * e.g. 'ledger-account' -> 'accounts', 'ledger-transaction' -> 'transactions'
      */
     pathForType(modelName) {
         return pluralize(dasherize(modelName)).replace('ledger-', '');

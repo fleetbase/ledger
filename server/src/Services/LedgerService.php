@@ -6,8 +6,7 @@ use Fleetbase\Ledger\Models\Account;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Models\Journal;
 use Fleetbase\Ledger\Models\Wallet;
-use Fleetbase\Ledger\Models\WalletTransaction;
-use Fleetbase\Models\Transaction;
+use Fleetbase\Ledger\Models\Transaction;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -464,8 +463,8 @@ class LedgerService
         $endDate   = $endDate ?? now()->toDateString();
 
         // Derive cash flows from wallet transactions (most reliable cash proxy)
-        $walletStats = WalletTransaction::where('company_uuid', $companyUuid)
-            ->where('status', WalletTransaction::STATUS_COMPLETED)
+        $walletStats = Transaction::where('company_uuid', $companyUuid)
+            ->where('status', 'completed')
             ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])
             ->select(
                 'type',
@@ -481,19 +480,8 @@ class LedgerService
         $financing = [];
         $investing = [];
 
-        $operatingTypes = [
-            WalletTransaction::TYPE_EARNING,
-            WalletTransaction::TYPE_FEE,
-            WalletTransaction::TYPE_ADJUSTMENT,
-            WalletTransaction::TYPE_REFUND,
-        ];
-        $financingTypes = [
-            WalletTransaction::TYPE_DEPOSIT,
-            WalletTransaction::TYPE_WITHDRAWAL,
-            WalletTransaction::TYPE_PAYOUT,
-            WalletTransaction::TYPE_TRANSFER_IN,
-            WalletTransaction::TYPE_TRANSFER_OUT,
-        ];
+        $operatingTypes = ['earning', 'fee', 'adjustment', 'refund'];
+        $financingTypes = ['deposit', 'withdrawal', 'payout', 'transfer_in', 'transfer_out'];
 
         foreach ($walletStats as $row) {
             $entry = [
@@ -560,7 +548,7 @@ class LedgerService
     {
         $net = 0;
         foreach ($items as $item) {
-            if ($item['direction'] === WalletTransaction::DIRECTION_CREDIT) {
+            if ($item['direction'] === 'credit') {
                 $net += $item['total'];
             } else {
                 $net -= $item['total'];

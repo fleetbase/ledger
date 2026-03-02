@@ -4,7 +4,7 @@ namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Ledger\Models\Wallet;
-use Fleetbase\Ledger\Models\WalletTransaction;
+use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Ledger\Services\LedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -339,8 +339,8 @@ class ReportController extends Controller
             });
 
         // Period credits and debits
-        $periodStats = WalletTransaction::where('company_uuid', $companyUuid)
-            ->where('status', WalletTransaction::STATUS_COMPLETED)
+        $periodStats = Transaction::where('company_uuid', $companyUuid)
+            ->where('status', 'completed')
             ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo])
             ->select(
                 'direction',
@@ -354,7 +354,7 @@ class ReportController extends Controller
             ->map(function ($rows) {
                 $result = ['credits' => 0, 'debits' => 0, 'credit_count' => 0, 'debit_count' => 0];
                 foreach ($rows as $row) {
-                    if ($row->direction === WalletTransaction::DIRECTION_CREDIT) {
+                    if ($row->direction === 'credit') {
                         $result['credits']      = (int) $row->total;
                         $result['credit_count'] = (int) $row->count;
                     } else {

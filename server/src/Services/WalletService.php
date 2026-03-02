@@ -4,8 +4,8 @@ namespace Fleetbase\Ledger\Services;
 
 use Fleetbase\Ledger\DTO\PurchaseRequest;
 use Fleetbase\Ledger\Models\Account;
+use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Ledger\Models\Wallet;
-use Fleetbase\Ledger\Models\WalletTransaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
  * This service is the single entry point for all wallet operations.
  * Every balance change MUST go through this service to ensure:
  *   1. Correct double-entry journal entries are created
- *   2. WalletTransaction audit records are persisted
+ *   2. Transaction audit records are persisted
  *   3. Wallet balance is updated atomically within a DB transaction
  *
  * Monetary values are always in the smallest currency unit (cents).
@@ -93,7 +93,7 @@ class WalletService
      *   CREDIT Wallet Liability       (liability increases — we owe more to wallet holder)
      *
      * @param int    $amount  Amount in smallest currency unit (cents)
-     * @param string $type    WalletTransaction type (default: 'deposit')
+     * @param string $type    Transaction type (default: 'deposit')
      * @param array  $options Optional: source_account, reference, subject, meta, gateway_transaction_uuid
      *
      * @throws \Exception if wallet is not active or cannot credit
@@ -102,9 +102,9 @@ class WalletService
         Wallet $wallet,
         int $amount,
         string $description = '',
-        string $type = WalletTransaction::TYPE_DEPOSIT,
+        string $type = 'deposit',
         array $options = [],
-    ): WalletTransaction {
+    ): Transaction {
         if (!$wallet->canCredit()) {
             throw new \Exception("Wallet [{$wallet->public_id}] cannot accept credits (status: {$wallet->status}).");
         }
@@ -133,22 +133,23 @@ class WalletService
             // Update wallet balance
             $newBalance = $wallet->credit($amount);
 
-            // Create WalletTransaction audit record
-            $transaction = WalletTransaction::create([
-                'company_uuid'             => $wallet->company_uuid,
-                'wallet_uuid'              => $wallet->uuid,
-                'gateway_transaction_uuid' => $options['gateway_transaction_uuid'] ?? null,
-                'type'                     => $type,
-                'direction'                => WalletTransaction::DIRECTION_CREDIT,
-                'status'                   => WalletTransaction::STATUS_COMPLETED,
-                'amount'                   => $amount,
-                'balance_after'            => $newBalance,
-                'currency'                 => $wallet->currency,
-                'description'              => $description ?: "Deposit to wallet {$wallet->public_id}",
-                'reference'                => $options['reference'] ?? null,
-                'subject_uuid'             => $options['subject_uuid'] ?? null,
-                'subject_type'             => $options['subject_type'] ?? null,
-                'meta'                     => $options['meta'] ?? null,
+            // Create Transaction audit record (owner = wallet)
+            $transaction = Transaction::create([
+                'company_uuid'           => $wallet->company_uuid,
+                'owner_uuid'             => $wallet->uuid,
+                'owner_type'             => Wallet::class,
+                'gateway_transaction_id' => $options['gateway_transaction_uuid'] ?? null,
+                'type'                   => $type,
+                'direction'              => 'credit',
+                'status'                 => 'completed',
+                'amount'                 => $amount,
+                'balance_after'          => $newBalance,
+                'currency'               => $wallet->currency,
+                'description'            => $description ?: "Deposit to wallet {$wallet->public_id}",
+                'reference'              => $options['reference'] ?? null,
+                'subject_uuid'           => $options['subject_uuid'] ?? null,
+                'subject_type'           => $options['subject_type'] ?? null,
+                'meta'                   => $options['meta'] ?? null,
             ]);
 
             Log::channel('ledger')->info('Wallet deposit completed.', [
@@ -174,7 +175,7 @@ class WalletService
      *   CREDIT Cash / Dest Account    (asset decreases — money paid out)
      *
      * @param int    $amount  Amount in smallest currency unit (cents)
-     * @param string $type    WalletTransaction type (default: 'withdrawal')
+     * @param string $type    Transaction type (default: 'withdrawal')
      * @param array  $options Optional: destination_account, reference, subject, meta
      *
      * @throws \Exception if wallet cannot debit or has insufficient balance
@@ -183,9 +184,9 @@ class WalletService
         Wallet $wallet,
         int $amount,
         string $description = '',
-        string $type = WalletTransaction::TYPE_WITHDRAWAL,
+        string $type = 'withdrawal',
         array $options = [],
-    ): WalletTransaction {
+    ): Transaction {
         if (!$wallet->canDebit()) {
             throw new \Exception("Wallet [{$wallet->public_id}] cannot be debited (status: {$wallet->status}).");
         }
@@ -218,22 +219,23 @@ class WalletService
             // Update wallet balance
             $newBalance = $wallet->debit($amount);
 
-            // Create WalletTransaction audit record
-            $transaction = WalletTransaction::create([
-                'company_uuid'             => $wallet->company_uuid,
-                'wallet_uuid'              => $wallet->uuid,
-                'gateway_transaction_uuid' => $options['gateway_transaction_uuid'] ?? null,
-                'type'                     => $type,
-                'direction'                => WalletTransaction::DIRECTION_DEBIT,
-                'status'                   => WalletTransaction::STATUS_COMPLETED,
-                'amount'                   => $amount,
-                'balance_after'            => $newBalance,
-                'currency'                 => $wallet->currency,
-                'description'              => $description ?: "Withdrawal from wallet {$wallet->public_id}",
-                'reference'                => $options['reference'] ?? null,
-                'subject_uuid'             => $options['subject_uuid'] ?? null,
-                'subject_type'             => $options['subject_type'] ?? null,
-                'meta'                     => $options['meta'] ?? null,
+            // Create Transaction audit record (owner = wallet)
+            $transaction = Transaction::create([
+                'company_uuid'           => $wallet->company_uuid,
+                'owner_uuid'             => $wallet->uuid,
+                'owner_type'             => Wallet::class,
+                'gateway_transaction_id' => $options['gateway_transaction_uuid'] ?? null,
+                'type'                   => $type,
+                'direction'              => 'debit',
+                'status'                 => 'completed',
+                'amount'                 => $amount,
+                'balance_after'          => $newBalance,
+                'currency'               => $wallet->currency,
+                'description'            => $description ?: "Withdrawal from wallet {$wallet->public_id}",
+                'reference'              => $options['reference'] ?? null,
+                'subject_uuid'           => $options['subject_uuid'] ?? null,
+                'subject_type'           => $options['subject_type'] ?? null,
+                'meta'                   => $options['meta'] ?? null,
             ]);
 
             Log::channel('ledger')->info('Wallet withdrawal completed.', [
@@ -260,7 +262,7 @@ class WalletService
      *
      * @param int $amount Amount in smallest currency unit (cents)
      *
-     * @return array{from: WalletTransaction, to: WalletTransaction}
+     * @return array{from: Transaction, to: Transaction}
      *
      * @throws \Exception if either wallet cannot operate or source has insufficient balance
      */
@@ -310,15 +312,16 @@ class WalletService
             $fromNewBalance = $fromWallet->debit($amount);
             $toNewBalance   = $toWallet->credit($amount);
 
-            // Create WalletTransaction records for both sides
             $reference = $options['reference'] ?? null;
 
-            $fromTransaction = WalletTransaction::create([
+            // Create Transaction records for both sides (owner = respective wallet)
+            $fromTransaction = Transaction::create([
                 'company_uuid'  => $fromWallet->company_uuid,
-                'wallet_uuid'   => $fromWallet->uuid,
-                'type'          => WalletTransaction::TYPE_TRANSFER_OUT,
-                'direction'     => WalletTransaction::DIRECTION_DEBIT,
-                'status'        => WalletTransaction::STATUS_COMPLETED,
+                'owner_uuid'    => $fromWallet->uuid,
+                'owner_type'    => Wallet::class,
+                'type'          => 'transfer_out',
+                'direction'     => 'debit',
+                'status'        => 'completed',
                 'amount'        => $amount,
                 'balance_after' => $fromNewBalance,
                 'currency'      => $fromWallet->currency,
@@ -330,12 +333,13 @@ class WalletService
                 ]),
             ]);
 
-            $toTransaction = WalletTransaction::create([
+            $toTransaction = Transaction::create([
                 'company_uuid'  => $toWallet->company_uuid,
-                'wallet_uuid'   => $toWallet->uuid,
-                'type'          => WalletTransaction::TYPE_TRANSFER_IN,
-                'direction'     => WalletTransaction::DIRECTION_CREDIT,
-                'status'        => WalletTransaction::STATUS_COMPLETED,
+                'owner_uuid'    => $toWallet->uuid,
+                'owner_type'    => Wallet::class,
+                'type'          => 'transfer_in',
+                'direction'     => 'credit',
+                'status'        => 'completed',
                 'amount'        => $amount,
                 'balance_after' => $toNewBalance,
                 'currency'      => $toWallet->currency,
@@ -348,9 +352,9 @@ class WalletService
             ]);
 
             Log::channel('ledger')->info('Wallet transfer completed.', [
-                'from_wallet'  => $fromWallet->uuid,
-                'to_wallet'    => $toWallet->uuid,
-                'amount'       => $amount,
+                'from_wallet' => $fromWallet->uuid,
+                'to_wallet'   => $toWallet->uuid,
+                'amount'      => $amount,
             ]);
 
             return [
@@ -370,7 +374,7 @@ class WalletService
      * This method:
      *   1. Initiates a charge via the PaymentService
      *   2. On success, deposits the amount into the wallet
-     *   3. Links the GatewayTransaction to the WalletTransaction
+     *   3. Links the GatewayTransaction to the Transaction record
      *
      * For asynchronous gateways (QPay), the wallet is credited when the
      * PaymentSucceeded event fires via the HandleSuccessfulPayment listener.
@@ -381,7 +385,7 @@ class WalletService
      * @param string $gatewayUuid UUID or public_id of the gateway to charge
      * @param array  $paymentData Payment data (payment_method_token, customer_id, etc.)
      *
-     * @return array{wallet: Wallet, transaction: WalletTransaction|null, gateway_response: GatewayResponse}
+     * @return array{wallet: Wallet, transaction: Transaction|null, gateway_response: GatewayResponse}
      */
     public function topUp(
         Wallet $wallet,
@@ -420,7 +424,7 @@ class WalletService
                 wallet: $wallet,
                 amount: $amount,
                 description: $description ?: 'Top-up via payment gateway',
-                type: WalletTransaction::TYPE_DEPOSIT,
+                type: 'deposit',
                 options: [
                     'reference'                => $gatewayResponse->gatewayTransactionId,
                     'gateway_transaction_uuid' => $gatewayTransaction?->uuid,
@@ -447,7 +451,7 @@ class WalletService
      * Credit earnings to a driver's wallet after order completion.
      *
      * This is the primary method for paying drivers. It credits the driver's
-     * wallet and creates an "earning" WalletTransaction record.
+     * wallet and creates an "earning" Transaction record.
      *
      * Double-entry accounting:
      *   DEBIT  Driver Earnings Payable (expense — we owe the driver)
@@ -463,14 +467,14 @@ class WalletService
         string $currency = 'USD',
         string $description = '',
         array $options = [],
-    ): WalletTransaction {
+    ): Transaction {
         $wallet = $this->getOrCreateWallet($driver, $currency);
 
         return $this->deposit(
             wallet: $wallet,
             amount: $amount,
             description: $description ?: 'Earnings credited',
-            type: WalletTransaction::TYPE_EARNING,
+            type: 'earning',
             options: array_merge($options, [
                 'subject_uuid' => $driver->uuid,
                 'subject_type' => get_class($driver),
@@ -495,14 +499,14 @@ class WalletService
         int $amount,
         string $description = '',
         array $options = [],
-    ): WalletTransaction {
+    ): Transaction {
         $wallet = $this->getOrCreateWallet($driver, $options['currency'] ?? 'USD');
 
         return $this->withdraw(
             wallet: $wallet,
             amount: $amount,
             description: $description ?: 'Driver payout',
-            type: WalletTransaction::TYPE_PAYOUT,
+            type: 'payout',
             options: array_merge($options, [
                 'subject_uuid' => $driver->uuid,
                 'subject_type' => get_class($driver),
@@ -524,14 +528,14 @@ class WalletService
      */
     public function recalculateBalance(Wallet $wallet): int
     {
-        $credits = WalletTransaction::where('wallet_uuid', $wallet->uuid)
-            ->where('direction', WalletTransaction::DIRECTION_CREDIT)
-            ->where('status', WalletTransaction::STATUS_COMPLETED)
+        $credits = Transaction::where('owner_uuid', $wallet->uuid)
+            ->where('direction', 'credit')
+            ->where('status', 'completed')
             ->sum('amount');
 
-        $debits = WalletTransaction::where('wallet_uuid', $wallet->uuid)
-            ->where('direction', WalletTransaction::DIRECTION_DEBIT)
-            ->where('status', WalletTransaction::STATUS_COMPLETED)
+        $debits = Transaction::where('owner_uuid', $wallet->uuid)
+            ->where('direction', 'debit')
+            ->where('status', 'completed')
             ->sum('amount');
 
         $correctBalance = (int) ($credits - $debits);

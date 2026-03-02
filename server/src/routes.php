@@ -109,11 +109,6 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 );
 
                                 // ----------------------------------------------------------------
-                                // Wallet Transactions (company-wide read-only feed)
-                                // ----------------------------------------------------------------
-                                $router->fleetbaseRoutes('wallet-transactions');
-
-                                // ----------------------------------------------------------------
                                 // Transactions (core-api Transaction records — read-only)
                                 // ----------------------------------------------------------------
                                 $router->fleetbaseRoutes('transactions');

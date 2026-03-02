@@ -11,6 +11,7 @@ use Fleetbase\Traits\HasPublicId;
 use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
 use Fleetbase\Traits\TracksApiCredential;
+use Fleetbase\Ledger\Models\Transaction;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Wallets are polymorphic — they can belong to a Driver, Customer, or Company.
  *
  * Balance is always stored as an integer in the smallest currency unit (cents).
- * Every balance change MUST produce a corresponding WalletTransaction record.
+ * Every balance change MUST produce a corresponding Transaction record.
  *
  * Wallet types (inferred from subject_type):
  *   - driver   : Earnings wallet for FleetOps drivers
@@ -125,10 +126,11 @@ class Wallet extends Model
 
     /**
      * All transactions on this wallet.
+     * Transactions are linked via owner_uuid / owner_type on the core Transaction model.
      */
     public function transactions(): HasMany
     {
-        return $this->hasMany(WalletTransaction::class, 'wallet_uuid', 'uuid')
+        return $this->hasMany(Transaction::class, 'owner_uuid', 'uuid')
             ->orderBy('created_at', 'desc');
     }
 
@@ -137,8 +139,8 @@ class Wallet extends Model
      */
     public function completedTransactions(): HasMany
     {
-        return $this->hasMany(WalletTransaction::class, 'wallet_uuid', 'uuid')
-            ->where('status', WalletTransaction::STATUS_COMPLETED)
+        return $this->hasMany(Transaction::class, 'owner_uuid', 'uuid')
+            ->where('status', 'completed')
             ->orderBy('created_at', 'desc');
     }
 
@@ -147,9 +149,9 @@ class Wallet extends Model
      */
     public function credits(): HasMany
     {
-        return $this->hasMany(WalletTransaction::class, 'wallet_uuid', 'uuid')
-            ->where('direction', WalletTransaction::DIRECTION_CREDIT)
-            ->where('status', WalletTransaction::STATUS_COMPLETED);
+        return $this->hasMany(Transaction::class, 'owner_uuid', 'uuid')
+            ->where('direction', 'credit')
+            ->where('status', 'completed');
     }
 
     /**
@@ -157,9 +159,9 @@ class Wallet extends Model
      */
     public function debits(): HasMany
     {
-        return $this->hasMany(WalletTransaction::class, 'wallet_uuid', 'uuid')
-            ->where('direction', WalletTransaction::DIRECTION_DEBIT)
-            ->where('status', WalletTransaction::STATUS_COMPLETED);
+        return $this->hasMany(Transaction::class, 'owner_uuid', 'uuid')
+            ->where('direction', 'debit')
+            ->where('status', 'completed');
     }
 
     // -------------------------------------------------------------------------
@@ -286,7 +288,7 @@ class Wallet extends Model
     /**
      * Credit the wallet balance by the given amount and return the new balance.
      * This method ONLY updates the balance column. Callers MUST also create
-     * a WalletTransaction record to maintain the audit trail.
+     * a Transaction record to maintain the audit trail.
      *
      * @param int $amount Amount in smallest currency unit (cents)
      *
@@ -303,7 +305,7 @@ class Wallet extends Model
     /**
      * Debit the wallet balance by the given amount and return the new balance.
      * This method ONLY updates the balance column. Callers MUST also create
-     * a WalletTransaction record to maintain the audit trail.
+     * a Transaction record to maintain the audit trail.
      *
      * @param int $amount Amount in smallest currency unit (cents)
      *

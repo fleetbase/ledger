@@ -13,7 +13,7 @@ const LedgerSerializerBase = ApplicationSerializer.extend(EmbeddedRecordsMixin);
  *
  * Payload key -> Ember model name:  'account'          -> 'ledger-account'
  * Ember model name -> payload key:  'ledger-account'   -> 'account'
- *                                   'ledger-wallet-transaction' -> 'wallet_transaction'
+ *                                   'ledger-transaction' -> 'transaction'
  */
 export default class LedgerSerializer extends LedgerSerializerBase {
     /**

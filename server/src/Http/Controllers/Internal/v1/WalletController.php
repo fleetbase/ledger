@@ -3,10 +3,10 @@
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
 use Fleetbase\Ledger\Http\Controllers\LedgerResourceController;
+use Fleetbase\Ledger\Http\Resources\v1\Transaction as TransactionResource;
 use Fleetbase\Ledger\Http\Resources\v1\Wallet as WalletResource;
-use Fleetbase\Ledger\Http\Resources\v1\WalletTransaction as WalletTransactionResource;
+use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Ledger\Models\Wallet;
-use Fleetbase\Ledger\Models\WalletTransaction;
 use Fleetbase\Ledger\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,7 +60,7 @@ class WalletController extends LedgerResourceController
         return response()->json([
             'from_wallet' => new WalletResource($fromWallet->fresh()),
             'to_wallet'   => new WalletResource($toWallet->fresh()),
-            'transaction' => new WalletTransactionResource($result),
+            'transaction' => new TransactionResource($result),
         ]);
     }
 
@@ -70,10 +70,10 @@ class WalletController extends LedgerResourceController
     public function topUp(string $id, Request $request): JsonResponse
     {
         $request->validate([
-            'amount'                => 'required|integer|min:1',
-            'gateway_uuid'          => 'required|uuid',
-            'payment_method_token'  => 'required|string',
-            'description'           => 'nullable|string|max:500',
+            'amount'               => 'required|integer|min:1',
+            'gateway_uuid'         => 'required|uuid',
+            'payment_method_token' => 'required|string',
+            'description'          => 'nullable|string|max:500',
         ]);
 
         $wallet = $this->resolveWallet($id);
@@ -93,7 +93,7 @@ class WalletController extends LedgerResourceController
         ];
 
         if ($result['transaction']) {
-            $response['transaction'] = new WalletTransactionResource($result['transaction']);
+            $response['transaction'] = new TransactionResource($result['transaction']);
         }
 
         return response()->json($response);
@@ -116,13 +116,13 @@ class WalletController extends LedgerResourceController
             wallet: $wallet,
             amount: $request->integer('amount'),
             description: $request->input('description', 'Driver payout'),
-            type: WalletTransaction::TYPE_PAYOUT,
+            type: 'payout',
             options: ['reference' => $request->input('reference')]
         );
 
         return response()->json([
             'wallet'      => new WalletResource($wallet->fresh()),
-            'transaction' => new WalletTransactionResource($transaction),
+            'transaction' => new TransactionResource($transaction),
         ]);
     }
 
@@ -132,12 +132,13 @@ class WalletController extends LedgerResourceController
 
     /**
      * Get the transaction history for a specific wallet.
+     * Queries the core Transaction model filtered by owner (wallet).
      */
     public function getTransactions(string $id, Request $request): AnonymousResourceCollection
     {
         $wallet = $this->resolveWallet($id);
 
-        $transactions = WalletTransaction::where('wallet_uuid', $wallet->uuid)
+        $transactions = Transaction::where('owner_uuid', $wallet->uuid)
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->input('type')))
             ->when($request->filled('direction'), fn ($q) => $q->where('direction', $request->input('direction')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
@@ -146,7 +147,7 @@ class WalletController extends LedgerResourceController
             ->orderBy('created_at', 'desc')
             ->paginate($request->input('limit', 25));
 
-        return WalletTransactionResource::collection($transactions);
+        return TransactionResource::collection($transactions);
     }
 
     // =========================================================================
