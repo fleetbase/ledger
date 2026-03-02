@@ -47,6 +47,11 @@ class Account extends Model
     protected $publicIdType = 'account';
 
     /**
+     * The response payload key to use.
+     */
+    protected $payloadKey = 'account';
+
+    /**
      * The attributes that can be queried.
      *
      * @var array

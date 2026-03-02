@@ -66,6 +66,11 @@ class Wallet extends Model
     protected $publicIdType = 'wallet';
 
     /**
+     * The response payload key to use.
+     */
+    protected $payloadKey = 'wallet';
+
+    /**
      * The attributes that can be queried.
      */
     protected $searchableColumns = ['public_id'];

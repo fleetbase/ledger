@@ -29,6 +29,11 @@ class Journal extends Model
     public $publicIdPrefix = 'journal';
 
     /**
+     * The response payload key to use.
+     */
+    protected $payloadKey = 'journal';
+
+    /**
      * The database table used by the model.
      *
      * @var string

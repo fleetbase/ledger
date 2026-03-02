@@ -45,6 +45,11 @@ class Invoice extends Model
     protected $publicIdType = 'invoice';
 
     /**
+     * The response payload key to use.
+     */
+    protected $payloadKey = 'invoice';
+
+    /**
      * The attributes that can be queried.
      *
      * @var array

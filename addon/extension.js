@@ -6,7 +6,12 @@ export default {
         const widgetService = universe.getService('universe/widget-service');
 
         // Register Ledger in the console header navigation
-        menuService.registerHeaderMenuItem('Ledger', 'console.ledger', { icon: 'calculator', priority: 4 });
+        menuService.registerHeaderMenuItem('Ledger', 'console.ledger', {
+            icon: 'calculator',
+            priority: 4,
+            description: 'Accounting and invoice management.',
+            shortcuts: [{ title: 'Transactions', description: 'Ledger transaction records.', route: 'console.ledger.payments.transactions' }],
+        });
 
         // Register dashboard and widgets
         this.registerWidgets(widgetService);

@@ -46,6 +46,11 @@ class Gateway extends Model
     protected $publicIdPrefix = 'gateway';
 
     /**
+     * The response payload key to use.
+     */
+    protected $payloadKey = 'gateway';
+
+    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [

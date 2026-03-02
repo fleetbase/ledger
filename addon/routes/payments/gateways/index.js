@@ -4,7 +4,7 @@ import { inject as service } from '@ember/service';
 export default class PaymentsGatewaysIndexRoute extends Route {
     @service store;
 
-    model() {
-        return this.store.query('ledger-gateway');
+    model(params) {
+        return this.store.query('ledger-gateway', params);
     }
 }

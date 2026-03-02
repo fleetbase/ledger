@@ -23,6 +23,11 @@ class InvoiceItem extends Model
     protected $table = 'ledger_invoice_items';
 
     /**
+     * The response payload key to use.
+     */
+    protected $payloadKey = 'invoice_item';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
