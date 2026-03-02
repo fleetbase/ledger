@@ -4,7 +4,7 @@ export default buildRoutes(function () {
     this.route('home', { path: '/' });
 
     // Receivables
-    this.route('receivables', function () {
+    this.route('billing', function () {
         this.route('invoices', function () {
             this.route('index', { path: '/' }, function () {
                 this.route('new');

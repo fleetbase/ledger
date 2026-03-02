@@ -1,7 +1,7 @@
 <Layout::Resource::Panel
     @title={{@model.number}}
     @actionButtons={{this.actionButtons}}
-    @onClose={{route-action "transitionTo" "console.ledger.receivables.invoices.index"}}
+    @onClose={{route-action "transitionTo" "console.ledger.billing.invoices.index"}}
 >
     <:header>
         <Invoice::PanelHeader @invoice={{@model}} />
