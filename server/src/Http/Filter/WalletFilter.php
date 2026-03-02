@@ -24,9 +24,19 @@ class WalletFilter extends Filter
         });
     }
 
+    /**
+     * Filter by wallet type.
+     *
+     * The `type` attribute is computed from `subject_type` (not a real column),
+     * so we translate the friendly type name to a subject_type LIKE pattern.
+     */
     public function type(?string $type): void
     {
-        $this->builder->where('type', $type);
+        if (!$type) {
+            return;
+        }
+
+        $this->builder->where('subject_type', 'like', '%' . strtolower($type) . '%');
     }
 
     public function status(?string $status): void
@@ -39,9 +49,12 @@ class WalletFilter extends Filter
         $this->builder->where('currency', strtoupper($currency));
     }
 
-    public function owner(?string $owner): void
+    public function isFrozen(?string $isFrozen): void
     {
-        $this->builder->where('owner_uuid', $owner);
+        if ($isFrozen === null) {
+            return;
+        }
+        $this->builder->where('is_frozen', filter_var($isFrozen, FILTER_VALIDATE_BOOLEAN));
     }
 
     public function publicId(?string $publicId): void

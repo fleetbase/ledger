@@ -18,7 +18,6 @@ export default class PaymentsWalletsIndexController extends Controller {
         'status',
         'currency',
         'is_frozen',
-        'owner_type',
         'created_at',
         'updated_at',
     ];
@@ -32,7 +31,6 @@ export default class PaymentsWalletsIndexController extends Controller {
     @tracked status = null;
     @tracked currency = null;
     @tracked is_frozen = null;
-    @tracked owner_type = null;
     @tracked created_at = null;
     @tracked updated_at = null;
     @tracked table = null;
@@ -67,7 +65,7 @@ export default class PaymentsWalletsIndexController extends Controller {
                 valuePath: 'name',
                 cellComponent: 'table/cell/anchor',
                 action: this.walletActions.transition.view,
-                width: 200,
+                width: 220,
                 resizable: true,
                 sortable: true,
                 filterable: true,
@@ -88,10 +86,10 @@ export default class PaymentsWalletsIndexController extends Controller {
                 filterOptionLabel: 'label',
                 filterOptionValue: 'value',
                 filterOptions: [
+                    { label: 'Company', value: 'company' },
                     { label: 'Driver', value: 'driver' },
                     { label: 'Customer', value: 'customer' },
-                    { label: 'Company', value: 'company' },
-                    { label: 'System', value: 'system' },
+                    { label: 'User', value: 'user' },
                 ],
             },
             {
@@ -156,6 +154,15 @@ export default class PaymentsWalletsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                label: this.intl.t('column.description'),
+                valuePath: 'description',
+                width: 200,
+                hidden: true,
+                resizable: true,
+                sortable: false,
+                filterable: false,
+            },
+            {
                 label: this.intl.t('column.frozen'),
                 valuePath: 'is_frozen',
                 cellComponent: 'table/cell/boolean',
@@ -172,16 +179,6 @@ export default class PaymentsWalletsIndexController extends Controller {
                     { label: 'Yes', value: 'true' },
                     { label: 'No', value: 'false' },
                 ],
-            },
-            {
-                label: this.intl.t('column.owner-type'),
-                valuePath: 'owner_type',
-                hidden: true,
-                resizable: true,
-                sortable: false,
-                filterable: true,
-                filterParam: 'owner_type',
-                filterComponent: 'filter/string',
             },
             {
                 label: this.intl.t('column.updated-at'),
