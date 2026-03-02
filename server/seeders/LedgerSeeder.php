@@ -1,6 +1,6 @@
 <?php
 
-namespace Fleetbase\Ledger\Seeds;
+namespace Fleetbase\Ledger\Seeders;
 
 use Fleetbase\Ledger\Models\Account;
 use Illuminate\Database\Seeder;

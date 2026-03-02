@@ -42,7 +42,7 @@
     "autoload": {
         "psr-4": {
             "Fleetbase\\Ledger\\": "server/src/",
-            "Fleetbase\\Ledger\\Seeds\\": "server/seeds/"
+            "Fleetbase\\Ledger\\Seeders\\": "server/seeders/"
         }
     },
     "autoload-dev": {

@@ -2,7 +2,7 @@
 
 namespace Fleetbase\Ledger\Observers;
 
-use Fleetbase\Ledger\Seeds\LedgerSeeder;
+use Fleetbase\Ledger\Seeders\LedgerSeeder;
 use Fleetbase\Ledger\Services\WalletService;
 use Fleetbase\Models\Company;
 use Illuminate\Support\Facades\Log;

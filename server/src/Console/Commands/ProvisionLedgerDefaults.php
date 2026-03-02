@@ -2,8 +2,10 @@
 
 namespace Fleetbase\Ledger\Console\Commands;
 
-use Fleetbase\Ledger\Seeds\LedgerSeeder;
+use Fleetbase\Ledger\Seeders\LedgerSeeder;
 use Fleetbase\Ledger\Services\WalletService;
+use Fleetbase\Models\Company;
+use Fleetbase\Models\User;
 use Illuminate\Console\Command;
 
 /**
@@ -11,11 +13,12 @@ use Illuminate\Console\Command;
  *
  * Backfills default chart-of-accounts and system wallets for all companies
  * (or a specific one) that were registered before automatic provisioning was
- * enabled. Safe to run multiple times — all operations are idempotent.
+ * enabled, and provisions personal wallets for all existing driver/customer
+ * users. Safe to run multiple times — all operations are idempotent.
  *
  * Usage:
- *   php artisan ledger:provision                     # all companies
- *   php artisan ledger:provision --company=<uuid>    # one company
+ *   php artisan ledger:provision                     # all companies + all users
+ *   php artisan ledger:provision --company=<uuid>    # one company + its users
  *   php artisan ledger:provision --accounts-only     # skip wallets
  *   php artisan ledger:provision --wallets-only      # skip accounts
  */
@@ -26,30 +29,33 @@ class ProvisionLedgerDefaults extends Command
                             {--accounts-only : Only provision default chart of accounts, skip wallets}
                             {--wallets-only  : Only provision system wallets, skip accounts}';
 
-    protected $description = 'Provision default accounts and wallets for all companies (or a specific one).';
+    protected $description = 'Provision default accounts and wallets for all companies and users (or a specific company).';
 
     public function handle(WalletService $walletService): int
     {
-        $companyModel = app('Fleetbase\\Models\\Company');
-        $companies    = $this->option('company')
-            ? $companyModel::where('uuid', $this->option('company'))->get()
-            : $companyModel::all();
+        $skipAccounts = (bool) $this->option('wallets-only');
+        $skipWallets  = (bool) $this->option('accounts-only');
+        $companyUuid  = $this->option('company');
+
+        // ── Companies ────────────────────────────────────────────────────────
+        $companies = $companyUuid
+            ? Company::where('uuid', $companyUuid)->get()
+            : Company::all();
 
         if ($companies->isEmpty()) {
             $this->warn('[Ledger] No companies found to provision.');
             return self::SUCCESS;
         }
 
-        $skipAccounts = (bool) $this->option('wallets-only');
-        $skipWallets  = (bool) $this->option('accounts-only');
-        $seeder       = app(LedgerSeeder::class);
-        $bar          = $this->output->createProgressBar($companies->count());
-
-        $bar->start();
-
+        $seeder              = app(LedgerSeeder::class);
         $accountsProvisioned = 0;
-        $walletsProvisioned  = 0;
+        $companyWallets      = 0;
+        $userWallets         = 0;
         $errors              = 0;
+
+        $this->info('[Ledger] Provisioning ' . $companies->count() . ' company/companies...');
+        $bar = $this->output->createProgressBar($companies->count());
+        $bar->start();
 
         foreach ($companies as $company) {
             // Seed default chart of accounts
@@ -64,14 +70,14 @@ class ProvisionLedgerDefaults extends Command
                 }
             }
 
-            // Provision company system wallets
+            // Provision company system wallets (Operating, Revenue, Payout Reserve, Refund Reserve)
             if (!$skipWallets) {
                 try {
                     $walletService->provisionCompanyWallets($company);
-                    $walletsProvisioned++;
+                    $companyWallets++;
                 } catch (\Throwable $e) {
                     $this->newLine();
-                    $this->error("[Ledger] Wallets failed for company {$company->uuid}: " . $e->getMessage());
+                    $this->error("[Ledger] Company wallets failed for {$company->uuid}: " . $e->getMessage());
                     $errors++;
                 }
             }
@@ -82,12 +88,49 @@ class ProvisionLedgerDefaults extends Command
         $bar->finish();
         $this->newLine(2);
 
+        // ── Users (driver / customer personal wallets) ────────────────────────
+        if (!$skipWallets) {
+            $usersQuery = User::whereIn('type', ['driver', 'customer'])
+                ->whereNotNull('company_uuid');
+
+            if ($companyUuid) {
+                $usersQuery->where('company_uuid', $companyUuid);
+            }
+
+            $users = $usersQuery->get();
+
+            if ($users->isNotEmpty()) {
+                $this->info('[Ledger] Provisioning wallets for ' . $users->count() . ' driver/customer user(s)...');
+                $userBar = $this->output->createProgressBar($users->count());
+                $userBar->start();
+
+                foreach ($users as $user) {
+                    try {
+                        $walletService->provisionUserWallet($user);
+                        $userWallets++;
+                    } catch (\Throwable $e) {
+                        $this->newLine();
+                        $this->error("[Ledger] User wallet failed for {$user->uuid}: " . $e->getMessage());
+                        $errors++;
+                    }
+                    $userBar->advance();
+                }
+
+                $userBar->finish();
+                $this->newLine(2);
+            } else {
+                $this->info('[Ledger] No driver/customer users found to provision wallets for.');
+            }
+        }
+
+        // ── Summary ──────────────────────────────────────────────────────────
         if (!$skipAccounts) {
-            $this->info("[Ledger] Chart of accounts provisioned for {$accountsProvisioned} companies.");
+            $this->info("[Ledger] Chart of accounts provisioned for {$accountsProvisioned} company/companies.");
         }
 
         if (!$skipWallets) {
-            $this->info("[Ledger] System wallets provisioned for {$walletsProvisioned} companies.");
+            $this->info("[Ledger] System wallets provisioned for {$companyWallets} company/companies.");
+            $this->info("[Ledger] Personal wallets provisioned for {$userWallets} driver/customer user(s).");
         }
 
         if ($errors > 0) {
