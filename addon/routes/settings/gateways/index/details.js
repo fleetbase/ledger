@@ -5,6 +5,6 @@ export default class SettingsGatewaysIndexDetailsRoute extends Route {
     @service store;
 
     model({ id }) {
-        return this.store.findRecord('gateway', id);
+        return this.store.findRecord('ledger-gateway', id);
     }
 }

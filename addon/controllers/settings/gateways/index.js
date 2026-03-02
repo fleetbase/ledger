@@ -50,7 +50,7 @@ export default class SettingsGatewaysIndexController extends Controller {
                     modal.startLoading();
                     try {
                         const gateway = modal.getOption('gateway');
-                        const record = this.store.createRecord('gateway', gateway);
+                        const record = this.store.createRecord('ledger-gateway', gateway);
                         await record.save();
                         this.notifications.success('Gateway added.');
                         this.hostRouter.refresh();

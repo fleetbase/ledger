@@ -13,6 +13,6 @@ export default class BillingInvoicesIndexRoute extends Route {
     };
 
     model(params) {
-        return this.store.query('invoice', params);
+        return this.store.query('ledger-invoice', params);
     }
 }

@@ -5,6 +5,6 @@ export default class WalletsIndexDetailsRoute extends Route {
     @service store;
 
     model({ id }) {
-        return this.store.findRecord('wallet', id);
+        return this.store.findRecord('ledger-wallet', id);
     }
 }

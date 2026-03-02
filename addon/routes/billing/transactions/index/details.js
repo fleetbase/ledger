@@ -5,6 +5,6 @@ export default class BillingTransactionsIndexDetailsRoute extends Route {
     @service store;
 
     model({ id }) {
-        return this.store.findRecord('transaction', id);
+        return this.store.findRecord('ledger-transaction', id);
     }
 }

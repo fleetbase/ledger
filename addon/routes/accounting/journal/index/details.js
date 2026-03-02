@@ -5,6 +5,6 @@ export default class AccountingJournalIndexDetailsRoute extends Route {
     @service store;
 
     model({ id }) {
-        return this.store.findRecord('journal', id);
+        return this.store.findRecord('ledger-journal', id);
     }
 }

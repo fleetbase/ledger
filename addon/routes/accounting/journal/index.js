@@ -13,6 +13,6 @@ export default class AccountingJournalIndexRoute extends Route {
     };
 
     model(params) {
-        return this.store.query('journal', params);
+        return this.store.query('ledger-journal', params);
     }
 }
