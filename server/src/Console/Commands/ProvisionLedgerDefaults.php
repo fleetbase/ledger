@@ -47,7 +47,14 @@ class ProvisionLedgerDefaults extends Command
             return self::SUCCESS;
         }
 
-        $seeder              = app(LedgerSeeder::class);
+        // Require the seeder file directly — it lives in the package's
+        // server/seeders/ directory which may not be in the host app's
+        // autoloader in local path-repository dev setups.
+        $seederPath = realpath(__DIR__ . '/../../../seeders/LedgerSeeder.php');
+        if ($seederPath && file_exists($seederPath)) {
+            require_once $seederPath;
+        }
+        $seeder              = new LedgerSeeder();
         $accountsProvisioned = 0;
         $companyWallets      = 0;
         $userWallets         = 0;
