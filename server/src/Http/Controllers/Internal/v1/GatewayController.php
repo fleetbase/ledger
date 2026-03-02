@@ -21,8 +21,15 @@ class GatewayController extends LedgerResourceController
      */
     public $resource = 'gateway';
 
-    public function __construct(protected PaymentService $paymentService)
+    /**
+     * The PaymentService instance.
+     */
+    protected PaymentService $paymentService;
+
+    public function __construct(PaymentService $paymentService)
     {
+        parent::__construct();
+        $this->paymentService = $paymentService;
     }
 
     /**

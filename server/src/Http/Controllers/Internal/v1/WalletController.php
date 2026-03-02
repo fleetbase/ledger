@@ -21,8 +21,15 @@ class WalletController extends LedgerResourceController
      */
     public $resource = 'wallet';
 
-    public function __construct(protected WalletService $walletService)
+    /**
+     * The WalletService instance.
+     */
+    protected WalletService $walletService;
+
+    public function __construct(WalletService $walletService)
     {
+        parent::__construct();
+        $this->walletService = $walletService;
     }
 
     // =========================================================================
