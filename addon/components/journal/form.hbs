@@ -1,0 +1,170 @@
+<div class="form-wrapper" ...attributes>
+    {{! JOURNAL ENTRY DETAILS }}
+    <ContentPanel @title="Journal Entry" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
+
+            {{! Entry Identification }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
+                Entry Information
+            </div>
+
+            <InputGroup @name="Entry Number">
+                <Input
+                    @value={{@resource.number}}
+                    @type="text"
+                    class="w-full form-input"
+                    placeholder="e.g. JE-0001"
+                    disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+
+            <InputGroup @name="Entry Date">
+                <Input
+                    @value={{@resource.entry_date}}
+                    @type="date"
+                    class="w-full form-input"
+                    disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+
+            <InputGroup @name="Type">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "standard" "adjusting" "closing" "reversing" "opening"}}
+                        @selected={{@resource.type}}
+                        @onChange={{fn (mut @resource.type)}}
+                        @placeholder="Select entry type"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Currency">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "USD" "EUR" "GBP" "AED" "SAR" "QAR" "KWD" "BHD" "OMR" "JOD" "EGP" "NGN" "KES" "GHS" "ZAR" "INR" "PKR" "BDT" "MYR" "SGD" "IDR" "PHP" "THB" "CNY" "JPY" "KRW" "AUD" "CAD" "NZD" "CHF" "SEK" "NOK" "DKK" "BRL" "MXN"}}
+                        @selected={{@resource.currency}}
+                        @onChange={{fn (mut @resource.currency)}}
+                        @placeholder="Select currency"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Amount" @wrapperClass="col-span-2">
+                <Input
+                    @value={{@resource.amount}}
+                    @type="number"
+                    class="w-full form-input"
+                    placeholder="0.00"
+                    disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    {{! DOUBLE-ENTRY }}
+    <ContentPanel @title="Double-Entry" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
+
+            {{! Debit Account }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
+                Debit Account
+            </div>
+
+            <InputGroup @name="Debit Account">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <ModelSelect
+                        @modelName="ledger-account"
+                        @selectedModel={{this.debitAccount}}
+                        @placeholder="Select debit account"
+                        @triggerClass="form-select form-input"
+                        @infiniteScroll={{false}}
+                        @renderInPlace={{true}}
+                        @onChange={{this.setDebitAccount}}
+                        @disabled={{cannot-write @resource}}
+                        as |model|
+                    >
+                        <div class="flex flex-col">
+                            <div class="font-semibold">{{model.name}}</div>
+                            <div class="text-xs text-gray-500">{{model.code}} · {{model.type}}</div>
+                        </div>
+                    </ModelSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Debit Account Code">
+                <Input
+                    @value={{@resource.debit_account_code}}
+                    @type="text"
+                    class="w-full form-input"
+                    placeholder="e.g. 1000"
+                    disabled={{true}}
+                />
+            </InputGroup>
+
+            {{! Credit Account }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Credit Account
+            </div>
+
+            <InputGroup @name="Credit Account">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <ModelSelect
+                        @modelName="ledger-account"
+                        @selectedModel={{this.creditAccount}}
+                        @placeholder="Select credit account"
+                        @triggerClass="form-select form-input"
+                        @infiniteScroll={{false}}
+                        @renderInPlace={{true}}
+                        @onChange={{this.setCreditAccount}}
+                        @disabled={{cannot-write @resource}}
+                        as |model|
+                    >
+                        <div class="flex flex-col">
+                            <div class="font-semibold">{{model.name}}</div>
+                            <div class="text-xs text-gray-500">{{model.code}} · {{model.type}}</div>
+                        </div>
+                    </ModelSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Credit Account Code">
+                <Input
+                    @value={{@resource.credit_account_code}}
+                    @type="text"
+                    class="w-full form-input"
+                    placeholder="e.g. 2000"
+                    disabled={{true}}
+                />
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    {{! DESCRIPTION }}
+    <ContentPanel @title="Description" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 no-input-group-padding text-xs">
+            <InputGroup @name="Description" @wrapperClass="col-span-2">
+                <Textarea
+                    @value={{@resource.description}}
+                    class="w-full form-input"
+                    rows="3"
+                    placeholder="Describe the purpose of this journal entry..."
+                    disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+        </div>
+    </ContentPanel>
+
+    <Spacer @height="100px" />
+</div>

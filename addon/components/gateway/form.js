@@ -6,72 +6,52 @@ import { task } from 'ember-concurrency';
 
 export default class GatewayFormComponent extends Component {
     @service fetch;
+    @service notifications;
 
-    @tracked selectedDriver = null;
+    @tracked availableDrivers = [];
     @tracked configSchema = [];
     @tracked configValues = {};
-    @tracked name = '';
-    @tracked environment = 'sandbox';
-    @tracked isDefault = false;
 
-    get availableDrivers() {
-        return this.args.availableDrivers ?? [];
+    constructor() {
+        super(...arguments);
+        this.loadDrivers.perform();
     }
 
-    get environmentOptions() {
-        return [
-            { value: 'sandbox', label: 'Sandbox / Test' },
-            { value: 'live', label: 'Live / Production' },
-        ];
+    @task *loadDrivers() {
+        try {
+            const drivers = yield this.fetch.get('gateways/drivers', {}, { namespace: 'ledger/int/v1' });
+            this.availableDrivers = drivers ?? [];
+
+            // If the resource already has a driver selected, load its schema
+            if (this.args.resource?.driver) {
+                yield this.loadSchema.perform(this.args.resource.driver);
+            }
+        } catch (err) {
+            this.notifications.warning('Could not load available payment drivers.');
+        }
     }
 
     @task *loadSchema(driverCode) {
         const driver = this.availableDrivers.find((d) => d.code === driverCode);
         this.configSchema = driver?.config_schema ?? [];
-        this.configValues = {};
-        // Pre-fill defaults
+
+        // Pre-fill with existing config values or field defaults
+        const existingConfig = this.args.resource?.config ?? {};
+        const values = {};
         this.configSchema.forEach((field) => {
-            if (field.default !== undefined) {
-                this.configValues[field.key] = field.default;
-            }
+            values[field.key] = existingConfig[field.key] ?? field.default ?? null;
         });
+        this.configValues = values;
     }
 
-    @action selectDriver(driverCode) {
-        this.selectedDriver = driverCode;
-        this.loadSchema.perform(driverCode);
-        this.notifyChange();
+    @action selectDriver(driver) {
+        this.args.resource.driver = driver.code;
+        this.loadSchema.perform(driver.code);
     }
 
     @action updateConfigField(key, value) {
         this.configValues = { ...this.configValues, [key]: value };
-        this.notifyChange();
-    }
-
-    @action updateName(value) {
-        this.name = value;
-        this.notifyChange();
-    }
-
-    @action updateEnvironment(value) {
-        this.environment = value;
-        this.notifyChange();
-    }
-
-    @action toggleDefault(value) {
-        this.isDefault = value;
-        this.notifyChange();
-    }
-
-    notifyChange() {
-        if (this.args.onChange) {
-            this.args.onChange({
-                name: this.name,
-                driver: this.selectedDriver,
-                environment: this.environment,
-                is_default: this.isDefault,
-                config: this.configValues,
-            });
-        }
+        // Persist config back to the resource
+        this.args.resource.config = { ...this.configValues };
     }
 }
