@@ -17,7 +17,7 @@ export default class AccountingJournalIndexDetailsController extends Controller 
     get actionButtons() {
         const entry = this.model;
         if (entry?.is_system_entry) return [];
-        return [{ label: 'Delete', icon: 'trash', type: 'danger', onClick: this.deleteEntry }];
+        return [{ label: 'Delete', icon: 'trash', type: 'danger', helpText: 'Permanently delete this journal entry. System entries cannot be deleted.', onClick: this.deleteEntry }];
     }
 
     @action async deleteEntry() {

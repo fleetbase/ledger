@@ -24,15 +24,15 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         const buttons = [];
 
         if (invoice?.status === 'draft') {
-            buttons.push({ label: 'Send', icon: 'paper-plane', type: 'primary', onClick: this.sendInvoice });
+            buttons.push({ label: 'Send', icon: 'paper-plane', type: 'primary', helpText: 'Send this invoice to the customer via email.', onClick: this.sendInvoice });
         }
 
         if (['sent', 'overdue', 'partial'].includes(invoice?.status)) {
-            buttons.push({ label: 'Record Payment', icon: 'check-circle', type: 'success', onClick: this.recordPayment });
+            buttons.push({ label: 'Record Payment', icon: 'check-circle', type: 'success', helpText: 'Mark a manual payment received against this invoice.', onClick: this.recordPayment });
         }
 
         if (!['paid', 'void'].includes(invoice?.status)) {
-            buttons.push({ label: 'Void', icon: 'ban', type: 'danger', onClick: this.voidInvoice });
+            buttons.push({ label: 'Void', icon: 'ban', type: 'danger', helpText: 'Cancel this invoice and mark it as void. This cannot be undone.', onClick: this.voidInvoice });
         }
 
         return buttons;

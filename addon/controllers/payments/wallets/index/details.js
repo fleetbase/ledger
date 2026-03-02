@@ -20,8 +20,8 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
 
     get actionButtons() {
         return [
-            { label: 'Top Up', icon: 'plus-circle', type: 'primary', onClick: this.topUpWallet },
-            { label: 'Transfer', icon: 'exchange-alt', onClick: this.transferFunds },
+            { label: 'Top Up', icon: 'plus-circle', type: 'primary', helpText: 'Add funds to this wallet balance.', onClick: this.topUpWallet },
+            { label: 'Transfer', icon: 'exchange-alt', helpText: 'Transfer funds from this wallet to another wallet.', onClick: this.transferFunds },
         ];
     }
 
