@@ -3,22 +3,8 @@ ledger:
 
 common:
   ledger: Ledger
-  new: New
-  refresh: Refresh
   overview: Overview
   transactions: Transactions
-  resource-actions: >-
-    {resource} Actions
-  view-resource: >-
-    View {resource}
-  edit-resource-name: >-
-    Edit {resource}
-  create-a-new-resource: >-
-    Create a new {resource}
-  delete-resource: >-
-    Delete {resource}
-  delete-selected-count: >-
-    Delete {count} selected
 
 resource:
   account: Account

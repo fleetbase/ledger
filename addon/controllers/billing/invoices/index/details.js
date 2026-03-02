@@ -9,9 +9,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
     @service fetch;
     @service hostRouter;
 
-
     @tracked overlay = null;
-
 
     get tabs() {
         return [
@@ -21,26 +19,24 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         ];
     }
 
-
     get actionButtons() {
         const invoice = this.model;
         const buttons = [];
-    
+
         if (invoice?.status === 'draft') {
             buttons.push({ label: 'Send', icon: 'paper-plane', type: 'primary', onClick: this.sendInvoice });
         }
-    
+
         if (['sent', 'overdue', 'partial'].includes(invoice?.status)) {
             buttons.push({ label: 'Record Payment', icon: 'check-circle', type: 'success', onClick: this.recordPayment });
         }
-    
+
         if (!['paid', 'void'].includes(invoice?.status)) {
             buttons.push({ label: 'Void', icon: 'ban', type: 'danger', onClick: this.voidInvoice });
         }
-    
+
         return buttons;
     }
-
 
     @action async sendInvoice() {
         const invoice = this.model;
@@ -53,13 +49,11 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         }
     }
 
-    
     @action async recordPayment() {
         const invoice = this.model;
         this.modalsManager.show('modals/record-payment', { invoice });
     }
 
-    
     @action async voidInvoice() {
         const invoice = this.model;
         this.modalsManager.confirm({
@@ -79,5 +73,4 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
             },
         });
     }
-
 }

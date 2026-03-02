@@ -8,9 +8,7 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
     @service modalsManager;
     @service hostRouter;
 
-
     @tracked overlay = null;
-
 
     get tabs() {
         return [
@@ -19,7 +17,6 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
         ];
     }
 
-
     get actionButtons() {
         return [
             { label: 'Edit', icon: 'pencil', onClick: this.editGateway },
@@ -27,13 +24,11 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
         ];
     }
 
-
     @action editGateway() {
         const gateway = this.model;
         this.modalsManager.show('modals/gateway-form', { gateway });
     }
 
-    
     @action async deleteGateway() {
         const gateway = this.model;
         this.modalsManager.confirm({
@@ -53,5 +48,4 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
             },
         });
     }
-
 }

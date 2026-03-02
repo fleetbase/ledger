@@ -8,23 +8,17 @@ export default class AccountingJournalIndexDetailsController extends Controller 
     @service modalsManager;
     @service hostRouter;
 
-
     @tracked overlay = null;
 
-
     get tabs() {
-        return [
-            { label: 'Overview', route: 'accounting.journal.index.details.index' },
-        ];
+        return [{ label: 'Overview', route: 'accounting.journal.index.details.index' }];
     }
-
 
     get actionButtons() {
         const entry = this.model;
         if (entry?.is_system_entry) return [];
         return [{ label: 'Delete', icon: 'trash', type: 'danger', onClick: this.deleteEntry }];
     }
-
 
     @action async deleteEntry() {
         const entry = this.model;
@@ -45,5 +39,4 @@ export default class AccountingJournalIndexDetailsController extends Controller 
             },
         });
     }
-
 }

@@ -9,9 +9,7 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
     @service fetch;
     @service hostRouter;
 
-
     @tracked overlay = null;
-
 
     get tabs() {
         return [
@@ -20,7 +18,6 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
         ];
     }
 
-
     get actionButtons() {
         return [
             { label: 'Top Up', icon: 'plus-circle', type: 'primary', onClick: this.topUpWallet },
@@ -28,16 +25,13 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
         ];
     }
 
-
     @action async topUpWallet() {
         const wallet = this.model;
         this.modalsManager.show('modals/wallet-top-up', { wallet });
     }
 
-    
     @action async transferFunds() {
         const wallet = this.model;
         this.modalsManager.show('modals/wallet-transfer', { wallet });
     }
-
 }

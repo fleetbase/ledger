@@ -4,7 +4,6 @@ import { tracked } from '@glimmer/tracking';
 export default class AccountingAccountsIndexDetailsController extends Controller {
     @tracked overlay = null;
 
-
     get tabs() {
         return [
             { label: 'Overview', route: 'accounting.accounts.index.details.index' },
@@ -12,9 +11,7 @@ export default class AccountingAccountsIndexDetailsController extends Controller
         ];
     }
 
-
     get actionButtons() {
         return [];
     }
-
 }
