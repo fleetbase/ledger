@@ -1,2 +1,94 @@
 ledger:
   extension-name: Ledger
+
+common:
+  ledger: Ledger
+  new: New
+  refresh: Refresh
+  overview: Overview
+  transactions: Transactions
+  resource-actions: >-
+    {resource} Actions
+  view-resource: >-
+    View {resource}
+  edit-resource-name: >-
+    Edit {resource}
+  create-a-new-resource: >-
+    Create a new {resource}
+  delete-resource: >-
+    Delete {resource}
+  delete-selected-count: >-
+    Delete {count} selected
+
+resource:
+  account: Account
+  accounts: Accounts
+  invoice: Invoice
+  invoices: Invoices
+  journal: Journal Entry
+  journal-entries: Journal Entries
+  transaction: Transaction
+  transactions: Transactions
+  wallet: Wallet
+  wallets: Wallets
+  gateway: Gateway
+  gateways: Gateways
+  wallet-transaction: Wallet Transaction
+  wallet-transactions: Wallet Transactions
+
+column:
+  id: ID
+  number: Number
+  name: Name
+  code: Code
+  type: Type
+  status: Status
+  direction: Direction
+  description: Description
+  date: Date
+  created-at: Created
+  updated-at: Updated
+  amount: Amount
+  balance: Balance
+  total: Total
+  net-amount: Net Amount
+  fee: Fee
+  tax: Tax
+  currency: Currency
+  gateway: Gateway
+  payment-method: Payment Method
+  reference: Reference
+  period: Period
+  settled-at: Settled At
+  failure-reason: Failure Reason
+  due-date: Due Date
+  issued-at: Issued At
+  debit-account: Debit Account
+  credit-account: Credit Account
+  source: Source
+  driver: Driver
+  environment: Environment
+  default: Default
+
+menu:
+  dashboard: Dashboard
+  billing: Billing
+  invoices: Invoices
+  payments: Payments
+  wallets: Wallets
+  gateways: Gateways
+  accounting: Accounting
+  chart-of-accounts: Chart of Accounts
+  journal-entries: Journal Entries
+  general-ledger: General Ledger
+  reports: Reports
+  income-statement: Income Statement
+  balance-sheet: Balance Sheet
+  trial-balance: Trial Balance
+  cash-flow: Cash Flow
+  ar-aging: AR Aging
+  wallet-summary: Wallet Summary
+  settings: Settings
+  invoice-settings: Invoice Settings
+  payment-settings: Payment Settings
+  accounting-settings: Accounting Settings
