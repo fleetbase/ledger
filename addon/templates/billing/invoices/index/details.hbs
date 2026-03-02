@@ -1,16 +1,15 @@
 <Layout::Resource::Panel
-    @title={{@model.number}}
+    @resource=@model
+    @controller={{this}}
+    @headerComponent={{component "invoice/panel-header" invoice=@model}}
+    @headerTitle=@model.number
     @actionButtons={{this.actionButtons}}
-    @onClose={{route-action "transitionTo" "console.ledger.billing.invoices.index"}}
+    @onPressCancel={{transition-to "billing.invoices.index"}}
+    @onOverlayReady={{fn (mut this.overlay)}}
+    @headerClass="no-bottom-border"
+    @bodyClass="no-scroll"
 >
-    <:header>
-        <Invoice::PanelHeader @invoice={{@model}} />
-    </:header>
-    <:default>
-        <TabNavigation @tabs={{this.tabs}}>
-            <:default>
-                {{outlet}}
-            </:default>
-        </TabNavigation>
-    </:default>
+    <TabNavigation @tabs={{this.tabs}} @contentClass="scrollable" @tablistClass="pl-2">
+        {{outlet}}
+    </TabNavigation>
 </Layout::Resource::Panel>
