@@ -8,10 +8,12 @@ export default class InvoiceActionsService extends ResourceActionService {
             mountPrefix: 'console.ledger',
         });
     }
+
     transition = {
-        view: (invoice) => this.transitionTo('console.ledger.billing.invoices.index.details', invoice),
-        create: () => this.transitionTo('console.ledger.billing.invoices.index.new'),
+        view: (invoice) => this.transitionTo('billing.invoices.index.details', invoice),
+        create: () => this.transitionTo('billing.invoices.index.new'),
     };
+
     panel = {
         create: (attributes = {}, options = {}) => {
             const invoice = this.createNewInstance(attributes);
@@ -24,6 +26,7 @@ export default class InvoiceActionsService extends ResourceActionService {
                 ...options,
             });
         },
+
         edit: (invoice, options = {}) => {
             return this.resourceContextPanel.open({
                 content: 'invoice/form',
@@ -33,6 +36,7 @@ export default class InvoiceActionsService extends ResourceActionService {
                 ...options,
             });
         },
+
         view: (invoice, options = {}) => {
             return this.resourceContextPanel.open({
                 invoice,

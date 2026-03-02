@@ -8,10 +8,12 @@ export default class GatewayActionsService extends ResourceActionService {
             mountPrefix: 'console.ledger',
         });
     }
+
     transition = {
-        view: (gateway) => this.transitionTo('console.ledger.payments.gateways.index.details', gateway),
-        create: () => this.transitionTo('console.ledger.payments.gateways.index.new'),
+        view: (gateway) => this.transitionTo('payments.gateways.index.details', gateway),
+        create: () => this.transitionTo('payments.gateways.index.new'),
     };
+
     panel = {
         create: (attributes = {}, options = {}) => {
             const gateway = this.createNewInstance(attributes);
@@ -24,22 +26,21 @@ export default class GatewayActionsService extends ResourceActionService {
                 ...options,
             });
         },
+
         edit: (gateway, options = {}) => {
             return this.resourceContextPanel.open({
                 content: 'gateway/form',
-                title: this.intl.t('common.edit-resource-name', { resourceName: gateway.name }),
+                title: this.intl.t('common.edit-resource-name', { resourceName: gateway.public_id }),
                 useDefaultSaveTask: true,
                 gateway,
                 ...options,
             });
         },
+
         view: (gateway, options = {}) => {
             return this.resourceContextPanel.open({
                 gateway,
-                tabs: [
-                    { label: this.intl.t('common.overview'), component: 'gateway/details' },
-                    { label: this.intl.t('common.transactions'), component: 'gateway/transactions' },
-                ],
+                tabs: [{ label: this.intl.t('common.overview'), component: 'gateway/details' }],
                 ...options,
             });
         },

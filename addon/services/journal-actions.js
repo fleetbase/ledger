@@ -8,10 +8,12 @@ export default class JournalActionsService extends ResourceActionService {
             mountPrefix: 'console.ledger',
         });
     }
+
     transition = {
-        view: (journal) => this.transitionTo('console.ledger.accounting.journal.index.details', journal),
-        create: () => this.transitionTo('console.ledger.accounting.journal.index.new'),
+        view: (journal) => this.transitionTo('accounting.journal.index.details', journal),
+        create: () => this.transitionTo('accounting.journal.index.new'),
     };
+
     panel = {
         create: (attributes = {}, options = {}) => {
             const journal = this.createNewInstance(attributes);
@@ -24,6 +26,7 @@ export default class JournalActionsService extends ResourceActionService {
                 ...options,
             });
         },
+
         view: (journal, options = {}) => {
             return this.resourceContextPanel.open({
                 journal,

@@ -10,7 +10,7 @@ export default class TransactionActionsService extends ResourceActionService {
     }
 
     transition = {
-        view: (transaction) => this.transitionTo('console.ledger.payments.transactions.index.details', transaction),
+        view: (transaction) => this.transitionTo('payments.transactions.index.details', transaction),
     };
 
     panel = {

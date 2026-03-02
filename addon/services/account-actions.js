@@ -8,10 +8,12 @@ export default class AccountActionsService extends ResourceActionService {
             mountPrefix: 'console.ledger',
         });
     }
+
     transition = {
-        view: (account) => this.transitionTo('console.ledger.accounting.accounts.index.details', account),
-        create: () => this.transitionTo('console.ledger.accounting.accounts.index.new'),
+        view: (account) => this.transitionTo('accounting.accounts.index.details', account),
+        create: () => this.transitionTo('accounting.accounts.index.new'),
     };
+
     panel = {
         create: (attributes = {}, options = {}) => {
             const account = this.createNewInstance(attributes);
@@ -24,22 +26,21 @@ export default class AccountActionsService extends ResourceActionService {
                 ...options,
             });
         },
+
         edit: (account, options = {}) => {
             return this.resourceContextPanel.open({
                 content: 'account/form',
-                title: this.intl.t('common.edit-resource-name', { resourceName: account.name }),
+                title: this.intl.t('common.edit-resource-name', { resourceName: account.public_id }),
                 useDefaultSaveTask: true,
                 account,
                 ...options,
             });
         },
+
         view: (account, options = {}) => {
             return this.resourceContextPanel.open({
                 account,
-                tabs: [
-                    { label: this.intl.t('common.overview'), component: 'account/details' },
-                    { label: this.intl.t('common.ledger'), component: 'account/ledger' },
-                ],
+                tabs: [{ label: this.intl.t('common.overview'), component: 'account/details' }],
                 ...options,
             });
         },

@@ -8,17 +8,16 @@ export default class WalletActionsService extends ResourceActionService {
             mountPrefix: 'console.ledger',
         });
     }
+
     transition = {
-        view: (wallet) => this.transitionTo('console.ledger.payments.wallets.index.details', wallet),
+        view: (wallet) => this.transitionTo('payments.wallets.index.details', wallet),
     };
+
     panel = {
         view: (wallet, options = {}) => {
             return this.resourceContextPanel.open({
                 wallet,
-                tabs: [
-                    { label: this.intl.t('common.overview'), component: 'wallet/details' },
-                    { label: this.intl.t('common.transactions'), component: 'wallet/transactions' },
-                ],
+                tabs: [{ label: this.intl.t('common.overview'), component: 'wallet/details' }, { label: this.intl.t('common.transactions'), component: 'wallet/transactions' }],
                 ...options,
             });
         },
