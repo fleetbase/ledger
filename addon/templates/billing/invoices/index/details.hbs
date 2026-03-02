@@ -1,7 +1,7 @@
 <Layout::Resource::Panel
     @resource={{@model}}
     @controller={{this}}
-    @headerComponent={{component "invoice/panel-header" invoice=@model}}
+    @headerComponent={{component "invoice/panel-header" resource=@model}}
     @actionButtons={{this.actionButtons}}
     @onPressCancel={{transition-to "billing.invoices.index"}}
     @onOverlayReady={{fn (mut this.overlay)}}

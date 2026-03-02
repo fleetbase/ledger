@@ -1,10 +1,17 @@
-<div class="flex items-center space-x-3 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-    <div class="flex-1 min-w-0">
-        <p class="text-xs text-gray-500">{{@transaction.gateway_code}}</p>
-        <p class="text-xs text-gray-400">{{@transaction.createdAt}}</p>
-    </div>
-    <div class="flex flex-col items-end">
-        <span class="text-sm font-semibold text-gray-900 dark:text-white">{{@transaction.formatted_amount}}</span>
-        <Badge @status={{@transaction.status}} @color={{@transaction.status_badge_color}}>{{@transaction.status}}</Badge>
+<div class="px-4 py-2" ...attributes>
+    <div class="flex flex-1 flex-row items-start justify-between">
+        <div class="flex flex-col">
+            <h1 class="text-gray-900 dark:text-white font-semibold text-2xl">{{n-a @resource.public_id}}</h1>
+            <div class="flex flex-row items-center space-x-2 mt-0.5">
+                <span class="text-sm text-gray-500 dark:text-gray-400 capitalize">{{n-a @resource.type}}</span>
+                <Badge @status={{@resource.status}} @color={{@resource.status_badge_color}}>{{@resource.status}}</Badge>
+            </div>
+        </div>
+        <div class="flex flex-col items-end">
+            <span class="text-xl font-bold {{if (eq @resource.direction "credit") "text-green-600" "text-red-600"}}">
+                {{@resource.direction_sign}}{{n-a @resource.formatted_amount}}
+            </span>
+            <span class="text-xs text-gray-500 mt-0.5">{{n-a @resource.currency}}</span>
+        </div>
     </div>
 </div>

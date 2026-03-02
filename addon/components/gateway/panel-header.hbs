@@ -1,12 +1,17 @@
-<div class="flex items-center space-x-3 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-    <div class="flex-1 min-w-0">
-        <p class="text-xs text-gray-500">{{@gateway.driver_label}}</p>
-        <p class="text-xs text-gray-400 capitalize">{{@gateway.environment}}</p>
-    </div>
-    <div class="flex flex-col items-end space-y-1">
-        {{#if @gateway.is_default}}
-            <Badge @color="blue">Default</Badge>
-        {{/if}}
-        <Badge @status={{@gateway.status_label}} @color={{if @gateway.is_active "green" "gray"}}>{{@gateway.status_label}}</Badge>
+<div class="px-4 py-2" ...attributes>
+    <div class="flex flex-1 flex-row items-start justify-between">
+        <div class="flex flex-col">
+            <h1 class="text-gray-900 dark:text-white font-semibold text-2xl">{{n-a @resource.name}}</h1>
+            <div class="flex flex-row items-center space-x-2 mt-0.5">
+                <span class="text-sm text-gray-500 dark:text-gray-400">{{n-a @resource.driver_label}}</span>
+                <Badge @color={{if (eq @resource.environment "live") "green" "yellow"}} class="capitalize">{{n-a @resource.environment}}</Badge>
+                {{#if @resource.is_default}}
+                    <Badge @color="blue">Default</Badge>
+                {{/if}}
+            </div>
+        </div>
+        <div class="flex flex-col items-end">
+            <Badge @status={{@resource.status_label}} @color={{if @resource.is_active "green" "gray"}}>{{@resource.status_label}}</Badge>
+        </div>
     </div>
 </div>

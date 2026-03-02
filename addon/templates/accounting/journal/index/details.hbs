@@ -1,7 +1,7 @@
 <Layout::Resource::Panel
     @resource={{@model}}
     @controller={{this}}
-    @headerComponent={{component "journal/panel-header" entry=@model}}
+    @headerComponent={{component "journal/panel-header" resource=@model}}
     @actionButtons={{this.actionButtons}}
     @onPressCancel={{transition-to "accounting.journal.index"}}
     @onOverlayReady={{fn (mut this.overlay)}}

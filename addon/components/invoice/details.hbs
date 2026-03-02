@@ -1,60 +1,126 @@
-<div class="p-4 space-y-4">
-    <div class="grid grid-cols-2 gap-4">
-        <div class="field-info-container">
-            <label class="field-info-label">Invoice Number</label>
-            <p class="field-info-value">{{@invoice.number}}</p>
-        </div>
-        <div class="field-info-container">
-            <label class="field-info-label">Status</label>
-            <Badge @status={{@invoice.status}} @color={{@invoice.status_badge_color}}>{{@invoice.status}}</Badge>
-        </div>
-        <div class="field-info-container">
-            <label class="field-info-label">Customer</label>
-            <p class="field-info-value">{{@invoice.customer_name}}</p>
-        </div>
-        <div class="field-info-container">
-            <label class="field-info-label">Customer Email</label>
-            <p class="field-info-value">{{or @invoice.customer_email "—"}}</p>
-        </div>
-        <div class="field-info-container">
-            <label class="field-info-label">Due Date</label>
-            <p class="field-info-value">{{@invoice.dueDate}}</p>
-        </div>
-        <div class="field-info-container">
-            <label class="field-info-label">Currency</label>
-            <p class="field-info-value">{{@invoice.currency}}</p>
-        </div>
-    </div>
+<div class="details-wrapper" ...attributes>
+    {{! INVOICE DETAILS }}
+    <ContentPanel @title="Invoice Details" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
 
-    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
-        <div class="grid grid-cols-2 gap-4">
-            <div class="field-info-container">
-                <label class="field-info-label">Subtotal</label>
-                <p class="field-info-value">{{@invoice.formatted_subtotal}}</p>
+            <div class="col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
+                Invoice Information
             </div>
-            <div class="field-info-container">
-                <label class="field-info-label">Tax</label>
-                <p class="field-info-value">{{@invoice.formatted_tax}}</p>
-            </div>
-            <div class="field-info-container">
-                <label class="field-info-label">Total</label>
-                <p class="field-info-value font-semibold">{{@invoice.formatted_total}}</p>
-            </div>
-            <div class="field-info-container">
-                <label class="field-info-label">Amount Paid</label>
-                <p class="field-info-value text-green-600">{{@invoice.formatted_amount_paid}}</p>
-            </div>
-            <div class="field-info-container">
-                <label class="field-info-label">Balance Due</label>
-                <p class="field-info-value font-semibold {{if @invoice.is_overdue "text-red-600"}}">{{@invoice.formatted_balance}}</p>
-            </div>
-        </div>
-    </div>
 
-    {{#if @invoice.notes}}
-        <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
-            <label class="field-info-label">Notes</label>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{@invoice.notes}}</p>
+            <div class="field-info-container">
+                <div class="field-name">Invoice Number</div>
+                <div class="field-value">{{n-a @resource.number}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Status</div>
+                <div class="field-value">
+                    <Badge @status={{@resource.status}} @color={{@resource.status_badge_color}}>{{@resource.status}}</Badge>
+                </div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Currency</div>
+                <div class="field-value">{{n-a @resource.currency}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Issued</div>
+                <div class="field-value">{{n-a @resource.issuedAt}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Due Date</div>
+                <div class="field-value">{{n-a @resource.dueDate}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Paid At</div>
+                <div class="field-value">{{n-a @resource.paidAt}}</div>
+            </div>
+
+            <div class="col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Customer
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Customer Name</div>
+                <div class="field-value">{{n-a @resource.customer_name}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Customer Email</div>
+                <div class="field-value">{{n-a @resource.customer_email}}</div>
+            </div>
+
         </div>
+    </ContentPanel>
+
+    {{! AMOUNTS }}
+    <ContentPanel @title="Amounts" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
+
+            <div class="field-info-container">
+                <div class="field-name">Subtotal</div>
+                <div class="field-value">{{n-a @resource.formatted_subtotal}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Tax</div>
+                <div class="field-value">{{n-a @resource.formatted_tax}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Discount</div>
+                <div class="field-value">{{n-a @resource.formatted_discount}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Total</div>
+                <div class="field-value font-semibold">{{n-a @resource.formatted_total}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Amount Paid</div>
+                <div class="field-value text-green-600">{{n-a @resource.formatted_amount_paid}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Balance Due</div>
+                <div class="field-value font-semibold {{if @resource.is_overdue "text-red-600"}}">{{n-a @resource.formatted_balance}}</div>
+            </div>
+
+        </div>
+    </ContentPanel>
+
+    {{! NOTES }}
+    {{#if @resource.notes}}
+        <ContentPanel @title="Notes" @open={{true}} @wrapperClass="bordered-top">
+            <div class="text-xs text-gray-600 dark:text-gray-400">
+                {{@resource.notes}}
+            </div>
+        </ContentPanel>
     {{/if}}
+
+    {{! METADATA }}
+    <ContentPanel @title="Record Info" @open={{false}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
+
+            <div class="field-info-container">
+                <div class="field-name">Internal ID</div>
+                <div class="field-value font-mono">{{n-a @resource.public_id}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Created</div>
+                <div class="field-value">{{n-a @resource.createdAt}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Last Updated</div>
+                <div class="field-value">{{n-a @resource.updatedAt}}</div>
+            </div>
+
+        </div>
+    </ContentPanel>
 </div>

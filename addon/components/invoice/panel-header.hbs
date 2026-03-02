@@ -1,10 +1,15 @@
-<div class="flex items-center space-x-3 px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-    <div class="flex-1 min-w-0">
-        <p class="text-xs text-gray-500">{{@invoice.customer_name}}</p>
-        <p class="text-xs text-gray-400">Due {{@invoice.dueDate}}</p>
-    </div>
-    <div class="flex flex-col items-end">
-        <span class="text-sm font-semibold text-gray-900 dark:text-white">{{@invoice.formatted_total}}</span>
-        <Badge @status={{@invoice.status}} @color={{@invoice.status_badge_color}}>{{@invoice.status}}</Badge>
+<div class="px-4 py-2" ...attributes>
+    <div class="flex flex-1 flex-row items-start justify-between">
+        <div class="flex flex-col">
+            <h1 class="text-gray-900 dark:text-white font-semibold text-2xl">{{n-a @resource.number}}</h1>
+            <div class="flex flex-row items-center space-x-2 mt-0.5">
+                <span class="text-sm text-gray-500 dark:text-gray-400">{{n-a @resource.customer_name}}</span>
+                <Badge @status={{@resource.status}} @color={{@resource.status_badge_color}}>{{@resource.status}}</Badge>
+            </div>
+        </div>
+        <div class="flex flex-col items-end">
+            <span class="text-xl font-bold text-gray-900 dark:text-white">{{n-a @resource.formatted_total}}</span>
+            <span class="text-xs text-gray-500 mt-0.5">Due {{n-a @resource.dueDate}}</span>
+        </div>
     </div>
 </div>
