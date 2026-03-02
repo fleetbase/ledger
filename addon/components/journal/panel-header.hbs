@@ -1,27 +1,30 @@
 <div class="px-4 py-2" ...attributes>
     <div class="flex flex-1 flex-row items-start justify-between">
         <div class="flex flex-col">
-            <h1 class="text-gray-900 dark:text-white font-semibold text-2xl">{{n-a @resource.number}}</h1>
+            <h1 class="text-gray-900 dark:text-white font-semibold text-lg">{{n-a @resource.number}}</h1>
             <div class="flex flex-row items-center space-x-2 mt-0.5">
-                <span class="text-sm text-gray-500 dark:text-gray-400">{{n-a @resource.type_label}}</span>
-                <Badge @color={{if @resource.is_system_entry "blue" "gray"}}>{{@resource.entry_source}}</Badge>
+                <Badge @status="info" @hideStatusDot={{true}}>{{titleize @resource.type}}</Badge>
+                {{#if @resource.is_system_entry}}
+                    <Badge @color="blue">System</Badge>
+                {{/if}}
             </div>
         </div>
-        <div class="flex flex-col items-end">
-            <span class="text-xl font-bold text-gray-900 dark:text-white">{{n-a @resource.formatted_amount}}</span>
-            <span class="text-xs text-gray-500 mt-0.5">{{n-a @resource.entryDate}}</span>
+        <div class="next-view-header-right f-child-items-start">
+            <Layout::Resource::Panel::HeaderActions
+                @resource={{@resource}}
+                @saveTask={{@saveTask}}
+                @saveOptions={{@saveOptions}}
+                @saveDisabled={{@saveDisabled}}
+                @pojoResource={{@pojoResource}}
+                @authSchema={{@authSchema}}
+                @actionButtons={{@actionButtons}}
+                @onPressCancel={{@onPressCancel}}
+            >
+                <div class="flex flex-col items-end mr-2">
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">{{n-a @resource.formatted_amount}}</span>
+                    <span class="text-xs text-gray-500">{{n-a @resource.entryDate}}</span>
+                </div>
+            </Layout::Resource::Panel::HeaderActions>
         </div>
-    </div>
-    <div class="next-view-header-right">
-        <Layout::Resource::Panel::HeaderActions
-            @resource={{@resource}}
-            @saveTask={{@saveTask}}
-            @saveOptions={{@saveOptions}}
-            @saveDisabled={{@saveDisabled}}
-            @pojoResource={{@pojoResource}}
-            @authSchema={{@authSchema}}
-            @actionButtons={{@actionButtons}}
-            @onPressCancel={{@onPressCancel}}
-        />
     </div>
 </div>

@@ -44,12 +44,6 @@ export default class PaymentsWalletsIndexController extends Controller {
                 onClick: this.walletActions.refresh,
                 helpText: this.intl.t('common.refresh'),
             },
-            {
-                text: this.intl.t('common.new'),
-                type: 'primary',
-                icon: 'plus',
-                onClick: this.walletActions.transition.create,
-            },
         ];
     }
 
