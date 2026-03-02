@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/ledger-engine/routes/settings/gateways/index/details/webhooks';
+export { default } from '@fleetbase/ledger-engine/routes/payments/gateways/index/details/webhooks';

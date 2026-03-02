@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/ledger-engine/routes/wallets/index/details/transactions';
+export { default } from '@fleetbase/ledger-engine/routes/payments/wallets/index/details/transactions';
