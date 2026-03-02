@@ -6,7 +6,11 @@ use Fleetbase\Ledger\DTO\PurchaseRequest;
 use Fleetbase\Ledger\Models\Account;
 use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Ledger\Models\Wallet;
+use Fleetbase\Models\Company;
+use Fleetbase\Models\User;
+use Fleetbase\Support\Utils;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -595,6 +599,123 @@ class WalletService
                 'type'              => 'asset',
                 'description'       => 'Default cash account',
                 'is_system_account' => true,
+            ]
+        );
+    }
+
+    // =========================================================================
+    // Company & User Provisioning
+    // =========================================================================
+
+    /**
+     * Provision the default system wallets for a newly registered company.
+     *
+     * Creates four company-level wallets (Operating, Revenue, Payout Reserve,
+     * Refund Reserve) owned by the company itself. Safe to call multiple times
+     * — uses firstOrCreate keyed on (company_uuid, subject_uuid, subject_type, name).
+     *
+     * @param  \Fleetbase\Models\Company  $company
+     * @return \Illuminate\Support\Collection<\Fleetbase\Ledger\Models\Wallet>
+     */
+    public function provisionCompanyWallets(Company $company): Collection
+    {
+        $currency    = $company->currency ?? config('ledger.default_currency', 'USD');
+        $subjectType = Utils::getMutationType(Company::class);
+
+        $definitions = [
+            [
+                'name'        => 'Operating Wallet',
+                'description' => 'Primary operating funds wallet for the company.',
+            ],
+            [
+                'name'        => 'Revenue Wallet',
+                'description' => 'Collected delivery and service revenue before settlement.',
+            ],
+            [
+                'name'        => 'Payout Reserve',
+                'description' => 'Funds reserved for driver and vendor payouts.',
+            ],
+            [
+                'name'        => 'Refund Reserve',
+                'description' => 'Funds set aside to cover customer refunds and chargebacks.',
+            ],
+        ];
+
+        $wallets = collect();
+
+        foreach ($definitions as $def) {
+            $wallet = Wallet::firstOrCreate(
+                [
+                    'company_uuid' => $company->uuid,
+                    'subject_uuid' => $company->uuid,
+                    'subject_type' => $subjectType,
+                    'name'         => $def['name'],
+                ],
+                [
+                    'company_uuid' => $company->uuid,
+                    'subject_uuid' => $company->uuid,
+                    'subject_type' => $subjectType,
+                    'name'         => $def['name'],
+                    'description'  => $def['description'],
+                    'currency'     => $currency,
+                    'balance'      => 0,
+                    'status'       => 'active',
+                    'is_frozen'    => false,
+                ]
+            );
+            $wallets->push($wallet);
+        }
+
+        return $wallets;
+    }
+
+    /**
+     * Provision a personal wallet for a newly created user.
+     *
+     * Only provisions wallets for users with type 'driver' or 'customer'.
+     * The wallet is scoped to the user's company so that a user who works
+     * for multiple companies gets a separate wallet per company.
+     *
+     * Safe to call multiple times — uses firstOrCreate keyed on
+     * (company_uuid, subject_uuid, subject_type).
+     *
+     * @param  \Fleetbase\Models\User  $user
+     * @return \Fleetbase\Ledger\Models\Wallet|null  null if the user type does not warrant a wallet
+     */
+    public function provisionUserWallet(User $user): ?Wallet
+    {
+        if (!in_array($user->type, ['driver', 'customer'])) {
+            return null;
+        }
+
+        $companyUuid = $user->company_uuid;
+        if (empty($companyUuid)) {
+            return null;
+        }
+
+        $currency    = optional($user->company)->currency ?? config('ledger.default_currency', 'USD');
+        $subjectType = Utils::getMutationType(User::class);
+        $walletName  = $user->type === 'driver' ? 'Driver Earnings Wallet' : 'Customer Wallet';
+        $description = $user->type === 'driver'
+            ? 'Personal earnings wallet for driver payouts.'
+            : 'Personal wallet for customer credits and prepaid balance.';
+
+        return Wallet::firstOrCreate(
+            [
+                'company_uuid' => $companyUuid,
+                'subject_uuid' => $user->uuid,
+                'subject_type' => $subjectType,
+            ],
+            [
+                'company_uuid' => $companyUuid,
+                'subject_uuid' => $user->uuid,
+                'subject_type' => $subjectType,
+                'name'         => $walletName,
+                'description'  => $description,
+                'currency'     => $currency,
+                'balance'      => 0,
+                'status'       => 'active',
+                'is_frozen'    => false,
             ]
         );
     }

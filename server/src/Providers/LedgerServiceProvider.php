@@ -35,6 +35,8 @@ class LedgerServiceProvider extends CoreServiceProvider
      */
     public $observers = [
         \Fleetbase\Ledger\Models\Invoice::class => \Fleetbase\Ledger\Observers\InvoiceObserver::class,
+        \Fleetbase\Models\Company::class        => \Fleetbase\Ledger\Observers\CompanyObserver::class,
+        \Fleetbase\Models\User::class           => \Fleetbase\Ledger\Observers\UserObserver::class,
     ];
 
     /**
@@ -90,6 +92,13 @@ class LedgerServiceProvider extends CoreServiceProvider
 
         // Register event-listener bindings for the payment gateway system
         $this->registerPaymentEvents();
+
+        // Register Artisan commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Fleetbase\Ledger\Console\Commands\ProvisionLedgerDefaults::class,
+            ]);
+        }
     }
 
     /**
