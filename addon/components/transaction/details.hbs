@@ -71,7 +71,7 @@
 
             <div class="field-info-container">
                 <div class="field-name">Amount</div>
-                <div class="field-value font-semibold">{{n-a @resource.formatted_amount}}</div>
+                <div class="field-value font-semibold">{{format-currency @resource.amount @resource.currency}}</div>
             </div>
 
             <div class="field-info-container">
@@ -81,22 +81,22 @@
 
             <div class="field-info-container">
                 <div class="field-name">Fee</div>
-                <div class="field-value">{{n-a @resource.formatted_fee}}</div>
+                <div class="field-value">{{format-currency @resource.fee @resource.currency}}</div>
             </div>
 
             <div class="field-info-container">
                 <div class="field-name">Tax</div>
-                <div class="field-value">{{n-a @resource.formatted_tax}}</div>
+                <div class="field-value">{{format-currency @resource.tax @resource.currency}}</div>
             </div>
 
             <div class="field-info-container">
                 <div class="field-name">Net Amount</div>
-                <div class="field-value font-semibold">{{n-a @resource.formatted_net}}</div>
+                <div class="field-value font-semibold">{{format-currency @resource.net @resource.currency}}</div>
             </div>
 
             <div class="field-info-container">
                 <div class="field-name">Balance After</div>
-                <div class="field-value">{{n-a @resource.formatted_balance_after}}</div>
+                <div class="field-value">{{format-currency @resource.balance_after @resource.currency}}</div>
             </div>
 
             {{#if @resource.exchange_rate}}
@@ -116,7 +116,7 @@
 
                 <div class="field-info-container">
                     <div class="field-name">Settled Amount</div>
-                    <div class="field-value">{{n-a @resource.formatted_settled_amount}}</div>
+                    <div class="field-value">{{format-currency @resource.settled_amount @resource.settled_currency}}</div>
                 </div>
 
                 <div class="field-info-container">

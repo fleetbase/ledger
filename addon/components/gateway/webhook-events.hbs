@@ -18,7 +18,7 @@
                         <td class="py-2 text-gray-600 text-xs">{{format-date-fns event.created_at "MMM d, HH:mm"}}</td>
                         <td class="py-2 text-gray-700 dark:text-gray-300 text-xs font-mono">{{event.event_type}}</td>
                         <td class="py-2 text-gray-500 text-xs font-mono truncate max-w-xs">{{event.gateway_reference_id}}</td>
-                        <td class="py-2 text-right font-medium text-xs text-gray-900 dark:text-white">{{event.formatted_amount}}</td>
+                        <td class="py-2 text-right font-medium text-xs text-gray-900 dark:text-white">{{format-currency event.amount event.currency}}</td>
                         <td class="py-2">
                             <Badge @status={{event.status}} @color={{if (eq event.status "processed") "green" (if (eq event.status "failed") "red" "yellow")}}>
                                 {{event.status}}

@@ -47,7 +47,7 @@
 
             <div class="field-info-container">
                 <div class="field-name">Current Balance</div>
-                <div class="field-value text-xl font-bold text-gray-900 dark:text-white">{{n-a @resource.formatted_balance}}</div>
+                <div class="field-value text-xl font-bold text-gray-900 dark:text-white">{{format-currency @resource.balance @resource.currency}}</div>
             </div>
 
         </div>

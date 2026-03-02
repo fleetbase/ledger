@@ -19,7 +19,7 @@
                 @onPressCancel={{@onPressCancel}}
             >
                 <div class="flex flex-col items-end mr-2">
-                    <span class="text-lg font-bold text-gray-900 dark:text-white">{{n-a @resource.formatted_total}}</span>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">{{format-currency @resource.total @resource.currency}}</span>
                     <span class="text-xs text-gray-500">Due {{n-a @resource.dueDate}}</span>
                 </div>
             </Layout::Resource::Panel::HeaderActions>

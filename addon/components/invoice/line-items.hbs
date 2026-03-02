@@ -13,8 +13,8 @@
                 <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0">
                     <td class="py-2 text-gray-700 dark:text-gray-300">{{item.description}}</td>
                     <td class="py-2 text-right text-gray-600">{{item.quantity}}</td>
-                    <td class="py-2 text-right text-gray-600">{{item.formatted_unit_price}}</td>
-                    <td class="py-2 text-right font-medium text-gray-900 dark:text-white">{{item.formatted_total}}</td>
+                    <td class="py-2 text-right text-gray-600">{{format-currency item.unit_price @invoice.currency}}</td>
+                    <td class="py-2 text-right font-medium text-gray-900 dark:text-white">{{format-currency item.total @invoice.currency}}</td>
                 </tr>
             {{else}}
                 <tr>

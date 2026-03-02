@@ -31,7 +31,7 @@
 
             <div class="field-info-container">
                 <div class="field-name">Amount</div>
-                <div class="field-value font-semibold">{{n-a @resource.formatted_amount}}</div>
+                <div class="field-value font-semibold">{{format-currency @resource.amount @resource.currency}}</div>
             </div>
 
             <div class="field-info-container">

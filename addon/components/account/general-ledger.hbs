@@ -6,15 +6,15 @@
             <div class="grid grid-cols-3 gap-3 mb-4">
                 <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
                     <p class="text-xs text-gray-500 mb-1">Total Debits</p>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{this.summary.formatted_total_debits}}</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{format-currency this.summary.total_debits @resource.currency}}</p>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
                     <p class="text-xs text-gray-500 mb-1">Total Credits</p>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{this.summary.formatted_total_credits}}</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{format-currency this.summary.total_credits @resource.currency}}</p>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
                     <p class="text-xs text-gray-500 mb-1">Net Balance</p>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{this.summary.formatted_net_balance}}</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{format-currency this.summary.net_balance @resource.currency}}</p>
                 </div>
             </div>
         {{/if}}
@@ -34,12 +34,12 @@
                         <td class="py-2 text-gray-600 text-xs">{{format-date-fns entry.date "MMM d, yyyy"}}</td>
                         <td class="py-2 text-gray-700 dark:text-gray-300 text-xs">{{entry.description}}</td>
                         <td class="py-2 text-right text-xs {{if entry.debit_amount "text-gray-900" "text-gray-300"}}">
-                            {{or entry.formatted_debit "—"}}
+                            {{if entry.debit_amount (format-currency entry.debit_amount @resource.currency) "—"}}
                         </td>
                         <td class="py-2 text-right text-xs {{if entry.credit_amount "text-gray-900" "text-gray-300"}}">
-                            {{or entry.formatted_credit "—"}}
+                            {{if entry.credit_amount (format-currency entry.credit_amount @resource.currency) "—"}}
                         </td>
-                        <td class="py-2 text-right text-xs font-medium text-gray-900 dark:text-white">{{entry.formatted_running_balance}}</td>
+                        <td class="py-2 text-right text-xs font-medium text-gray-900 dark:text-white">{{format-currency entry.running_balance @resource.currency}}</td>
                     </tr>
                 {{else}}
                     <tr>

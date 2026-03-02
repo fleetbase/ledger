@@ -11,7 +11,7 @@
         {{#each @data.buckets as |bucket|}}
             <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
                 <p class="text-xs text-gray-500 mb-1">{{bucket.label}}</p>
-                <p class="text-sm font-bold {{if (gt bucket.total 0) "text-red-600" "text-gray-400"}}">{{bucket.formatted_total}}</p>
+                <p class="text-sm font-bold {{if (gt bucket.total 0) "text-red-600" "text-gray-400"}}">{{format-currency bucket.total @data.currency}}</p>
                 <p class="text-xs text-gray-400">{{bucket.count}} invoice(s)</p>
             </div>
         {{/each}}
@@ -35,7 +35,7 @@
                     <td class="py-2 text-blue-600 text-xs font-mono">{{row.number}}</td>
                     <td class="py-2 text-gray-700 dark:text-gray-300 text-xs">{{row.customer_name}}</td>
                     <td class="py-2 text-gray-600 text-xs">{{format-date-fns row.due_date "MMM d, yyyy"}}</td>
-                    <td class="py-2 text-right font-medium text-xs text-red-600">{{row.formatted_balance}}</td>
+                    <td class="py-2 text-right font-medium text-xs text-red-600">{{format-currency row.balance @data.currency}}</td>
                     <td class="py-2 text-right text-xs {{if (gt row.days_overdue 60) "text-red-600 font-semibold" "text-gray-600"}}">{{row.days_overdue}}</td>
                     <td class="py-2 text-xs">
                         <Badge @color={{if (gt row.days_overdue 60) "red" (if (gt row.days_overdue 30) "yellow" "gray")}}>{{row.bucket_label}}</Badge>
@@ -51,7 +51,7 @@
             <tfoot>
                 <tr class="border-t-2 border-gray-300">
                     <td colspan="3" class="py-2 font-semibold text-gray-900 dark:text-white">Total Outstanding</td>
-                    <td class="py-2 text-right font-bold text-red-600">{{@data.formatted_total_outstanding}}</td>
+                    <td class="py-2 text-right font-bold text-red-600">{{format-currency @data.total_outstanding @data.currency}}</td>
                     <td colspan="2"></td>
                 </tr>
             </tfoot>

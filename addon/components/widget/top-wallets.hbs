@@ -8,7 +8,7 @@
                 <div class="flex-1 min-w-0">
                     <p class="font-medium text-gray-800 dark:text-gray-200 truncate">{{wallet.owner_name}}</p>
                 </div>
-                <span class="font-semibold text-green-600 flex-shrink-0">{{wallet.formatted_balance}}</span>
+                <span class="font-semibold text-green-600 flex-shrink-0">{{format-currency wallet.balance wallet.currency}}</span>
             </div>
         {{/each}}
     {{else}}

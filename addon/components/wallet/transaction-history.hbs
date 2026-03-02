@@ -20,9 +20,9 @@
                         <td class="py-2 text-gray-600 capitalize text-xs">{{txn.type}}</td>
                         <td class="py-2 text-gray-600 text-xs">{{or txn.description "—"}}</td>
                         <td class="py-2 text-right font-medium text-xs text-{{txn.direction_color}}-600">
-                            {{txn.direction_sign}}{{txn.formatted_amount}}
+                            {{txn.direction_sign}}{{format-currency txn.amount txn.currency}}
                         </td>
-                        <td class="py-2 text-right text-gray-500 text-xs">{{txn.formatted_balance_after}}</td>
+                        <td class="py-2 text-right text-gray-500 text-xs">{{format-currency txn.balance_after txn.currency}}</td>
                         <td class="py-2">
                             <Badge @status={{txn.status}} @color={{txn.status_badge_color}} @size="xs">{{txn.status}}</Badge>
                         </td>

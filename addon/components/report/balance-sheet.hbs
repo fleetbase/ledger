@@ -16,14 +16,14 @@
                     <tr class="border-b border-gray-100 dark:border-gray-700">
                         <td class="py-1.5 text-gray-700 dark:text-gray-300">{{item.name}}</td>
                         <td class="py-1.5 text-xs text-gray-400">{{item.code}}</td>
-                        <td class="py-1.5 text-right font-medium text-gray-900 dark:text-white">{{item.formatted_balance}}</td>
+                        <td class="py-1.5 text-right font-medium text-gray-900 dark:text-white">{{format-currency item.balance @data.currency}}</td>
                     </tr>
                 {{/each}}
             </tbody>
             <tfoot>
                 <tr class="border-t-2 border-gray-300">
                     <td colspan="2" class="py-2 font-semibold text-gray-900 dark:text-white">Total Assets</td>
-                    <td class="py-2 text-right font-bold text-gray-900 dark:text-white">{{@data.formatted_total_assets}}</td>
+                    <td class="py-2 text-right font-bold text-gray-900 dark:text-white">{{format-currency @data.total_assets @data.currency}}</td>
                 </tr>
             </tfoot>
         </table>
@@ -38,14 +38,14 @@
                     <tr class="border-b border-gray-100 dark:border-gray-700">
                         <td class="py-1.5 text-gray-700 dark:text-gray-300">{{item.name}}</td>
                         <td class="py-1.5 text-xs text-gray-400">{{item.code}}</td>
-                        <td class="py-1.5 text-right font-medium text-gray-900 dark:text-white">{{item.formatted_balance}}</td>
+                        <td class="py-1.5 text-right font-medium text-gray-900 dark:text-white">{{format-currency item.balance @data.currency}}</td>
                     </tr>
                 {{/each}}
             </tbody>
             <tfoot>
                 <tr class="border-t-2 border-gray-300">
                     <td colspan="2" class="py-2 font-semibold text-gray-900 dark:text-white">Total Liabilities</td>
-                    <td class="py-2 text-right font-bold text-gray-900 dark:text-white">{{@data.formatted_total_liabilities}}</td>
+                    <td class="py-2 text-right font-bold text-gray-900 dark:text-white">{{format-currency @data.total_liabilities @data.currency}}</td>
                 </tr>
             </tfoot>
         </table>
@@ -60,14 +60,14 @@
                     <tr class="border-b border-gray-100 dark:border-gray-700">
                         <td class="py-1.5 text-gray-700 dark:text-gray-300">{{item.name}}</td>
                         <td class="py-1.5 text-xs text-gray-400">{{item.code}}</td>
-                        <td class="py-1.5 text-right font-medium text-gray-900 dark:text-white">{{item.formatted_balance}}</td>
+                        <td class="py-1.5 text-right font-medium text-gray-900 dark:text-white">{{format-currency item.balance @data.currency}}</td>
                     </tr>
                 {{/each}}
             </tbody>
             <tfoot>
                 <tr class="border-t-2 border-gray-300">
                     <td colspan="2" class="py-2 font-semibold text-gray-900 dark:text-white">Total Equity</td>
-                    <td class="py-2 text-right font-bold text-gray-900 dark:text-white">{{@data.formatted_total_equity}}</td>
+                    <td class="py-2 text-right font-bold text-gray-900 dark:text-white">{{format-currency @data.total_equity @data.currency}}</td>
                 </tr>
             </tfoot>
         </table>
