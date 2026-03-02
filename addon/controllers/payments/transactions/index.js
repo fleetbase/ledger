@@ -2,8 +2,8 @@ import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 
-export default class AccountingAccountsIndexController extends Controller {
-    @service accountActions;
+export default class PaymentsTransactionsIndexController extends Controller {
+    @service transactionActions;
     @service tableContext;
     @service intl;
 
@@ -19,19 +19,10 @@ get columns() {
         return [
             {
                 sticky: true,
-                label: this.intl.t('column.name'),
-                valuePath: 'name',
+                label: this.intl.t('column.id'),
+                valuePath: 'public_id',
                 cellComponent: 'table/cell/anchor',
-                action: this.accountActions.transition.view,
-                resizable: true,
-                sortable: true,
-                filterable: true,
-                filterParam: 'name',
-                filterComponent: 'filter/string',
-            },
-            {
-                label: this.intl.t('column.code'),
-                valuePath: 'code',
+                action: this.transactionActions.transition.view,
                 resizable: true,
                 sortable: true,
             },
@@ -45,8 +36,8 @@ get columns() {
                 filterComponent: 'filter/string',
             },
             {
-                label: this.intl.t('column.balance'),
-                valuePath: 'balance',
+                label: this.intl.t('column.amount'),
+                valuePath: 'amount',
                 resizable: true,
                 sortable: true,
             },
@@ -57,6 +48,12 @@ get columns() {
                 resizable: true,
                 sortable: true,
             },
+            {
+                label: this.intl.t('column.created-at'),
+                valuePath: 'createdAt',
+                resizable: true,
+                sortable: true,
+            },
         ];
     }
 
@@ -64,26 +61,13 @@ get actionButtons() {
         return [
             {
                 icon: 'refresh',
-                onClick: this.accountActions.refresh,
+                onClick: this.transactionActions.refresh,
                 helpText: this.intl.t('common.refresh'),
-            },
-            {
-                text: this.intl.t('common.new'),
-                type: 'primary',
-                icon: 'plus',
-                onClick: this.accountActions.transition.create,
             },
         ];
     }
 
 get bulkActions() {
-        const selected = this.tableContext.getSelectedRows();
-        return [
-            {
-                label: this.intl.t('common.delete-selected-count', { count: selected.length }),
-                class: 'text-red-500',
-                fn: this.accountActions.bulkDelete,
-            },
-        ];
+        return [];
     }
 }

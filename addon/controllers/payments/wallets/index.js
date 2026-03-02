@@ -2,8 +2,8 @@ import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 
-export default class AccountingAccountsIndexController extends Controller {
-    @service accountActions;
+export default class PaymentsWalletsIndexController extends Controller {
+    @service walletActions;
     @service tableContext;
     @service intl;
 
@@ -22,7 +22,7 @@ get columns() {
                 label: this.intl.t('column.name'),
                 valuePath: 'name',
                 cellComponent: 'table/cell/anchor',
-                action: this.accountActions.transition.view,
+                action: this.walletActions.transition.view,
                 resizable: true,
                 sortable: true,
                 filterable: true,
@@ -30,19 +30,16 @@ get columns() {
                 filterComponent: 'filter/string',
             },
             {
-                label: this.intl.t('column.code'),
-                valuePath: 'code',
-                resizable: true,
-                sortable: true,
-            },
-            {
                 label: this.intl.t('column.type'),
                 valuePath: 'type',
                 resizable: true,
                 sortable: true,
-                filterable: true,
-                filterParam: 'type',
-                filterComponent: 'filter/string',
+            },
+            {
+                label: this.intl.t('column.currency'),
+                valuePath: 'currency',
+                resizable: true,
+                sortable: true,
             },
             {
                 label: this.intl.t('column.balance'),
@@ -64,14 +61,8 @@ get actionButtons() {
         return [
             {
                 icon: 'refresh',
-                onClick: this.accountActions.refresh,
+                onClick: this.walletActions.refresh,
                 helpText: this.intl.t('common.refresh'),
-            },
-            {
-                text: this.intl.t('common.new'),
-                type: 'primary',
-                icon: 'plus',
-                onClick: this.accountActions.transition.create,
             },
         ];
     }
@@ -82,7 +73,7 @@ get bulkActions() {
             {
                 label: this.intl.t('common.delete-selected-count', { count: selected.length }),
                 class: 'text-red-500',
-                fn: this.accountActions.bulkDelete,
+                fn: this.walletActions.bulkDelete,
             },
         ];
     }

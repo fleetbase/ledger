@@ -2,18 +2,17 @@ import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 
-export default class AccountingAccountsIndexController extends Controller {
-    @service accountActions;
+export default class PaymentsGatewaysIndexController extends Controller {
+    @service gatewayActions;
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status'];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type'];
     @tracked page = 1;
     @tracked limit = null;
     @tracked sort = '-created_at';
     @tracked query = null;
     @tracked type = null;
-    @tracked status = null;
     @tracked table = null;
 get columns() {
         return [
@@ -22,7 +21,7 @@ get columns() {
                 label: this.intl.t('column.name'),
                 valuePath: 'name',
                 cellComponent: 'table/cell/anchor',
-                action: this.accountActions.transition.view,
+                action: this.gatewayActions.transition.view,
                 resizable: true,
                 sortable: true,
                 filterable: true,
@@ -30,30 +29,20 @@ get columns() {
                 filterComponent: 'filter/string',
             },
             {
-                label: this.intl.t('column.code'),
-                valuePath: 'code',
-                resizable: true,
-                sortable: true,
-            },
-            {
                 label: this.intl.t('column.type'),
                 valuePath: 'type',
                 resizable: true,
                 sortable: true,
-                filterable: true,
-                filterParam: 'type',
-                filterComponent: 'filter/string',
             },
             {
-                label: this.intl.t('column.balance'),
-                valuePath: 'balance',
+                label: this.intl.t('column.sandbox'),
+                valuePath: 'sandbox',
+                cellComponent: 'table/cell/boolean',
                 resizable: true,
-                sortable: true,
             },
             {
-                label: this.intl.t('column.status'),
-                valuePath: 'status',
-                cellComponent: 'table/cell/status',
+                label: this.intl.t('column.created-at'),
+                valuePath: 'createdAt',
                 resizable: true,
                 sortable: true,
             },
@@ -64,14 +53,14 @@ get actionButtons() {
         return [
             {
                 icon: 'refresh',
-                onClick: this.accountActions.refresh,
+                onClick: this.gatewayActions.refresh,
                 helpText: this.intl.t('common.refresh'),
             },
             {
                 text: this.intl.t('common.new'),
                 type: 'primary',
                 icon: 'plus',
-                onClick: this.accountActions.transition.create,
+                onClick: this.gatewayActions.transition.create,
             },
         ];
     }
@@ -82,7 +71,7 @@ get bulkActions() {
             {
                 label: this.intl.t('common.delete-selected-count', { count: selected.length }),
                 class: 'text-red-500',
-                fn: this.accountActions.bulkDelete,
+                fn: this.gatewayActions.bulkDelete,
             },
         ];
     }

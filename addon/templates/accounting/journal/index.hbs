@@ -1,15 +1,15 @@
-<Layout::Section::Body>
-    <Table
-        @rows={{@model}}
-        @columns={{this.columns}}
-        @selectable={{true}}
-        @canSelectAll={{true}}
-        @onSetup={{fn (mut this.table)}}
-        @pagination={{true}}
-        @paginationMeta={{@model.meta}}
-        @page={{this.page}}
-        @onPageChange={{fn (mut this.page)}}
-        @onRowClick={{this.viewEntry}}
-    />
-</Layout::Section::Body>
+<Layout::Resource::Tabular
+    @resource="ledger-journal"
+    @title={{t "resource.journal-entries"}}
+    @searchQuery={{this.query}}
+    @onSearch={{perform this.journalActions.controllerSearchTask this}}
+    @data={{@model}}
+    @columns={{this.columns}}
+    @page={{this.page}}
+    @onPageChange={{fn (mut this.page)}}
+    @setupTable={{fn (mut this.table)}}
+    @actionButtons={{this.actionButtons}}
+    @bulkActions={{this.bulkActions}}
+    @controller={{this}}
+/>
 {{outlet}}
