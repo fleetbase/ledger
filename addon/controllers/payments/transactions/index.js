@@ -58,14 +58,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
     }
 
     get bulkActions() {
-        return [
-            {
-                label: this.intl.t('common.delete-resource', { resource: this.intl.t('resource.transactions') }),
-                icon: 'trash',
-                class: 'text-red-500',
-                fn: this.transactionActions.bulkDelete,
-            },
-        ];
+        return [];
     }
 
     get columns() {
@@ -297,13 +290,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                         fn: this.transactionActions.transition.view,
                         permission: 'ledger view transaction',
                     },
-                    { separator: true },
-                    {
-                        label: this.intl.t('common.delete-resource', { resource: this.intl.t('resource.transaction') }),
-                        icon: 'trash',
-                        fn: this.transactionActions.delete,
-                        permission: 'ledger delete transaction',
-                    },
+
                 ],
                 sortable: false,
                 filterable: false,

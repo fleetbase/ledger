@@ -1,6 +1,9 @@
 import Model, { attr } from '@ember-data/model';
+import { computed } from '@ember/object';
+import { format as formatDate, formatDistanceToNow, isValid as isValidDate } from 'date-fns';
 
 export default class LedgerJournalModel extends Model {
+    @attr('string') public_id;
     @attr('string') number;
     @attr('string') type;
     @attr('string') currency;
@@ -21,5 +24,66 @@ export default class LedgerJournalModel extends Model {
 
     get entry_source() {
         return this.is_system_entry ? 'System' : 'Manual';
+    }
+
+    @computed('created_at') get createdAtAgo() {
+        if (!isValidDate(this.created_at)) {
+            return null;
+        }
+        return formatDistanceToNow(this.created_at);
+    }
+
+    @computed('created_at') get createdAt() {
+        if (!isValidDate(this.created_at)) {
+            return null;
+        }
+        return formatDate(this.created_at, 'PP HH:mm');
+    }
+
+    @computed('created_at') get createdAtShort() {
+        if (!isValidDate(this.created_at)) {
+            return null;
+        }
+        return formatDate(this.created_at, 'dd, MMM');
+    }
+    @computed('updated_at') get updatedAtAgo() {
+        if (!isValidDate(this.updated_at)) {
+            return null;
+        }
+        return formatDistanceToNow(this.updated_at);
+    }
+
+    @computed('updated_at') get updatedAt() {
+        if (!isValidDate(this.updated_at)) {
+            return null;
+        }
+        return formatDate(this.updated_at, 'PP HH:mm');
+    }
+
+    @computed('updated_at') get updatedAtShort() {
+        if (!isValidDate(this.updated_at)) {
+            return null;
+        }
+        return formatDate(this.updated_at, 'dd, MMM');
+    }
+    @computed('entry_date') get entryDateAgo() {
+        if (!isValidDate(this.entry_date)) {
+            return null;
+        }
+        return formatDistanceToNow(this.entry_date);
+    }
+
+    @computed('entry_date') get entryDate() {
+        if (!isValidDate(this.entry_date)) {
+            return null;
+        }
+        return formatDate(this.entry_date, 'PP HH:mm');
+    }
+
+    @computed('entry_date') get entryDateShort() {
+        if (!isValidDate(this.entry_date)) {
+            return null;
+        }
+        return formatDate(this.entry_date, 'dd, MMM');
     }
 }
