@@ -670,24 +670,20 @@ class WalletService
     }
 
     /**
-     * Provision a personal wallet for a newly created user.
+     * Provision a personal wallet for a user.
      *
-     * Only provisions wallets for users with type 'driver' or 'customer'.
-     * The wallet is scoped to the user's company so that a user who works
-     * for multiple companies gets a separate wallet per company.
+     * Every user gets a wallet regardless of their type, scoped to their
+     * company so that a user who belongs to multiple companies receives a
+     * separate wallet per company.
      *
      * Safe to call multiple times — uses firstOrCreate keyed on
      * (company_uuid, subject_uuid, subject_type).
      *
      * @param  \Fleetbase\Models\User  $user
-     * @return \Fleetbase\Ledger\Models\Wallet|null  null if the user type does not warrant a wallet
+     * @return \Fleetbase\Ledger\Models\Wallet|null  null if the user has no company
      */
     public function provisionUserWallet(User $user): ?Wallet
     {
-        if (!in_array($user->type, ['driver', 'customer'])) {
-            return null;
-        }
-
         $companyUuid = $user->company_uuid;
         if (empty($companyUuid)) {
             return null;
@@ -695,10 +691,6 @@ class WalletService
 
         $currency    = optional($user->company)->currency ?? config('ledger.default_currency', 'USD');
         $subjectType = Utils::getMutationType(User::class);
-        $walletName  = $user->type === 'driver' ? 'Driver Earnings Wallet' : 'Customer Wallet';
-        $description = $user->type === 'driver'
-            ? 'Personal earnings wallet for driver payouts.'
-            : 'Personal wallet for customer credits and prepaid balance.';
 
         return Wallet::firstOrCreate(
             [
@@ -710,8 +702,8 @@ class WalletService
                 'company_uuid' => $companyUuid,
                 'subject_uuid' => $user->uuid,
                 'subject_type' => $subjectType,
-                'name'         => $walletName,
-                'description'  => $description,
+                'name'         => 'Personal Wallet',
+                'description'  => 'Personal wallet for credits, earnings, and prepaid balance.',
                 'currency'     => $currency,
                 'balance'      => 0,
                 'status'       => 'active',

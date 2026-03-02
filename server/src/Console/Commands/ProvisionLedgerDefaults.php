@@ -88,22 +88,17 @@ class ProvisionLedgerDefaults extends Command
         $bar->finish();
         $this->newLine(2);
 
-        // ── Users (driver / customer personal wallets) ────────────────────────
+         // ── Users (personal wallets for all users) ───────────────────────────
         if (!$skipWallets) {
-            $usersQuery = User::whereIn('type', ['driver', 'customer'])
-                ->whereNotNull('company_uuid');
-
+            $usersQuery = User::whereNotNull('company_uuid');
             if ($companyUuid) {
                 $usersQuery->where('company_uuid', $companyUuid);
             }
-
             $users = $usersQuery->get();
-
             if ($users->isNotEmpty()) {
-                $this->info('[Ledger] Provisioning wallets for ' . $users->count() . ' driver/customer user(s)...');
+                $this->info('[Ledger] Provisioning personal wallets for ' . $users->count() . ' user(s)...');
                 $userBar = $this->output->createProgressBar($users->count());
                 $userBar->start();
-
                 foreach ($users as $user) {
                     try {
                         $walletService->provisionUserWallet($user);
@@ -115,11 +110,10 @@ class ProvisionLedgerDefaults extends Command
                     }
                     $userBar->advance();
                 }
-
                 $userBar->finish();
                 $this->newLine(2);
             } else {
-                $this->info('[Ledger] No driver/customer users found to provision wallets for.');
+                $this->info('[Ledger] No users found to provision wallets for.');
             }
         }
 
@@ -130,7 +124,7 @@ class ProvisionLedgerDefaults extends Command
 
         if (!$skipWallets) {
             $this->info("[Ledger] System wallets provisioned for {$companyWallets} company/companies.");
-            $this->info("[Ledger] Personal wallets provisioned for {$userWallets} driver/customer user(s).");
+            $this->info("[Ledger] Personal wallets provisioned for {$userWallets} user(s).");
         }
 
         if ($errors > 0) {
