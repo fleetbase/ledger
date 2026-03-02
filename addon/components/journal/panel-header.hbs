@@ -12,4 +12,16 @@
             <span class="text-xs text-gray-500 mt-0.5">{{n-a @resource.entryDate}}</span>
         </div>
     </div>
+    <div class="next-view-header-right">
+        <Layout::Resource::Panel::HeaderActions
+            @resource={{@resource}}
+            @saveTask={{@saveTask}}
+            @saveOptions={{@saveOptions}}
+            @saveDisabled={{@saveDisabled}}
+            @pojoResource={{@pojoResource}}
+            @authSchema={{@authSchema}}
+            @actionButtons={{@actionButtons}}
+            @onPressCancel={{@onPressCancel}}
+        />
+    </div>
 </div>

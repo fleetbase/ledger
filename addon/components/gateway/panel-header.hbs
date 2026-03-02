@@ -14,4 +14,16 @@
             <Badge @status={{@resource.status_label}} @color={{if @resource.is_active "green" "gray"}}>{{@resource.status_label}}</Badge>
         </div>
     </div>
+    <div class="next-view-header-right">
+        <Layout::Resource::Panel::HeaderActions
+            @resource={{@resource}}
+            @saveTask={{@saveTask}}
+            @saveOptions={{@saveOptions}}
+            @saveDisabled={{@saveDisabled}}
+            @pojoResource={{@pojoResource}}
+            @authSchema={{@authSchema}}
+            @actionButtons={{@actionButtons}}
+            @onPressCancel={{@onPressCancel}}
+        />
+    </div>
 </div>
