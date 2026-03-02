@@ -1,0 +1,16 @@
+<Layout::Resource::Panel
+    @title={{@model.name}}
+    @actionButtons={{this.actionButtons}}
+    @onClose={{route-action "transitionTo" "console.ledger.payments.gateways.index"}}
+>
+    <:header>
+        <Gateway::PanelHeader @gateway={{@model}} />
+    </:header>
+    <:default>
+        <TabNavigation @tabs={{this.tabs}}>
+            <:default>
+                {{outlet}}
+            </:default>
+        </TabNavigation>
+    </:default>
+</Layout::Resource::Panel>
