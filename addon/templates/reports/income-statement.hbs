@@ -12,7 +12,7 @@
     </div>
 </Layout::Section::Header>
 <Layout::Section::Body class="overflow-y-auto h-full">
-    <div class="p-6 max-w-4xl">
+    <div class="p-6">
         {{#if this.loadReport.isRunning}}
             <div class="flex items-center justify-center py-20"><Spinner /></div>
         {{else if this.data}}
@@ -31,7 +31,7 @@
                 <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-t">
                     <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Revenue</h3>
                 </div>
-                <table class="w-full text-sm border border-t-0 border-gray-200 dark:border-gray-700 rounded-b">
+                <table class="w-full text-sm border border-t-0 border-gray-200 dark:border-gray-700 rounded-b overflow-hidden">
                     <tbody>
                         {{#each this.data.revenue as |item|}}
                             <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -44,7 +44,7 @@
                         {{/each}}
                     </tbody>
                     <tfoot>
-                        <tr class="bg-gray-50 dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-600">
+                        <tr class="bg-gray-50 dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-700">
                             <td colspan="2" class="px-4 py-2.5 font-semibold text-gray-900 dark:text-white">Total Revenue</td>
                             <td class="px-4 py-2.5 text-right font-bold text-green-600 dark:text-green-400">{{format-currency this.data.total_revenue this.companyCurrency}}</td>
                         </tr>
@@ -57,7 +57,7 @@
                 <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-t">
                     <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Expenses</h3>
                 </div>
-                <table class="w-full text-sm border border-t-0 border-gray-200 dark:border-gray-700 rounded-b">
+                <table class="w-full text-sm border border-t-0 border-gray-200 dark:border-gray-700 rounded-b overflow-hidden">
                     <tbody>
                         {{#each this.data.expenses as |item|}}
                             <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -70,7 +70,7 @@
                         {{/each}}
                     </tbody>
                     <tfoot>
-                        <tr class="bg-gray-50 dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-600">
+                        <tr class="bg-gray-50 dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-700">
                             <td colspan="2" class="px-4 py-2.5 font-semibold text-gray-900 dark:text-white">Total Expenses</td>
                             <td class="px-4 py-2.5 text-right font-bold text-red-600 dark:text-red-400">{{format-currency this.data.total_expenses this.companyCurrency}}</td>
                         </tr>
@@ -79,7 +79,7 @@
             </div>
 
             {{! Net Income }}
-            <div class="border-t-2 border-gray-400 dark:border-gray-500 pt-4">
+            <div class="border-t-2 border-gray-400 dark:border-gray-700 pt-4">
                 <div class="flex justify-between items-center py-1">
                     <span class="text-base font-bold text-gray-900 dark:text-white">Net Income</span>
                     <span class="text-base font-bold {{if this.data.profitable "text-green-600 dark:text-green-400" "text-red-600 dark:text-red-400"}}">
