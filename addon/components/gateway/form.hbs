@@ -117,6 +117,45 @@
                 />
             </InputGroup>
 
+            {{! URLs }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                URLs
+            </div>
+
+            <InputGroup
+                @name="Return URL"
+                @helpText="The URL the customer is redirected to after a successful payment."
+                @wrapperClass="col-span-2"
+            >
+                <Input
+                    @value={{@resource.return_url}}
+                    @type="url"
+                    class="w-full form-input"
+                    placeholder="https://yourapp.com/payment/success"
+                    disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+
+            <InputGroup
+                @name="Webhook / Callback URL"
+                @helpText="The URL the gateway will POST payment events to. Register this in your gateway dashboard."
+                @wrapperClass="col-span-2"
+            >
+                <Input
+                    @value={{@resource.webhook_url}}
+                    @type="url"
+                    class="w-full form-input"
+                    placeholder="https://yourapp.com/ledger/webhooks/stripe"
+                    disabled={{cannot-write @resource}}
+                />
+                {{#if @resource.system_webhook_url}}
+                    <div class="mt-1 text-[11px] text-gray-500">
+                        System webhook URL:
+                        <span class="font-mono select-all">{{@resource.system_webhook_url}}</span>
+                    </div>
+                {{/if}}
+            </InputGroup>
+
         </div>
     </ContentPanel>
 

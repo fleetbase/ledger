@@ -97,6 +97,7 @@ class LedgerServiceProvider extends CoreServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \Fleetbase\Ledger\Console\Commands\ProvisionLedgerDefaults::class,
+                \Fleetbase\Ledger\Console\Commands\BackfillTransactionDirection::class,
             ]);
         }
     }

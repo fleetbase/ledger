@@ -19,8 +19,9 @@ export default class GatewayFormComponent extends Component {
 
     @task *loadDrivers() {
         try {
-            const drivers = yield this.fetch.get('gateways/drivers', {}, { namespace: 'ledger/int/v1' });
-            this.availableDrivers = drivers ?? [];
+            const response = yield this.fetch.get('gateways/drivers', {}, { namespace: 'ledger/int/v1' });
+            // The endpoint returns { status: 'ok', drivers: [...] }
+            this.availableDrivers = response?.drivers ?? response ?? [];
 
             // If the resource already has a driver selected, load its schema
             if (this.args.resource?.driver) {

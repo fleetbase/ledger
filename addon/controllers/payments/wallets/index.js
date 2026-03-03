@@ -18,6 +18,8 @@ export default class PaymentsWalletsIndexController extends Controller {
         'status',
         'currency',
         'is_frozen',
+        'subject',
+        'subject_type',
         'created_at',
         'updated_at',
     ];
@@ -31,6 +33,8 @@ export default class PaymentsWalletsIndexController extends Controller {
     @tracked status = null;
     @tracked currency = null;
     @tracked is_frozen = null;
+    @tracked subject = null;
+    @tracked subject_type = null;
     @tracked created_at = null;
     @tracked updated_at = null;
     @tracked table = null;
@@ -140,6 +144,17 @@ export default class PaymentsWalletsIndexController extends Controller {
                 sortable: true,
                 filterable: true,
                 filterComponent: 'filter/date',
+            },
+            // ── Owner (subject) column ───────────────────────────────────────
+            {
+                label: this.intl.t('column.owner'),
+                valuePath: 'subject.name',
+                width: 180,
+                resizable: true,
+                sortable: false,
+                filterable: true,
+                filterParam: 'subject',
+                filterComponent: 'filter/string',
             },
             // ── Hidden / toggleable columns ──────────────────────────────────
             {

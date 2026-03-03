@@ -12,6 +12,9 @@ export default class LedgerGatewayModel extends Model {
     @attr('string') status;
     @attr('string') environment;
     @attr('boolean') is_default;
+    @attr('string') return_url;
+    @attr('string') webhook_url;
+    @attr('string') system_webhook_url;
     @attr('raw') config;
     @attr('raw') config_schema;
     @attr('date') created_at;

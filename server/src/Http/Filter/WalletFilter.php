@@ -8,7 +8,9 @@ class WalletFilter extends Filter
 {
     public function queryForInternal(): void
     {
-        $this->builder->where('company_uuid', $this->session->get('company'));
+        $this->builder
+            ->where('company_uuid', $this->session->get('company'))
+            ->with(['subject']);
     }
 
     public function queryForPublic(): void
@@ -55,6 +57,25 @@ class WalletFilter extends Filter
             return;
         }
         $this->builder->where('is_frozen', filter_var($isFrozen, FILTER_VALIDATE_BOOLEAN));
+    }
+
+    /**
+     * Filter by subject UUID (the entity that owns the wallet).
+     */
+    public function subject(?string $subject): void
+    {
+        $this->builder->where('subject_uuid', $subject);
+    }
+
+    /**
+     * Filter by subject_type class name fragment (e.g. 'driver', 'customer', 'company').
+     */
+    public function subjectType(?string $subjectType): void
+    {
+        if (!$subjectType) {
+            return;
+        }
+        $this->builder->where('subject_type', 'like', '%' . strtolower($subjectType) . '%');
     }
 
     public function publicId(?string $publicId): void
