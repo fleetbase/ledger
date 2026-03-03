@@ -1,4 +1,140 @@
-<Layout::Section::Header @title="Wallet Summary" />
-<Layout::Section::Body>
-    {{outlet}}
+<Layout::Section::Header @title="Wallet Summary" @actionsWrapperClass="flex flex-row items-center space-x-2">
+    <div class="flex flex-row items-center space-x-2">
+        <DatePicker
+            @value={{this.dateRange}}
+            @range={{true}}
+            @onSelect={{this.onDateRangeChanged}}
+            @autoClose={{true}}
+            @placeholder="Select period"
+            class="w-52 form-input form-input-sm"
+        />
+        <Button @size="sm" @type="default" @icon="refresh" @helpText="Refresh" {{on "click" this.reload}} />
+    </div>
+</Layout::Section::Header>
+<Layout::Section::Body class="overflow-y-auto h-full">
+    <div class="p-6 max-w-5xl">
+        {{#if this.loadReport.isRunning}}
+            <div class="flex items-center justify-center py-20"><Spinner /></div>
+        {{else if this.data}}
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Wallet Summary</h2>
+                    {{#if this.data.period}}
+                        <p class="text-sm text-gray-500 mt-0.5">
+                            {{this.data.period.from}} &ndash; {{this.data.period.to}}
+                        </p>
+                    {{/if}}
+                </div>
+            </div>
+
+            {{! Wallet counts by owner type }}
+            <div class="mb-6">
+                <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-t">
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Wallets by Owner Type</h3>
+                </div>
+                <table class="w-full text-sm border border-t-0 border-gray-200 dark:border-gray-700 rounded-b">
+                    <thead>
+                        <tr class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner Type</th>
+                            <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Count</th>
+                            <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Balance</th>
+                            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Currency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each this.data.wallet_counts as |row|}}
+                            <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <td class="px-4 py-2">
+                                    <Badge @color="blue">{{or row.type "unknown"}}</Badge>
+                                </td>
+                                <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300">{{row.count}}</td>
+                                <td class="px-4 py-2 text-right font-medium text-gray-900 dark:text-white">
+                                    {{format-currency row.total_balance (or row.currency this.companyCurrency)}}
+                                </td>
+                                <td class="px-4 py-2 text-gray-500 font-mono text-xs">{{or row.currency "—"}}</td>
+                            </tr>
+                        {{else}}
+                            <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400 text-sm">No wallet data</td></tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+
+            {{! Period transaction stats }}
+            {{#if this.periodStats.length}}
+                <div class="mb-6">
+                    <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-t">
+                        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Period Transaction Activity</h3>
+                    </div>
+                    <table class="w-full text-sm border border-t-0 border-gray-200 dark:border-gray-700 rounded-b">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Currency</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Credits</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Credit Count</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Debits</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Debit Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each this.periodStats as |stat|}}
+                                <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    <td class="px-4 py-2 font-mono text-xs text-gray-500">{{stat.currency}}</td>
+                                    <td class="px-4 py-2 text-right text-green-600 dark:text-green-400 font-medium">
+                                        {{format-currency stat.credits stat.currency}}
+                                    </td>
+                                    <td class="px-4 py-2 text-right text-gray-500">{{stat.credit_count}}</td>
+                                    <td class="px-4 py-2 text-right text-red-600 dark:text-red-400 font-medium">
+                                        {{format-currency stat.debits stat.currency}}
+                                    </td>
+                                    <td class="px-4 py-2 text-right text-gray-500">{{stat.debit_count}}</td>
+                                </tr>
+                            {{else}}
+                                <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400 text-sm">No transactions in this period</td></tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{/if}}
+
+            {{! Top wallets by balance }}
+            {{#if this.data.top_wallets}}
+                <div class="mb-6">
+                    <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-t">
+                        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Top Wallets by Balance</h3>
+                    </div>
+                    <table class="w-full text-sm border border-t-0 border-gray-200 dark:border-gray-700 rounded-b">
+                        <thead>
+                            <tr class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Wallet</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+                                <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each this.data.top_wallets as |wallet|}}
+                                <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    <td class="px-4 py-2 font-mono text-xs text-gray-400">{{or wallet.wallet_public_id wallet.name "—"}}</td>
+                                    <td class="px-4 py-2 text-gray-700 dark:text-gray-300">{{or wallet.subject.name "—"}}</td>
+                                    <td class="px-4 py-2">
+                                        <Badge @color="blue">{{or wallet.type "wallet"}}</Badge>
+                                    </td>
+                                    <td class="px-4 py-2 text-right font-medium text-gray-900 dark:text-white">
+                                        {{format-currency wallet.balance (or wallet.currency this.companyCurrency)}}
+                                    </td>
+                                </tr>
+                            {{else}}
+                                <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400 text-sm">No wallets found</td></tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{/if}}
+        {{else}}
+            <div class="flex flex-col items-center justify-center py-20 text-gray-400">
+                <p class="text-sm">No report data available. Select a period and refresh.</p>
+            </div>
+        {{/if}}
+    </div>
 </Layout::Section::Body>
