@@ -261,6 +261,11 @@ class LedgerSeeder extends Seeder
      * This method is safe to call from company-provisioning hooks, onboarding
      * flows, or tests. It is idempotent — existing accounts are not modified.
      *
+     * public_id is derived deterministically from the company UUID and account
+     * code so that bulk provisioning across hundreds of companies never triggers
+     * the HasPublicId collision-retry loop. The format is:
+     *   account_<first-8-chars-of-sha256(company_uuid + ':' + code)>
+     *
      * @param string $companyUuid
      *
      * @return void
@@ -268,15 +273,26 @@ class LedgerSeeder extends Seeder
     public function runForCompany(string $companyUuid): void
     {
         foreach ($this->defaultAccounts as $accountData) {
+            // Derive a stable, collision-free public_id from the company UUID
+            // and the account code. This avoids the HasPublicId entropy-collision
+            // problem that occurs when many accounts are inserted in rapid
+            // succession (same process, same second, same microsecond window).
+            $publicId = 'account_' . substr(
+                hash('sha256', $companyUuid . ':' . $accountData['code']),
+                0,
+                10
+            );
+
             Account::firstOrCreate(
                 [
                     'company_uuid' => $companyUuid,
                     'code'         => $accountData['code'],
                 ],
                 array_merge($accountData, [
+                    'public_id'    => $publicId,
                     'company_uuid' => $companyUuid,
                     'balance'      => 0,
-                    'is_active'    => true,
+                    'status'       => 'active',
                 ])
             );
         }
