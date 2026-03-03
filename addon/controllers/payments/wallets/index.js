@@ -149,7 +149,7 @@ export default class PaymentsWalletsIndexController extends Controller {
             // ── Owner (subject) column ───────────────────────────────────────
             {
                 label: this.intl.t('column.owner'),
-                valuePath: 'subject.name',
+                valuePath: 'owner_name',
                 width: 180,
                 resizable: true,
                 sortable: false,
