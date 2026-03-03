@@ -28,11 +28,11 @@
             </div>
 
             {{! Revenue }}
-            <div class="mb-6">
-                <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-t">
+            <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <div class="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                     <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Revenue</h3>
                 </div>
-                <table class="w-full text-sm border border-t-0 border-gray-200 dark:border-gray-700 rounded-b overflow-hidden">
+                <table class="w-full text-sm overflow-hidden">
                     <tbody>
                         {{#each this.data.revenue as |item|}}
                             <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -54,11 +54,11 @@
             </div>
 
             {{! Expenses }}
-            <div class="mb-6">
-                <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-t">
+            <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <div class="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                     <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Expenses</h3>
                 </div>
-                <table class="w-full text-sm border border-t-0 border-gray-200 dark:border-gray-700 rounded-b overflow-hidden">
+                <table class="w-full text-sm overflow-hidden">
                     <tbody>
                         {{#each this.data.expenses as |item|}}
                             <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
