@@ -36,6 +36,7 @@ column:
   updated-at: Updated
   amount: Amount
   balance: Balance
+  balance-after: Balance After
   total: Total
   net-amount: Net Amount
   fee: Fee
