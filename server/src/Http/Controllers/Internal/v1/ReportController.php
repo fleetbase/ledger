@@ -396,4 +396,120 @@ class ReportController extends Controller
             ],
         ]);
     }
+
+    // =========================================================================
+    // General Ledger
+    // =========================================================================
+
+    /**
+     * GET /ledger/int/v1/reports/general-ledger.
+     *
+     * Returns the full General Ledger: all active accounts for the company,
+     * each with its journal entry history and a running balance.
+     *
+     * Query parameters:
+     *   - date_from  (string, optional)  Filter entries from this date (YYYY-MM-DD).
+     *   - date_to    (string, optional)  Filter entries up to this date (YYYY-MM-DD).
+     *   - type       (string, optional)  Filter by account type (asset, liability, equity, revenue, expense).
+     *
+     * Response includes:
+     *   - accounts   Array of account objects, each with:
+     *                  account    — account details
+     *                  entries    — journal entry rows with debit_amount, credit_amount, running_balance
+     *                  summary    — total_debits, total_credits, net_balance, entry_count
+     *   - date_from  The date_from filter applied
+     *   - date_to    The date_to filter applied
+     */
+    public function generalLedger(Request $request): JsonResponse
+    {
+        $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date',
+            'type'      => 'nullable|string|in:asset,liability,equity,revenue,expense',
+        ]);
+
+        $companyUuid = session('company');
+        $dateFrom    = $request->input('date_from');
+        $dateTo      = $request->input('date_to');
+        $typeFilter  = $request->input('type');
+
+        $accountsQuery = \Fleetbase\Ledger\Models\Account::where('company_uuid', $companyUuid)
+            ->where('status', 'active')
+            ->orderBy('code');
+
+        if ($typeFilter) {
+            $accountsQuery->where('type', $typeFilter);
+        }
+
+        $accounts = $accountsQuery->get();
+
+        $result = $accounts->map(function ($account) use ($dateFrom, $dateTo) {
+            $journals = $this->ledgerService->getGeneralLedger($account, $dateFrom, $dateTo);
+
+            $isDebitNormal  = in_array($account->type, ['asset', 'expense']);
+            $runningBalance = 0;
+            $totalDebits    = 0;
+            $totalCredits   = 0;
+
+            $entries = $journals->map(function ($journal) use ($account, $isDebitNormal, &$runningBalance, &$totalDebits, &$totalCredits) {
+                $isDebit  = $journal->debit_account_uuid === $account->uuid;
+                $isCredit = $journal->credit_account_uuid === $account->uuid;
+
+                $debitAmount  = $isDebit  ? (int) $journal->amount : 0;
+                $creditAmount = $isCredit ? (int) $journal->amount : 0;
+
+                $totalDebits  += $debitAmount;
+                $totalCredits += $creditAmount;
+
+                if ($isDebitNormal) {
+                    $runningBalance += $debitAmount - $creditAmount;
+                } else {
+                    $runningBalance += $creditAmount - $debitAmount;
+                }
+
+                return [
+                    'id'              => $journal->public_id,
+                    'date'            => $journal->entry_date?->toDateString(),
+                    'number'          => $journal->number,
+                    'type'            => $journal->type,
+                    'description'     => $journal->description ?? $journal->memo,
+                    'reference'       => $journal->reference,
+                    'debit_amount'    => $debitAmount,
+                    'credit_amount'   => $creditAmount,
+                    'running_balance' => $runningBalance,
+                    'currency'        => $journal->currency ?? $account->currency,
+                    'is_system_entry' => (bool) $journal->is_system_entry,
+                ];
+            });
+
+            return [
+                'account' => [
+                    'id'       => $account->public_id,
+                    'uuid'     => $account->uuid,
+                    'name'     => $account->name,
+                    'code'     => $account->code,
+                    'type'     => $account->type,
+                    'currency' => $account->currency,
+                    'balance'  => $account->balance,
+                ],
+                'entries' => $entries,
+                'summary' => [
+                    'total_debits'  => $totalDebits,
+                    'total_credits' => $totalCredits,
+                    'net_balance'   => $isDebitNormal ? ($totalDebits - $totalCredits) : ($totalCredits - $totalDebits),
+                    'currency'      => $account->currency,
+                    'entry_count'   => $entries->count(),
+                ],
+            ];
+        });
+
+        return response()->json([
+            'status' => 'ok',
+            'data'   => [
+                'accounts'  => $result,
+                'date_from' => $dateFrom,
+                'date_to'   => $dateTo,
+            ],
+        ]);
+    }
 }
