@@ -1,6 +1,8 @@
 import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
+import { inject as service } from '@ember/service';
+import { task } from 'ember-concurrency';
 
 const ACCOUNT_TYPES = [
     { label: 'All Types', value: null },
@@ -12,8 +14,10 @@ const ACCOUNT_TYPES = [
 ];
 
 export default class AccountingGeneralLedgerController extends Controller {
-    queryParams = ['date_from', 'date_to', 'type'];
+    @service fetch;
 
+    @tracked accounts = [];
+    @tracked isLoading = false;
     @tracked date_from = null;
     @tracked date_to = null;
     @tracked type = null;
@@ -32,16 +36,40 @@ export default class AccountingGeneralLedgerController extends Controller {
         return ACCOUNT_TYPES.find((t) => t.value === this.type) ?? ACCOUNT_TYPES[0];
     }
 
+    @task *loadGeneralLedger() {
+        this.isLoading = true;
+        try {
+            const params = {};
+            if (this.date_from) params.date_from = this.date_from;
+            if (this.date_to) params.date_to = this.date_to;
+            if (this.type) params.type = this.type;
+
+            const result = yield this.fetch.get('reports/general-ledger', params, { namespace: 'ledger/int/v1' });
+            this.accounts = result?.data?.accounts ?? [];
+        } catch {
+            this.accounts = [];
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    @action reload() {
+        this.loadGeneralLedger.perform();
+    }
+
     @action setType(option) {
         this.type = option?.value ?? null;
+        this.loadGeneralLedger.perform();
     }
 
-    @action setDateFrom(event) {
-        this.date_from = event?.target?.value || null;
+    @action setDateFrom(value) {
+        this.date_from = value || null;
+        this.loadGeneralLedger.perform();
     }
 
-    @action setDateTo(event) {
-        this.date_to = event?.target?.value || null;
+    @action setDateTo(value) {
+        this.date_to = value || null;
+        this.loadGeneralLedger.perform();
     }
 
     @action toggleAccount(accountId) {
@@ -53,7 +81,7 @@ export default class AccountingGeneralLedgerController extends Controller {
 
     @action expandAll() {
         const map = {};
-        (this.model?.accounts ?? []).forEach((a) => {
+        this.accounts.forEach((a) => {
             map[a.account.id] = true;
         });
         this.expandedMap = map;
