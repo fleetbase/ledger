@@ -10,7 +10,6 @@ use Fleetbase\Ledger\Models\Wallet;
 use Fleetbase\Ledger\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class WalletController extends LedgerResourceController
 {
@@ -159,7 +158,7 @@ class WalletController extends LedgerResourceController
      * Get the transaction history for a specific wallet.
      * Queries the core Transaction model filtered by owner (wallet).
      */
-    public function getTransactions(string $id, Request $request): AnonymousResourceCollection
+    public function getTransactions(string $id, Request $request): JsonResponse
     {
         $wallet = $this->resolveWallet($id);
 
@@ -172,7 +171,15 @@ class WalletController extends LedgerResourceController
             ->orderBy('created_at', 'desc')
             ->paginate($request->input('limit', 25));
 
-        return TransactionResource::collection($transactions);
+        return response()->json([
+            'data' => TransactionResource::collection($transactions)->resolve(),
+            'meta' => [
+                'total'        => $transactions->total(),
+                'per_page'     => $transactions->perPage(),
+                'current_page' => $transactions->currentPage(),
+                'last_page'    => $transactions->lastPage(),
+            ],
+        ]);
     }
 
     // =========================================================================

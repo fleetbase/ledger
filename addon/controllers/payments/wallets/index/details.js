@@ -20,10 +20,67 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
     }
 
     get actionButtons() {
+        const wallet = this.model;
+        const isFrozen = wallet?.is_frozen;
+
         return [
             { label: 'Add Funds', icon: 'plus-circle', type: 'primary', helpText: 'Add funds to this wallet balance.', onClick: this.topUpWallet },
             { label: 'Transfer', icon: 'exchange-alt', helpText: 'Transfer funds from this wallet to another wallet.', onClick: this.transferFunds },
+            {
+                label: isFrozen ? 'Unfreeze' : 'Freeze',
+                icon: isFrozen ? 'unlock' : 'lock',
+                type: isFrozen ? 'default' : 'danger',
+                helpText: isFrozen ? 'Unfreeze this wallet to allow debits.' : 'Freeze this wallet to block all debits.',
+                onClick: isFrozen ? this.unfreezeWallet : this.freezeWallet,
+            },
         ];
+    }
+
+    @action async freezeWallet() {
+        const wallet = this.model;
+
+        this.modalsManager.confirm({
+            title: `Freeze ${wallet.name}?`,
+            body: 'Freezing this wallet will block all debit transactions. Credits will still be accepted. You can unfreeze it at any time.',
+            acceptButtonText: 'Freeze Wallet',
+            acceptButtonIcon: 'lock',
+            acceptButtonScheme: 'danger',
+            confirm: async (modal) => {
+                modal.startLoading();
+                try {
+                    await this.fetch.post(`wallets/${wallet.id}/freeze`, {}, { namespace: 'ledger/int/v1' });
+                    this.notifications.success(`${wallet.name} has been frozen.`);
+                    await wallet.reload();
+                    modal.done();
+                } catch (error) {
+                    this.notifications.serverError(error);
+                    modal.stopLoading();
+                }
+            },
+        });
+    }
+
+    @action async unfreezeWallet() {
+        const wallet = this.model;
+
+        this.modalsManager.confirm({
+            title: `Unfreeze ${wallet.name}?`,
+            body: 'Unfreezing this wallet will restore normal operation and allow debit transactions.',
+            acceptButtonText: 'Unfreeze Wallet',
+            acceptButtonIcon: 'unlock',
+            confirm: async (modal) => {
+                modal.startLoading();
+                try {
+                    await this.fetch.post(`wallets/${wallet.id}/unfreeze`, {}, { namespace: 'ledger/int/v1' });
+                    this.notifications.success(`${wallet.name} has been unfrozen.`);
+                    await wallet.reload();
+                    modal.done();
+                } catch (error) {
+                    this.notifications.serverError(error);
+                    modal.stopLoading();
+                }
+            },
+        });
     }
 
     @action async topUpWallet() {
@@ -34,10 +91,8 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
             acceptButtonText: 'Add Funds',
             acceptButtonIcon: 'plus-circle',
             wallet,
-            // MoneyInput @onChange fires with the already-converted cents integer
             amount: 0,
             description: '',
-            // MoneyInput calls onChange(centsInteger, detail) — store directly
             setAmount: (centsValue) => {
                 options.amount = centsValue;
             },
@@ -78,13 +133,11 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
             acceptButtonIcon: 'exchange-alt',
             wallet,
             toWallet: null,
-            // MoneyInput @onChange fires with the already-converted cents integer
             amount: 0,
             description: '',
             setToWallet: (selectedWallet) => {
                 options.toWallet = selectedWallet;
             },
-            // MoneyInput calls onChange(centsInteger, detail) — store directly
             setAmount: (centsValue) => {
                 options.amount = centsValue;
             },
