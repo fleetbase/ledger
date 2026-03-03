@@ -46,6 +46,10 @@ export default class LedgerWalletModel extends Model {
         return s.email || s.phone || null;
     }
 
+    @computed('is_frozen') get is_frozen_label() {
+        return this.is_frozen ? 'Yes' : 'No';
+    }
+
     // ── Timestamp helpers ──────────────────────────────────────────────────
 
     @computed('created_at') get createdAtAgo() {

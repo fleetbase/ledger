@@ -99,8 +99,8 @@ export default class PaymentsGatewaysIndexController extends Controller {
             },
             {
                 label: this.intl.t('column.default'),
-                valuePath: 'is_default',
-                cellComponent: 'table/cell/boolean',
+                valuePath: 'is_default_label',
+                cellComponent: 'table/cell/base',
                 width: 80,
                 resizable: true,
                 sortable: true,

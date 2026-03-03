@@ -167,8 +167,8 @@ export default class PaymentsWalletsIndexController extends Controller {
             },
             {
                 label: this.intl.t('column.frozen'),
-                valuePath: 'is_frozen',
-                cellComponent: 'table/cell/boolean',
+                valuePath: 'is_frozen_label',
+                cellComponent: 'table/cell/base',
                 width: 80,
                 hidden: true,
                 resizable: true,

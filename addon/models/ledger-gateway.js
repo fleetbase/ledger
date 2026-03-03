@@ -20,6 +20,10 @@ export default class LedgerGatewayModel extends Model {
     @attr('date') created_at;
     @attr('date') updated_at;
 
+    @computed('is_default') get is_default_label() {
+        return this.is_default ? 'Yes' : 'No';
+    }
+
     @computed('created_at') get createdAtAgo() {
         if (!isValidDate(this.created_at)) {
             return null;
