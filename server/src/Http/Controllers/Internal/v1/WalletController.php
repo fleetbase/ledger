@@ -59,9 +59,10 @@ class WalletController extends LedgerResourceController
         );
 
         return response()->json([
-            'from_wallet' => new WalletResource($fromWallet->fresh()),
-            'to_wallet'   => new WalletResource($toWallet->fresh()),
-            'transaction' => new TransactionResource($result),
+            'from_wallet'    => new WalletResource($fromWallet->fresh()),
+            'to_wallet'      => new WalletResource($toWallet->fresh()),
+            'transaction'    => new TransactionResource($result['from']),
+            'to_transaction' => new TransactionResource($result['to']),
         ]);
     }
 
