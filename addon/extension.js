@@ -9,7 +9,7 @@ export default {
         menuService.registerHeaderMenuItem('Ledger', 'console.ledger', {
             icon: 'calculator',
             priority: 4,
-            description: 'Full-cycle accounting, invoicing, and payment management — including wallets, gateways, journal entries, and financial reports.',
+            description: 'Ledger is the financial backbone of your Fleetbase operation. Manage invoices, track payments, reconcile accounts, and gain real-time visibility into your financial position — all from a single, unified platform built for logistics businesses.',
             shortcuts: [
                 // ── Billing ──────────────────────────────────────────────────
                 {
@@ -33,7 +33,7 @@ export default {
                 },
                 {
                     title: 'Transactions',
-                    description: 'Full ledger of all payment transactions across wallets and gateways.',
+                    description: 'A complete, chronological record of every payment transaction processed across all wallets and gateways — with status tracking, gateway references, and amount details.',
                     icon: 'money-bill-transfer',
                     route: 'console.ledger.payments.transactions',
                 },
