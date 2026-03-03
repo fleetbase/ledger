@@ -60,12 +60,13 @@
             </InputGroup>
 
             <InputGroup @name="Amount" @wrapperClass="col-span-2">
-                <Input
+                <MoneyInput
                     @value={{@resource.amount}}
-                    @type="number"
-                    class="w-full form-input"
+                    @currency={{@resource.currency}}
+                    @onChange={{fn (mut @resource.amount)}}
+                    @disabled={{cannot-write @resource}}
                     placeholder="0.00"
-                    disabled={{cannot-write @resource}}
+                    class="w-full"
                 />
             </InputGroup>
 

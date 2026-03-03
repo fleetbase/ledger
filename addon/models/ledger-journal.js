@@ -27,6 +27,37 @@ export default class LedgerJournalModel extends Model {
         return this.is_system_entry ? 'System' : 'Manual';
     }
 
+    get type_label() {
+        const labels = {
+            general: 'General',
+            standard: 'Standard',
+            adjusting: 'Adjusting',
+            closing: 'Closing',
+            reversing: 'Reversing',
+            opening: 'Opening',
+            wallet_transfer: 'Wallet Transfer',
+            wallet_deposit: 'Wallet Deposit',
+            wallet_withdrawal: 'Wallet Withdrawal',
+        };
+        return labels[this.type] ?? this.type ?? null;
+    }
+
+    @computed('debit_account') get debit_account_name() {
+        return this.debit_account?.name ?? null;
+    }
+
+    @computed('debit_account') get debit_account_code() {
+        return this.debit_account?.code ?? null;
+    }
+
+    @computed('credit_account') get credit_account_name() {
+        return this.credit_account?.name ?? null;
+    }
+
+    @computed('credit_account') get credit_account_code() {
+        return this.credit_account?.code ?? null;
+    }
+
     @computed('created_at') get createdAtAgo() {
         if (!isValidDate(this.created_at)) {
             return null;
@@ -47,6 +78,7 @@ export default class LedgerJournalModel extends Model {
         }
         return formatDate(this.created_at, 'dd, MMM');
     }
+
     @computed('updated_at') get updatedAtAgo() {
         if (!isValidDate(this.updated_at)) {
             return null;
@@ -67,6 +99,7 @@ export default class LedgerJournalModel extends Model {
         }
         return formatDate(this.updated_at, 'dd, MMM');
     }
+
     @computed('entry_date') get entryDateAgo() {
         if (!isValidDate(this.entry_date)) {
             return null;
