@@ -1,53 +1,48 @@
-<Layout::Section::Header @title="General Ledger" @hideActions={{true}} />
+<Layout::Section::Header @title="General Ledger" @actionsWrapperClass="flex flex-row items-center space-x-2">
+    <div class="flex flex-row items-center space-x-2">
+        <DatePicker
+            @value={{this.date_from}}
+            @onChange={{this.setDateFrom}}
+            @placeholder="From date"
+            class="w-40 form-input form-input-sm"
+        />
+        <DatePicker
+            @value={{this.date_to}}
+            @onChange={{this.setDateTo}}
+            @placeholder="To date"
+            class="w-40 form-input form-input-sm"
+        />
+        <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+            <PowerSelect
+                @options={{this.accountTypes}}
+                @selected={{this.selectedType}}
+                @onChange={{this.setType}}
+                @searchEnabled={{false}}
+                @triggerClass="form-select form-input form-input-sm"
+                @renderInPlace={{true}}
+                as |opt|
+            >
+                {{opt.label}}
+            </PowerSelect>
+        </div>
+        <Button @size="sm" {{on "click" this.expandAll}}>
+            <FaIcon @icon="chevron-down" class="mr-1" /> Expand All
+        </Button>
+        <Button @size="sm" {{on "click" this.collapseAll}}>
+            <FaIcon @icon="chevron-right" class="mr-1" /> Collapse All
+        </Button>
+    </div>
+</Layout::Section::Header>
 <Layout::Section::Body>
     <div class="p-4 space-y-4">
 
-        {{! ── Filters ─────────────────────────────────────────────────────── }}
-        <div class="flex flex-wrap items-end gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">From</label>
-                <Input
-                    @type="date"
-                    @value={{this.date_from}}
-                    class="form-input text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white h-9 px-3"
-                    {{on "change" this.setDateFrom}}
-                />
-            </div>
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">To</label>
-                <Input
-                    @type="date"
-                    @value={{this.date_to}}
-                    class="form-input text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white h-9 px-3"
-                    {{on "change" this.setDateTo}}
-                />
-            </div>
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Account Type</label>
-                <PowerSelect
-                    @options={{this.accountTypes}}
-                    @selected={{this.selectedType}}
-                    @onChange={{this.setType}}
-                    @searchEnabled={{false}}
-                    as |opt|
-                >
-                    {{opt.label}}
-                </PowerSelect>
-            </div>
-            <div class="flex-1"></div>
-            <div class="flex items-center gap-2">
-                <Button @size="sm" {{on "click" this.expandAll}}>
-                    <FaIcon @icon="chevron-down" class="mr-1" /> Expand All
-                </Button>
-                <Button @size="sm" {{on "click" this.collapseAll}}>
-                    <FaIcon @icon="chevron-right" class="mr-1" /> Collapse All
-                </Button>
-            </div>
-        </div>
-
         {{! ── Account list ─────────────────────────────────────────────────── }}
-        {{#if @model.accounts.length}}
-            {{#each @model.accounts as |row|}}
+        {{#if this.isLoading}}
+            <div class="flex items-center justify-center py-20">
+                <LoadingIndicator />
+            </div>
+        {{else if this.accounts.length}}
+            {{#each this.accounts as |row|}}
                 {{#let row.account as |acct|}}
                     <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
 
@@ -133,8 +128,7 @@
                                 </div>
                             {{else}}
                                 <div class="px-4 py-6 text-center text-xs text-gray-400 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
-                                    No journal entries for this account
-                                    {{#if @model.date_from}}in the selected period{{/if}}.
+                                    No journal entries for this account{{#if this.date_from}} in the selected period{{/if}}.
                                 </div>
                             {{/if}}
                         {{/if}}
