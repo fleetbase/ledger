@@ -23,7 +23,7 @@
 
         {{! Report content }}
         {{#if this.isLoading}}
-            <LoadingIndicator />
+            <div class="flex items-center justify-center py-20"><Spinner /></div>
         {{else if this.reportData}}
             {{#if (eq this.activeReport "balance-sheet")}}
                 <Report::BalanceSheet @data={{this.reportData}} />
