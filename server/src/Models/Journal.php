@@ -55,7 +55,7 @@ class Journal extends Model
         'amount',
         'currency',
         'description',
-        'date',
+        'entry_date',
         'meta',
     ];
 
@@ -66,7 +66,7 @@ class Journal extends Model
      */
     protected $casts = [
         'amount' => 'integer',
-        'date'   => 'date',
+        'entry_date' => 'date',
         'meta'   => Json::class,
     ];
 

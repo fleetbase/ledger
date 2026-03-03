@@ -116,7 +116,7 @@ class LedgerService
                 'amount'              => $amount,
                 'currency'            => $currency,
                 'description'         => $description,
-                'date'                => $options['date'] ?? now(),
+                'entry_date'          => $options['entry_date'] ?? now(),
                 'meta'                => $meta,
             ]);
 
@@ -207,13 +207,13 @@ class LedgerService
             });
 
         if ($startDate) {
-            $query->where('date', '>=', $startDate);
+            $query->where('entry_date', '>=', $startDate);
         }
         if ($endDate) {
-            $query->where('date', '<=', $endDate);
+            $query->where('entry_date', '<=', $endDate);
         }
 
-        return $query->orderBy('date', 'asc')->orderBy('created_at', 'asc')->get();
+        return $query->orderBy('entry_date', 'asc')->orderBy('created_at', 'asc')->get();
     }
 
     /**
@@ -226,11 +226,11 @@ class LedgerService
     public function getBalanceAtDate(Account $account, string $date): int
     {
         $debits  = Journal::where('debit_account_uuid', $account->uuid)
-            ->where('date', '<=', $date)
+            ->where('entry_date', '<=', $date)
             ->sum('amount');
 
         $credits = Journal::where('credit_account_uuid', $account->uuid)
-            ->where('date', '<=', $date)
+            ->where('entry_date', '<=', $date)
             ->sum('amount');
 
         if (in_array($account->type, [Account::TYPE_ASSET, Account::TYPE_EXPENSE])) {
@@ -389,11 +389,11 @@ class LedgerService
         foreach ($accounts as $account) {
             // Income statement uses only activity within the period
             $debits  = Journal::where('debit_account_uuid', $account->uuid)
-                ->whereBetween('date', [$startDate, $endDate])
+                ->whereBetween('entry_date', [$startDate, $endDate])
                 ->sum('amount');
 
             $credits = Journal::where('credit_account_uuid', $account->uuid)
-                ->whereBetween('date', [$startDate, $endDate])
+                ->whereBetween('entry_date', [$startDate, $endDate])
                 ->sum('amount');
 
             if ($account->type === Account::TYPE_REVENUE) {
@@ -714,13 +714,13 @@ class LedgerService
         // Revenue trend — daily breakdown for the current period
         $revenueTrend = Journal::where('company_uuid', $companyUuid)
             ->whereHas('creditAccount', fn ($q) => $q->where('type', Account::TYPE_REVENUE))
-            ->whereBetween('date', [$startDate, $endDate])
-            ->select('date', DB::raw('sum(amount) as daily_revenue'))
-            ->groupBy('date')
-            ->orderBy('date')
+            ->whereBetween('entry_date', [$startDate, $endDate])
+            ->select('entry_date', DB::raw('sum(amount) as daily_revenue'))
+            ->groupBy('entry_date')
+            ->orderBy('entry_date')
             ->get()
             ->map(fn ($r) => [
-                'date'          => $r->date,
+                'date'          => $r->entry_date,
                 'daily_revenue' => (int) $r->daily_revenue,
             ]);
 

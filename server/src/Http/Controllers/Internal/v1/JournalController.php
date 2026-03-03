@@ -34,7 +34,7 @@ class JournalController extends LedgerResourceController
             'amount'              => 'required|integer|min:1',
             'currency'            => 'nullable|string|size:3',
             'description'         => 'required|string|max:500',
-            'date'                => 'nullable|date',
+            'entry_date'          => 'nullable|date',
         ]);
 
         $debitAccount = \Fleetbase\Ledger\Models\Account::where('company_uuid', session('company'))
@@ -54,7 +54,7 @@ class JournalController extends LedgerResourceController
                 'company_uuid' => session('company'),
                 'currency'     => $request->input('currency', 'USD'),
                 'type'         => 'manual_entry',
-                'date'         => $request->input('date', now()),
+                'entry_date'   => $request->input('entry_date', now()),
             ]
         );
 

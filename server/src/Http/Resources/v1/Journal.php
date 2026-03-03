@@ -30,7 +30,7 @@ class Journal extends FleetbaseResource
             'status'              => $this->status,
             'memo'                => $this->memo,
             'reference'           => $this->reference,
-            'date'                => $this->date,
+            'entry_date'          => $this->entry_date,
             'meta'                => $this->meta,
             'created_at'          => $this->created_at,
             'updated_at'          => $this->updated_at,
