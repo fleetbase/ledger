@@ -31,21 +31,20 @@ export default class ReportsIncomeStatementController extends Controller {
             }
             // Normalise: backend returns revenues/expenses (not revenue/expenses)
             // period is an object {from, to} not a string
-            const periodStr = raw.period?.from && raw.period?.to
-                ? `${raw.period.from} – ${raw.period.to}`
-                : null;
-            const mapItems = (arr) => (arr ?? []).map(item => ({
-                ...item,
-                amount: item.amount ?? item.balance ?? 0,
-            }));
+            const periodStr = raw.period?.from && raw.period?.to ? `${raw.period.from} – ${raw.period.to}` : null;
+            const mapItems = (arr) =>
+                (arr ?? []).map((item) => ({
+                    ...item,
+                    amount: item.amount ?? item.balance ?? 0,
+                }));
             this.data = {
-                period:         periodStr,
-                revenue:        mapItems(raw.revenues ?? raw.revenue ?? []),
-                expenses:       mapItems(raw.expenses ?? []),
-                total_revenue:  raw.total_revenue  ?? 0,
+                period: periodStr,
+                revenue: mapItems(raw.revenues ?? raw.revenue ?? []),
+                expenses: mapItems(raw.expenses ?? []),
+                total_revenue: raw.total_revenue ?? 0,
                 total_expenses: raw.total_expenses ?? 0,
-                net_income:     raw.net_income ?? 0,
-                profitable:     raw.profitable ?? false,
+                net_income: raw.net_income ?? 0,
+                profitable: raw.profitable ?? false,
             };
         } catch {
             this.data = null;

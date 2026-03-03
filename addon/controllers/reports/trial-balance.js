@@ -29,15 +29,15 @@ export default class ReportsTrialBalanceController extends Controller {
             // Normalise: backend returns accounts[].account (full model), debit_total, credit_total
             // Template expects accounts[].{code, name, type, debit, credit}, total_debits, total_credits
             this.data = {
-                as_of_date:    raw.as_of_date,
-                balanced:      raw.balanced,
-                total_debits:  raw.debit_total,
+                as_of_date: raw.as_of_date,
+                balanced: raw.balanced,
+                total_debits: raw.debit_total,
                 total_credits: raw.credit_total,
-                accounts: (raw.accounts ?? []).map(row => ({
-                    code:   row.account?.code ?? row.code ?? '',
-                    name:   row.account?.name ?? row.name ?? '',
-                    type:   row.account?.type ?? row.type ?? '',
-                    debit:  row.debit_total  ?? (row.balance > 0 && row.account?.is_debit_normal ? row.balance : 0),
+                accounts: (raw.accounts ?? []).map((row) => ({
+                    code: row.account?.code ?? row.code ?? '',
+                    name: row.account?.name ?? row.name ?? '',
+                    type: row.account?.type ?? row.type ?? '',
+                    debit: row.debit_total ?? (row.balance > 0 && row.account?.is_debit_normal ? row.balance : 0),
                     credit: row.credit_total ?? (row.balance > 0 && !row.account?.is_debit_normal ? row.balance : 0),
                 })),
             };

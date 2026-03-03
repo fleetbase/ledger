@@ -67,13 +67,9 @@ export default class WalletTransactionHistoryComponent extends Component {
 
         try {
             console.log('fetching wallet transactions');
-            const result = yield this.fetch.get(
-                `wallets/${wallet.id}/transactions`,
-                { page: this.page, limit: 20 },
-                { namespace: 'ledger/int/v1' }
-            );
+            const result = yield this.fetch.get(`wallets/${wallet.id}/transactions`, { page: this.page, limit: 20 }, { namespace: 'ledger/int/v1' });
 
-            const transactions = (result?.transactions ?? []).map((trx) => this.store.push(this.store.normalize('ledger-transaction', trx)))
+            const transactions = (result?.transactions ?? []).map((trx) => this.store.push(this.store.normalize('ledger-transaction', trx)));
 
             console.log('[result]', result);
             console.log('[transactions]', transactions);

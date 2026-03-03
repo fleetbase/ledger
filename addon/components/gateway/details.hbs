@@ -19,7 +19,7 @@
 
             <div class="field-info-container">
                 <div class="field-name">Driver</div>
-                <div class="field-value">{{n-a @resource.driver_label}}</div>
+                <div class="field-value">{{n-a (titleize @resource.driver)}}</div>
             </div>
 
             <div class="field-info-container">
@@ -30,14 +30,14 @@
             <div class="field-info-container">
                 <div class="field-name">Environment</div>
                 <div class="field-value">
-                    <Badge @color={{if (eq @resource.environment "live") "green" "yellow"}} class="capitalize">{{n-a @resource.environment}}</Badge>
+                    <Badge @color={{if (eq @resource.environment "live") "success" "warning"}} class="capitalize">{{n-a @resource.environment}}</Badge>
                 </div>
             </div>
 
             <div class="field-info-container">
                 <div class="field-name">Status</div>
                 <div class="field-value">
-                    <Badge @status={{@resource.status_label}} @color={{if @resource.is_active "green" "gray"}}>{{@resource.status_label}}</Badge>
+                    <Badge @status={{@resource.status}}>{{titleize @resource.status}}</Badge>
                 </div>
             </div>
 

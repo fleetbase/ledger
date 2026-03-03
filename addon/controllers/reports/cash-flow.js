@@ -32,23 +32,22 @@ export default class ReportsCashFlowController extends Controller {
             // Normalise: backend returns operating_activities.{items, net_flow}, etc.
             // Each item has {type, direction, currency, total, count}.
             // Template expects item.net (positive = inflow, negative = outflow).
-            const periodStr = raw.period?.from && raw.period?.to
-                ? `${raw.period.from} – ${raw.period.to}`
-                : null;
-            const mapFlowItems = (items) => (items ?? []).map(item => ({
-                ...item,
-                net: item.direction === 'credit' ? item.total : -item.total,
-            }));
+            const periodStr = raw.period?.from && raw.period?.to ? `${raw.period.from} – ${raw.period.to}` : null;
+            const mapFlowItems = (items) =>
+                (items ?? []).map((item) => ({
+                    ...item,
+                    net: item.direction === 'credit' ? item.total : -item.total,
+                }));
             this.data = {
-                period:          periodStr,
-                operating:       mapFlowItems(raw.operating_activities?.items),
-                net_operating:   raw.operating_activities?.net_flow ?? 0,
-                financing:       mapFlowItems(raw.financing_activities?.items),
-                net_financing:   raw.financing_activities?.net_flow ?? 0,
-                investing:       mapFlowItems(raw.investing_activities?.items),
-                net_investing:   raw.investing_activities?.net_flow ?? 0,
-                net_change:      raw.net_cash_change ?? 0,
-                cash_account:    raw.cash_account ?? null,
+                period: periodStr,
+                operating: mapFlowItems(raw.operating_activities?.items),
+                net_operating: raw.operating_activities?.net_flow ?? 0,
+                financing: mapFlowItems(raw.financing_activities?.items),
+                net_financing: raw.financing_activities?.net_flow ?? 0,
+                investing: mapFlowItems(raw.investing_activities?.items),
+                net_investing: raw.investing_activities?.net_flow ?? 0,
+                net_change: raw.net_cash_change ?? 0,
+                cash_account: raw.cash_account ?? null,
             };
         } catch {
             this.data = null;

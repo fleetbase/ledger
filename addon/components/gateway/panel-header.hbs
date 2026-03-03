@@ -4,7 +4,7 @@
             <h1 class="text-gray-900 dark:text-white font-semibold text-lg">{{n-a @resource.name}}</h1>
             <div class="flex flex-row items-center space-x-2 mt-0.5">
                 <Badge @status="info" @hideStatusDot={{true}}>{{titleize @resource.driver}}</Badge>
-                <Badge @color={{if (eq @resource.environment "live") "green" "yellow"}}>{{titleize @resource.environment}}</Badge>
+                <Badge @color={{if (eq @resource.environment "live") "success" "warning"}}>{{titleize @resource.environment}}</Badge>
                 {{#if @resource.is_default}}
                     <Badge @color="blue">Default</Badge>
                 {{/if}}
