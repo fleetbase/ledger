@@ -1,3 +1,4 @@
+import { action } from '@ember/object';
 import ResourceActionService from '@fleetbase/ember-core/services/resource-action';
 
 export default class GatewayActionsService extends ResourceActionService {
@@ -12,7 +13,12 @@ export default class GatewayActionsService extends ResourceActionService {
     transition = {
         view: (gateway) => this.transitionTo('payments.gateways.index.details', gateway),
         create: () => this.transitionTo('payments.gateways.index.new'),
+        edit: (gateway) => this.transitionTo('payments.gateways.index.edit', gateway),
     };
+
+    @action edit(gateway) {
+        return this.transitionTo('payments.gateways.index.edit', gateway);
+    }
 
     panel = {
         create: (attributes = {}, options = {}) => {
