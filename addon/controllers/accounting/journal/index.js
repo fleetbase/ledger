@@ -65,6 +65,7 @@ export default class AccountingJournalIndexController extends Controller {
             {
                 label: this.intl.t('column.type'),
                 valuePath: 'type',
+                humanize: true,
                 resizable: true,
                 sortable: true,
                 filterable: true,
@@ -100,6 +101,13 @@ export default class AccountingJournalIndexController extends Controller {
                 ],
             },
             {
+                label: this.intl.t('column.amount'),
+                valuePath: 'amount',
+                cellComponent: 'table/cell/currency',
+                resizable: true,
+                sortable: true,
+            },
+            {
                 label: this.intl.t('column.debit-account'),
                 valuePath: 'debit_account.code',
                 resizable: true,
@@ -114,13 +122,6 @@ export default class AccountingJournalIndexController extends Controller {
                 filterable: true,
                 filterParam: 'creditAccount',
                 filterComponent: 'filter/string',
-            },
-            {
-                label: this.intl.t('column.amount'),
-                valuePath: 'amount',
-                cellComponent: 'table/cell/currency',
-                resizable: true,
-                sortable: true,
             },
             {
                 label: this.intl.t('column.reference'),
