@@ -5,7 +5,12 @@ import { task } from 'ember-concurrency';
 
 export default class WidgetArAgingComponent extends Component {
     @service fetch;
+    @service currentUser;
     @tracked buckets = null;
+
+    get companyCurrency() {
+        return this.currentUser.getCompany()?.currency ?? 'USD';
+    }
 
     constructor() {
         super(...arguments);

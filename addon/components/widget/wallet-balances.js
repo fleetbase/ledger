@@ -5,7 +5,12 @@ import { task } from 'ember-concurrency';
 
 export default class WidgetWalletBalancesComponent extends Component {
     @service fetch;
+    @service currentUser;
     @tracked totals = null;
+
+    get companyCurrency() {
+        return this.currentUser.getCompany()?.currency ?? 'USD';
+    }
 
     constructor() {
         super(...arguments);

@@ -5,7 +5,12 @@ import { task } from 'ember-concurrency';
 
 export default class WidgetOverviewComponent extends Component {
     @service fetch;
+    @service currentUser;
     @tracked data = null;
+
+    get companyCurrency() {
+        return this.currentUser.getCompany()?.currency ?? 'USD';
+    }
 
     constructor() {
         super(...arguments);
