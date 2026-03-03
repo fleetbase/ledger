@@ -109,14 +109,20 @@ class WalletController extends LedgerResourceController
             $wallet,
             $request->integer('amount'),
             $request->input('gateway_uuid'),
-            $request->input('payment_method_token'),
+            [
+                'payment_method_token' => $request->input('payment_method_token'),
+                'customer_email'       => $request->input('customer_email'),
+                'customer_id'          => $request->input('customer_id'),
+                'metadata'             => $request->input('metadata', []),
+            ],
             $request->input('description', 'Wallet top-up')
         );
 
+        $gatewayResponse = $result['gateway_response'];
         $response = [
             'wallet'           => new WalletResource($wallet->fresh()),
-            'status'           => $result['status'],
-            'gateway_response' => $result['gateway_response'],
+            'status'           => $gatewayResponse->status ?? 'unknown',
+            'gateway_response' => $gatewayResponse,
         ];
 
         if ($result['transaction']) {
