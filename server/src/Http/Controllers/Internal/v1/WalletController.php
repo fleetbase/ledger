@@ -174,6 +174,7 @@ class WalletController extends LedgerResourceController
             ->paginate($request->input('limit', 25));
 
         TransactionResource::wrap('transactions');
+
         return TransactionResource::collection($transactions);
     }
 

@@ -100,7 +100,7 @@ class Journal extends Model
 
         static::creating(function (Journal $journal) {
             if (empty($journal->number)) {
-                $count          = static::where('company_uuid', $journal->company_uuid)->count() + 1;
+                $count           = static::where('company_uuid', $journal->company_uuid)->count() + 1;
                 $journal->number = 'JE-' . str_pad($count, 5, '0', STR_PAD_LEFT);
             }
             if (empty($journal->status)) {

@@ -57,7 +57,8 @@ export default class AccountingJournalIndexController extends Controller {
             },
             {
                 label: this.intl.t('column.date'),
-                valuePath: 'entry_date',
+                valuePath: 'entryDate',
+                filterParam: 'entry_date',
                 resizable: true,
                 sortable: true,
             },
@@ -69,6 +70,8 @@ export default class AccountingJournalIndexController extends Controller {
                 filterable: true,
                 filterParam: 'type',
                 filterComponent: 'filter/select',
+                filterOptionLabel: 'label',
+                filterOptionValue: 'value',
                 filterOptions: [
                     { label: 'General', value: 'general' },
                     { label: 'Payment', value: 'payment' },
@@ -88,6 +91,8 @@ export default class AccountingJournalIndexController extends Controller {
                 filterable: true,
                 filterParam: 'status',
                 filterComponent: 'filter/select',
+                filterOptionLabel: 'label',
+                filterOptionValue: 'value',
                 filterOptions: [
                     { label: 'Posted', value: 'posted' },
                     { label: 'Draft', value: 'draft' },

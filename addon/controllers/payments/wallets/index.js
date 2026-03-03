@@ -51,7 +51,7 @@ export default class PaymentsWalletsIndexController extends Controller {
             {
                 sticky: true,
                 label: this.intl.t('column.owner'),
-                valuePath: 'owner_name',
+                valuePath: 'subject.name',
                 cellComponent: 'table/cell/anchor',
                 action: this.walletActions.transition.view,
                 width: 200,
