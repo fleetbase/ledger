@@ -1,20 +1,21 @@
 <Layout::Section::Header @title="General Ledger" @actionsWrapperClass="flex flex-row items-center space-x-2">
-    <div class="flex flex-row items-center space-x-2">
+    <div class="general-ledger-filters flex flex-row items-center space-x-2">
         <DatePicker
             @value={{this.dateRange}}
             @range={{true}}
             @onSelect={{this.onDateRangeChanged}}
             @autoClose={{true}}
+            @buttons={{array "clear"}}
             @placeholder="Select date range"
-            class="w-52 form-input form-input-sm"
+            class="w-52"
         />
-        <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+        <div class="fleetbase-model-select fleetbase-power-select ember-model-select w-40">
             <PowerSelect
                 @options={{this.accountTypes}}
                 @selected={{this.selectedType}}
                 @onChange={{this.setType}}
                 @searchEnabled={{false}}
-                @triggerClass="form-select form-input form-input-sm"
+                @triggerClass="form-select form-input"
                 @renderInPlace={{true}}
                 as |opt|
             >
@@ -129,10 +130,10 @@
                                 </div>
                             {{/if}}
                         {{/if}}
-
                     </div>
                 {{/let}}
             {{/each}}
+            <Spacer @height="300px" />
         {{else}}
             <div class="flex flex-col items-center justify-center py-20 text-gray-400">
                 <FaIcon @icon="book-open" class="w-12 h-12 mb-3 opacity-30" />
@@ -140,6 +141,5 @@
                 <p class="text-xs mt-1">Create accounts in the Chart of Accounts to see entries here.</p>
             </div>
         {{/if}}
-
     </div>
 </Layout::Section::Body>

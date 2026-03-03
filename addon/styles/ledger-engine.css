@@ -3,7 +3,6 @@
 }
 
 /* ── Ledger wallet status badge colours ──────────────────────────────────── */
-
 .status-badge.frozen-status-badge > span {
     @apply bg-blue-800 border-blue-700 text-blue-100;
 }
@@ -18,4 +17,17 @@
 
 .status-badge.closed-status-badge > span svg {
     @apply text-gray-400;
+}
+
+.general-ledger-filters .ember-basic-dropdown > .ember-power-select-trigger {
+    padding: 0.25rem 2.5rem 0.25rem 0.75rem !important;
+    height: 30px !important;
+}
+
+.general-ledger-filters .fleetbase-date-picker {
+    height: 30px !important;
+}
+
+.general-ledger-filters button.btn {
+    height: 30px !important;
 }
