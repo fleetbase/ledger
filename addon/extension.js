@@ -9,22 +9,14 @@ export default {
         menuService.registerHeaderMenuItem('Ledger', 'console.ledger', {
             icon: 'calculator',
             priority: 4,
-            description: 'Ledger is the financial backbone of your Fleetbase operation. Manage invoices, track payments, reconcile accounts, and gain real-time visibility into your financial position — all from a single, unified platform built for logistics businesses.',
+            description: 'The financial backbone of your Fleetbase operation — invoicing, payments, accounting, and real-time financial reporting in one place.',
             shortcuts: [
-                // ── Billing ──────────────────────────────────────────────────
                 {
                     title: 'Invoices',
                     description: 'Create, send, and manage customer invoices.',
                     icon: 'file-invoice-dollar',
                     route: 'console.ledger.billing.invoices',
                 },
-                {
-                    title: 'Billing Transactions',
-                    description: 'View all billing and payment transaction records.',
-                    icon: 'receipt',
-                    route: 'console.ledger.billing.transactions',
-                },
-                // ── Payments ─────────────────────────────────────────────────
                 {
                     title: 'Wallets',
                     description: 'Manage driver, customer, and company wallets and balances.',
@@ -33,7 +25,7 @@ export default {
                 },
                 {
                     title: 'Transactions',
-                    description: 'A complete, chronological record of every payment transaction processed across all wallets and gateways — with status tracking, gateway references, and amount details.',
+                    description: 'A chronological record of every payment transaction processed across all wallets and gateways.',
                     icon: 'money-bill-transfer',
                     route: 'console.ledger.payments.transactions',
                 },
@@ -43,7 +35,6 @@ export default {
                     icon: 'credit-card',
                     route: 'console.ledger.payments.gateways',
                 },
-                // ── Accounting ───────────────────────────────────────────────
                 {
                     title: 'Chart of Accounts',
                     description: 'View and manage the full chart of accounts.',
@@ -62,7 +53,6 @@ export default {
                     icon: 'book-open',
                     route: 'console.ledger.accounting.general-ledger',
                 },
-                // ── Reports ──────────────────────────────────────────────────
                 {
                     title: 'Income Statement',
                     description: 'Profit and loss report for a selected period.',
@@ -71,7 +61,7 @@ export default {
                 },
                 {
                     title: 'Balance Sheet',
-                    description: 'Snapshot of assets, liabilities, and equity.',
+                    description: 'Snapshot of assets, liabilities, and equity at a point in time.',
                     icon: 'scale-balanced',
                     route: 'console.ledger.reports.balance-sheet',
                 },
@@ -89,7 +79,7 @@ export default {
                 },
                 {
                     title: 'AR Aging',
-                    description: 'Accounts receivable aging report by overdue bucket.',
+                    description: 'Accounts receivable aging report broken down by overdue bucket.',
                     icon: 'clock',
                     route: 'console.ledger.reports.ar-aging',
                 },
