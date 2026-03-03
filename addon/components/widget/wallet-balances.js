@@ -20,7 +20,7 @@ export default class WidgetWalletBalancesComponent extends Component {
     @task *loadData() {
         try {
             const response = yield this.fetch.get('reports/dashboard', {}, { namespace: 'ledger/int/v1' });
-            this.totals = response?.data?.wallet_totals ?? null;
+            this.totals = response?.data?.kpis?.wallet_totals ?? null;
         } catch {
             this.totals = null;
         }

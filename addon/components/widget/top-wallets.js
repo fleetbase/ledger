@@ -20,7 +20,7 @@ export default class WidgetTopWalletsComponent extends Component {
     @task *loadData() {
         try {
             const response = yield this.fetch.get('reports/wallet-summary', {}, { namespace: 'ledger/int/v1' });
-            this.wallets = response?.data?.top_driver_wallets ?? [];
+            this.wallets = response?.data?.top_wallets ?? [];
         } catch {
             this.wallets = [];
         }

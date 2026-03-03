@@ -366,20 +366,22 @@ class ReportController extends Controller
                 return $result;
             });
 
-        // Top 10 driver wallets by balance
-        $topDriverWallets = Wallet::where('company_uuid', $companyUuid)
-            ->where('subject_type', 'like', '%Driver%')
+        // Top 10 wallets by balance (all owner types)
+        $topWallets = Wallet::where('company_uuid', $companyUuid)
+            ->where('status', Wallet::STATUS_ACTIVE)
             ->with('subject')
             ->orderBy('balance', 'desc')
             ->limit(10)
             ->get()
             ->map(fn ($w) => [
                 'wallet_public_id'  => $w->public_id,
+                'name'              => $w->name,
+                'type'              => $w->type,
                 'balance'           => $w->balance,
                 'formatted_balance' => $w->formatted_balance,
                 'currency'          => $w->currency,
                 'subject'           => $w->subject ? [
-                    'name' => $w->subject->name ?? $w->subject->public_id ?? $w->subject->uuid,
+                    'name' => $w->subject->name ?? $w->subject->email ?? $w->subject->public_id ?? $w->subject->uuid,
                 ] : null,
             ]);
 
@@ -392,7 +394,7 @@ class ReportController extends Controller
                 ],
                 'wallet_counts'      => $walletCounts,
                 'period_stats'       => $periodStats,
-                'top_driver_wallets' => $topDriverWallets,
+                'top_wallets' => $topWallets,
             ],
         ]);
     }
