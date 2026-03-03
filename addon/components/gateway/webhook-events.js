@@ -17,10 +17,11 @@ export default class GatewayWebhookEventsComponent extends Component {
         const gateway = this.args.gateway;
         if (!gateway?.id) return;
         try {
-            const result = yield this.fetch.get(`gateways/${gateway.id}/transactions`, {
-                namespace: 'ledger/int/v1',
-                params: { limit: 20 },
-            });
+            const result = yield this.fetch.get(
+                `gateways/${gateway.id}/transactions`,
+                { limit: 20 },
+                { namespace: 'ledger/int/v1' }
+            );
             this.events = result?.data ?? [];
             this.meta = result?.meta ?? null;
         } catch {

@@ -16,10 +16,11 @@ export default class InvoiceTransactionsComponent extends Component {
         const invoice = this.args.invoice;
         if (!invoice?.id) return;
         try {
-            const result = yield this.fetch.get('transactions', {
-                namespace: 'ledger/int/v1',
-                params: { invoice_uuid: invoice.id },
-            });
+            const result = yield this.fetch.get(
+                'transactions',
+                { invoice_uuid: invoice.id },
+                { namespace: 'ledger/int/v1' }
+            );
             this.transactions = result?.data ?? [];
         } catch {
             this.transactions = [];
