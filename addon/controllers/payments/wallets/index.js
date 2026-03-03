@@ -108,7 +108,8 @@ export default class PaymentsWalletsIndexController extends Controller {
             },
             {
                 label: this.intl.t('column.balance'),
-                valuePath: 'formatted_balance',
+                valuePath: 'balance',
+                cellComponent: 'table/cell/currency',
                 sortParam: 'balance',
                 width: 130,
                 resizable: true,

@@ -48,6 +48,17 @@ export default class AccountingAccountsIndexController extends Controller {
         return [
             {
                 sticky: true,
+                label: this.intl.t('column.name'),
+                valuePath: 'name',
+                cellComponent: 'table/cell/anchor',
+                action: this.accountActions.transition.view,
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'name',
+                filterComponent: 'filter/string',
+            },
+            {
                 label: this.intl.t('column.code'),
                 valuePath: 'code',
                 cellComponent: 'table/cell/anchor',
@@ -59,22 +70,16 @@ export default class AccountingAccountsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
-                label: this.intl.t('column.name'),
-                valuePath: 'name',
-                resizable: true,
-                sortable: true,
-                filterable: true,
-                filterParam: 'name',
-                filterComponent: 'filter/string',
-            },
-            {
                 label: this.intl.t('column.type'),
                 valuePath: 'type',
+                humanize: true,
                 resizable: true,
                 sortable: true,
                 filterable: true,
                 filterParam: 'type',
                 filterComponent: 'filter/select',
+                filterOptionLabel: 'label',
+                filterOptionValue: 'value',
                 filterOptions: [
                     { label: 'Asset', value: 'asset' },
                     { label: 'Liability', value: 'liability' },
@@ -94,6 +99,7 @@ export default class AccountingAccountsIndexController extends Controller {
             },
             {
                 label: this.intl.t('column.balance'),
+                cellComponent: 'table/cell/currency',
                 valuePath: 'balance',
                 resizable: true,
                 sortable: true,
