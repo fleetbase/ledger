@@ -50,10 +50,10 @@ class WalletController extends LedgerResourceController
         $toWallet   = $this->resolveWallet($request->input('to_wallet_uuid'));
 
         $result = $this->walletService->transfer(
-            from: $fromWallet,
-            to: $toWallet,
-            amount: $request->integer('amount'),
-            description: $request->input('description', 'Wallet transfer')
+            $fromWallet,
+            $toWallet,
+            $request->integer('amount'),
+            $request->input('description', 'Wallet transfer')
         );
 
         return response()->json([
@@ -76,10 +76,10 @@ class WalletController extends LedgerResourceController
         $wallet = $this->resolveWallet($id);
 
         $transaction = $this->walletService->deposit(
-            wallet: $wallet,
-            amount: $request->integer('amount'),
-            description: $request->input('description', 'Manual credit'),
-            type: 'deposit'
+            $wallet,
+            $request->integer('amount'),
+            $request->input('description', 'Manual credit'),
+            'deposit'
         );
 
         return response()->json([
@@ -103,11 +103,11 @@ class WalletController extends LedgerResourceController
         $wallet = $this->resolveWallet($id);
 
         $result = $this->walletService->topUp(
-            wallet: $wallet,
-            amount: $request->integer('amount'),
-            gatewayUuid: $request->input('gateway_uuid'),
-            paymentMethodToken: $request->input('payment_method_token'),
-            description: $request->input('description', 'Wallet top-up')
+            $wallet,
+            $request->integer('amount'),
+            $request->input('gateway_uuid'),
+            $request->input('payment_method_token'),
+            $request->input('description', 'Wallet top-up')
         );
 
         $response = [
@@ -137,11 +137,11 @@ class WalletController extends LedgerResourceController
         $wallet = $this->resolveWallet($id);
 
         $transaction = $this->walletService->withdraw(
-            wallet: $wallet,
-            amount: $request->integer('amount'),
-            description: $request->input('description', 'Driver payout'),
-            type: 'payout',
-            options: ['reference' => $request->input('reference')]
+            $wallet,
+            $request->integer('amount'),
+            $request->input('description', 'Driver payout'),
+            'payout',
+            ['reference' => $request->input('reference')]
         );
 
         return response()->json([
