@@ -25,7 +25,13 @@
             <div class="field-info-container">
                 <div class="field-name">Status</div>
                 <div class="field-value">
-                    <Badge @status={{@resource.status_label}} @color={{@resource.status_badge_color}}>{{@resource.status_label}}</Badge>
+                    {{#if @resource.status_label}}
+                        <Badge @status={{@resource.status}} @color={{@resource.status_badge_color}}>
+                            {{@resource.status_label}}
+                        </Badge>
+                    {{else}}
+                        —
+                    {{/if}}
                 </div>
             </div>
 
@@ -38,7 +44,7 @@
                 Balance
             </div>
 
-            <div class="field-info-container">
+            <div class="field-info-container col-span-2">
                 <div class="field-name">Current Balance</div>
                 <div class="field-value text-xl font-bold text-gray-900 dark:text-white">{{format-currency @resource.balance @resource.currency}}</div>
             </div>
@@ -54,8 +60,16 @@
 
             <div class="field-info-container">
                 <div class="field-name">Owner Type</div>
-                <div class="field-value capitalize">{{n-a @resource.owner_type}}</div>
+                <div class="field-value capitalize">{{n-a @resource.owner_type_label}}</div>
             </div>
+
+            {{! Show email/phone only for user-type wallets }}
+            {{#if (eq @resource.type "user")}}
+                <div class="field-info-container">
+                    <div class="field-name">Email / Phone</div>
+                    <div class="field-value">{{n-a @resource.owner_contact}}</div>
+                </div>
+            {{/if}}
 
         </div>
     </ContentPanel>

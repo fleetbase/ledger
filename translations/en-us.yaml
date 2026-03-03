@@ -55,6 +55,8 @@ column:
   driver: Driver
   environment: Environment
   default: Default
+  owner: Owner
+  frozen: Frozen
 
 menu:
   dashboard: Dashboard
