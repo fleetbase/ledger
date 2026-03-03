@@ -25,7 +25,7 @@ export default {
                 description: 'Key financial KPIs: revenue, expenses, net income, and outstanding AR for the current period.',
                 icon: 'gauge-high',
                 component: new ExtensionComponent('@fleetbase/ledger-engine', 'widget/overview'),
-                grid_options: { w: 12, h: 4, minW: 8, minH: 3 },
+                grid_options: { w: 12, h: 4, minW: 8, minH: 4 },
                 options: { title: 'Financial Overview' },
                 default: true,
             }),
@@ -69,7 +69,7 @@ export default {
                 description: 'Live feed of the most recent double-entry journal entries in the ledger.',
                 icon: 'book',
                 component: new ExtensionComponent('@fleetbase/ledger-engine', 'widget/activity-feed'),
-                grid_options: { w: 8, h: 6, minW: 6, minH: 5 },
+                grid_options: { w: 8, h: 8, minW: 6, minH: 7 },
                 options: { title: 'Recent Journal Entries' },
                 default: true,
             }),
@@ -97,5 +97,6 @@ export default {
 
         widgetService.registerDashboard('ledger');
         widgetService.registerWidgets('ledger', widgets);
+        widgetService.registerWidgets('dashboard', widgets);
     },
 };
