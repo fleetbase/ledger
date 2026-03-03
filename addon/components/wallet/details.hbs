@@ -14,7 +14,7 @@
 
             <div class="field-info-container">
                 <div class="field-name">Type</div>
-                <div class="field-value">{{n-a @resource.type_label}}</div>
+                <div class="field-value">{{n-a (humanize @resource.type)}}</div>
             </div>
 
             <div class="field-info-container">
@@ -25,10 +25,8 @@
             <div class="field-info-container">
                 <div class="field-name">Status</div>
                 <div class="field-value">
-                    {{#if @resource.status_label}}
-                        <Badge @status={{@resource.status}} @color={{@resource.status_badge_color}}>
-                            {{@resource.status_label}}
-                        </Badge>
+                    {{#if @resource.status}}
+                        <Badge @status={{@resource.status}} />
                     {{else}}
                         —
                     {{/if}}
@@ -55,19 +53,19 @@
 
             <div class="field-info-container">
                 <div class="field-name">Owner</div>
-                <div class="field-value">{{n-a @resource.owner_name}}</div>
+                <div class="field-value">{{n-a @resource.ownerName}}</div>
             </div>
 
             <div class="field-info-container">
                 <div class="field-name">Owner Type</div>
-                <div class="field-value capitalize">{{n-a @resource.owner_type_label}}</div>
+                <div class="field-value">{{n-a (humanize @resource.type)}}</div>
             </div>
 
             {{! Show email/phone only for user-type wallets }}
             {{#if (eq @resource.type "user")}}
                 <div class="field-info-container">
                     <div class="field-name">Email / Phone</div>
-                    <div class="field-value">{{n-a @resource.owner_contact}}</div>
+                    <div class="field-value">{{n-a @resource.ownerContact}}</div>
                 </div>
             {{/if}}
 

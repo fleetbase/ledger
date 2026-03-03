@@ -26,7 +26,7 @@ export default class LedgerWalletModel extends Model {
      * Tries name → display_name → full_name → email → phone in order.
      */
     @computed('subject')
-    get owner_name() {
+    get ownerName() {
         const s = this.subject;
         if (!s) {
             return null;
@@ -38,66 +38,12 @@ export default class LedgerWalletModel extends Model {
      * Contact detail (email or phone) of the owner when the subject is a User.
      */
     @computed('subject')
-    get owner_contact() {
+    get ownerContact() {
         const s = this.subject;
         if (!s) {
             return null;
         }
         return s.email || s.phone || null;
-    }
-
-    /**
-     * Human-readable owner type label derived from the computed `type` attr.
-     */
-    @computed('type')
-    get owner_type_label() {
-        const t = this.type;
-        if (!t) {
-            return null;
-        }
-        return t.charAt(0).toUpperCase() + t.slice(1);
-    }
-
-    // ── Type helpers ───────────────────────────────────────────────────────
-
-    /**
-     * Human-readable wallet type label.
-     * The `type` attr is already computed server-side from subject_type.
-     */
-    @computed('type')
-    get type_label() {
-        const t = this.type;
-        if (!t) {
-            return null;
-        }
-        return t.charAt(0).toUpperCase() + t.slice(1);
-    }
-
-    // ── Status helpers ─────────────────────────────────────────────────────
-
-    @computed('status')
-    get status_label() {
-        const s = this.status;
-        if (!s) {
-            return null;
-        }
-        return s.charAt(0).toUpperCase() + s.slice(1);
-    }
-
-    @computed('status')
-    get status_badge_color() {
-        switch (this.status) {
-            case 'active':
-                return 'green';
-            case 'inactive':
-                return 'gray';
-            case 'frozen':
-                return 'blue';
-            case 'suspended':
-                return 'red';
-            default:
-                return 'gray';
-        }
     }
 
     // ── Timestamp helpers ──────────────────────────────────────────────────

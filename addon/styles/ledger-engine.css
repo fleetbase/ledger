@@ -1,3 +1,21 @@
 .f-child-items-start > * {
     align-items: start !important;
 }
+
+/* ── Ledger wallet status badge colours ──────────────────────────────────── */
+
+.status-badge.frozen-status-badge > span {
+    @apply bg-blue-800 border-blue-700 text-blue-100;
+}
+
+.status-badge.frozen-status-badge > span svg {
+    @apply text-blue-300;
+}
+
+.status-badge.closed-status-badge > span {
+    @apply bg-gray-700 border-gray-600 text-gray-200;
+}
+
+.status-badge.closed-status-badge > span svg {
+    @apply text-gray-400;
+}

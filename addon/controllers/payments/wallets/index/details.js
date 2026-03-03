@@ -1,33 +1,12 @@
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
-import { tracked } from '@glimmer/tracking';
 
 export default class PaymentsWalletsIndexDetailsController extends Controller {
     @service notifications;
     @service modalsManager;
     @service fetch;
-    @service hostRouter;
     @service intl;
-
-    @tracked overlay = null;
-
-    /**
-     * Tracked mirror of wallet.is_frozen so that actionButtons re-computes
-     * reactively after a freeze or unfreeze action without needing a full
-     * page reload. Initialised to null; set in setModel() which is called
-     * by the route's setupController hook.
-     */
-    @tracked isFrozen = null;
-
-    /**
-     * Called by the route's setupController to sync the tracked state
-     * whenever a new wallet model is loaded.
-     */
-    setModel(wallet) {
-        this.model = wallet;
-        this.isFrozen = wallet?.is_frozen ?? false;
-    }
 
     get tabs() {
         return [
@@ -37,15 +16,18 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
     }
 
     get actionButtons() {
+        const wallet = this.model;
+        const frozen = wallet?.is_frozen;
+
         return [
             { label: 'Add Funds', icon: 'plus-circle', type: 'primary', helpText: 'Add funds to this wallet balance.', onClick: this.topUpWallet },
             { label: 'Transfer', icon: 'exchange-alt', helpText: 'Transfer funds from this wallet to another wallet.', onClick: this.transferFunds },
             {
-                label: this.isFrozen ? 'Unfreeze' : 'Freeze',
-                icon: this.isFrozen ? 'unlock' : 'lock',
-                type: this.isFrozen ? 'default' : 'danger',
-                helpText: this.isFrozen ? 'Unfreeze this wallet to allow debits.' : 'Freeze this wallet to block all debits.',
-                onClick: this.isFrozen ? this.unfreezeWallet : this.freezeWallet,
+                label: frozen ? 'Unfreeze' : 'Freeze',
+                icon: frozen ? 'unlock' : 'lock',
+                type: frozen ? 'default' : 'danger',
+                helpText: frozen ? 'Unfreeze this wallet to allow debits.' : 'Freeze this wallet to block all debits.',
+                onClick: frozen ? this.unfreezeWallet : this.freezeWallet,
             },
         ];
     }
@@ -65,7 +47,6 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
                     await this.fetch.post(`wallets/${wallet.id}/freeze`, {}, { namespace: 'ledger/int/v1' });
                     this.notifications.success(`${wallet.name} has been frozen.`);
                     await wallet.reload();
-                    this.isFrozen = true;
                     modal.done();
                 } catch (error) {
                     this.notifications.serverError(error);
@@ -89,7 +70,6 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
                     await this.fetch.post(`wallets/${wallet.id}/unfreeze`, {}, { namespace: 'ledger/int/v1' });
                     this.notifications.success(`${wallet.name} has been unfrozen.`);
                     await wallet.reload();
-                    this.isFrozen = false;
                     modal.done();
                 } catch (error) {
                     this.notifications.serverError(error);

@@ -93,7 +93,6 @@ class Wallet extends Model
         'balance',
         'currency',
         'status',
-        'is_frozen',
         'meta',
     ];
 
@@ -102,7 +101,6 @@ class Wallet extends Model
      */
     protected $casts = [
         'balance'      => 'integer',
-        'is_frozen'    => 'boolean',
         'subject_type' => PolymorphicType::class,
         'meta'         => Json::class,
     ];
@@ -110,7 +108,7 @@ class Wallet extends Model
     /**
      * Dynamic attributes that are appended to object.
      */
-    protected $appends = ['public_id', 'type', 'formatted_balance'];
+    protected $appends = ['public_id', 'type', 'formatted_balance', 'is_frozen'];
 
     // -------------------------------------------------------------------------
     // Status Constants
@@ -198,6 +196,16 @@ class Wallet extends Model
             str_contains($type, 'user')     => 'user',
             default                         => $type,
         };
+    }
+
+    /**
+     * Computed accessor: is_frozen is derived from status.
+     * Returns true when status === 'frozen'.
+     * The is_frozen column is no longer used — status is the single source of truth.
+     */
+    public function getIsFrozenAttribute(): bool
+    {
+        return $this->status === self::STATUS_FROZEN;
     }
 
     /**
