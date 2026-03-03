@@ -9,8 +9,97 @@ export default {
         menuService.registerHeaderMenuItem('Ledger', 'console.ledger', {
             icon: 'calculator',
             priority: 4,
-            description: 'Accounting and invoice management.',
-            shortcuts: [{ title: 'Transactions', description: 'Ledger transaction records.', route: 'console.ledger.payments.transactions' }],
+            description: 'Ledger is the financial backbone of your Fleetbase operation. Manage invoices, track payments, reconcile accounts, and gain real-time visibility into your financial position — all from a single, unified platform built for logistics businesses.',
+            shortcuts: [
+                // ── Billing ──────────────────────────────────────────────────
+                {
+                    title: 'Invoices',
+                    description: 'Create, send, and manage customer invoices.',
+                    icon: 'file-invoice-dollar',
+                    route: 'console.ledger.billing.invoices',
+                },
+                {
+                    title: 'Billing Transactions',
+                    description: 'View all billing and payment transaction records.',
+                    icon: 'receipt',
+                    route: 'console.ledger.billing.transactions',
+                },
+                // ── Payments ─────────────────────────────────────────────────
+                {
+                    title: 'Wallets',
+                    description: 'Manage driver, customer, and company wallets and balances.',
+                    icon: 'wallet',
+                    route: 'console.ledger.payments.wallets',
+                },
+                {
+                    title: 'Transactions',
+                    description: 'A complete, chronological record of every payment transaction processed across all wallets and gateways — with status tracking, gateway references, and amount details.',
+                    icon: 'money-bill-transfer',
+                    route: 'console.ledger.payments.transactions',
+                },
+                {
+                    title: 'Payment Gateways',
+                    description: 'Configure and manage payment gateway integrations.',
+                    icon: 'credit-card',
+                    route: 'console.ledger.payments.gateways',
+                },
+                // ── Accounting ───────────────────────────────────────────────
+                {
+                    title: 'Chart of Accounts',
+                    description: 'View and manage the full chart of accounts.',
+                    icon: 'sitemap',
+                    route: 'console.ledger.accounting.accounts',
+                },
+                {
+                    title: 'Journal Entries',
+                    description: 'Browse and create double-entry journal entries.',
+                    icon: 'book',
+                    route: 'console.ledger.accounting.journal',
+                },
+                {
+                    title: 'General Ledger',
+                    description: 'Review all posted transactions across every account.',
+                    icon: 'book-open',
+                    route: 'console.ledger.accounting.general-ledger',
+                },
+                // ── Reports ──────────────────────────────────────────────────
+                {
+                    title: 'Income Statement',
+                    description: 'Profit and loss report for a selected period.',
+                    icon: 'chart-line',
+                    route: 'console.ledger.reports.income-statement',
+                },
+                {
+                    title: 'Balance Sheet',
+                    description: 'Snapshot of assets, liabilities, and equity.',
+                    icon: 'scale-balanced',
+                    route: 'console.ledger.reports.balance-sheet',
+                },
+                {
+                    title: 'Cash Flow',
+                    description: 'Statement of cash inflows and outflows by activity.',
+                    icon: 'arrow-right-arrow-left',
+                    route: 'console.ledger.reports.cash-flow',
+                },
+                {
+                    title: 'Trial Balance',
+                    description: 'Verify that total debits equal total credits across all accounts.',
+                    icon: 'list-check',
+                    route: 'console.ledger.reports.trial-balance',
+                },
+                {
+                    title: 'AR Aging',
+                    description: 'Accounts receivable aging report by overdue bucket.',
+                    icon: 'clock',
+                    route: 'console.ledger.reports.ar-aging',
+                },
+                {
+                    title: 'Wallet Summary',
+                    description: 'Aggregated wallet balances and top wallet holders.',
+                    icon: 'ranking-star',
+                    route: 'console.ledger.reports.wallet-summary',
+                },
+            ],
         });
 
         // Register dashboard and widgets
