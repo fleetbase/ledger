@@ -43,6 +43,12 @@ export default class GatewayFormComponent extends Component {
             values[field.key] = existingConfig[field.key] ?? field.default ?? null;
         });
         this.configValues = values;
+
+        // Default webhook_url to the system-computed handler URL when not already set
+        const resource = this.args.resource;
+        if (resource && !resource.webhook_url && driverCode) {
+            resource.webhook_url = driver?.webhook_url ?? `/ledger/webhooks/${driverCode}`;
+        }
     }
 
     @action selectDriver(driver) {

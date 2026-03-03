@@ -99,6 +99,7 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                     'wallets',
                                     function ($router, $controller) {
                                         $router->post('{id}/transfer', $controller('transfer'));
+                                        $router->post('{id}/credit', $controller('credit'));
                                         $router->post('{id}/topup', $controller('topUp'));
                                         $router->post('{id}/payout', $controller('payout'));
                                         $router->post('{id}/freeze', $controller('freeze'));

@@ -174,7 +174,7 @@
                                 @value={{get this.configValues field.key}}
                                 @type="text"
                                 class="w-full form-input"
-                                placeholder={{field.placeholder}}
+                                placeholder={{or field.placeholder field.label}}
                                 {{on "input" (fn this.updateConfigField field.key)}}
                                 disabled={{cannot-write @resource}}
                             />
@@ -185,7 +185,7 @@
                                 @value={{get this.configValues field.key}}
                                 @type="password"
                                 class="w-full form-input"
-                                placeholder={{field.placeholder}}
+                                placeholder={{or field.placeholder field.label}}
                                 {{on "input" (fn this.updateConfigField field.key)}}
                                 disabled={{cannot-write @resource}}
                             />

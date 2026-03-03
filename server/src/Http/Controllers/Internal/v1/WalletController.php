@@ -65,6 +65,31 @@ class WalletController extends LedgerResourceController
     }
 
     /**
+     * Manually credit a wallet (admin/internal deposit, no gateway required).
+     */
+    public function credit(string $id, Request $request): JsonResponse
+    {
+        $request->validate([
+            'amount'      => 'required|integer|min:1',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        $wallet = $this->resolveWallet($id);
+
+        $transaction = $this->walletService->deposit(
+            wallet: $wallet,
+            amount: $request->integer('amount'),
+            description: $request->input('description', 'Manual credit'),
+            type: 'deposit'
+        );
+
+        return response()->json([
+            'wallet'      => new WalletResource($wallet->fresh()),
+            'transaction' => new TransactionResource($transaction),
+        ]);
+    }
+
+    /**
      * Top up a wallet via a payment gateway.
      */
     public function topUp(string $id, Request $request): JsonResponse

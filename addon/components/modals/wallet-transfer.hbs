@@ -1,0 +1,67 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        {{#let @options.wallet as |wallet|}}
+            {{! Source wallet context header }}
+            <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="flex flex-col">
+                    <span class="text-xs text-gray-500 uppercase tracking-wide mb-0.5">From</span>
+                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{n-a wallet.name}}</span>
+                    <span class="text-xs text-gray-500">{{n-a wallet.owner_name}}</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-sm font-bold text-gray-900 dark:text-white">{{format-currency wallet.balance wallet.currency}}</span>
+                    <span class="text-xs text-gray-500">Available</span>
+                </div>
+            </div>
+
+            {{! Destination wallet selector }}
+            <InputGroup @name="To Wallet" @helpText="Select the destination wallet to transfer funds into.">
+                <ModelSelect
+                    @modelName="ledger-wallet"
+                    @selectedModel={{@options.toWallet}}
+                    @placeholder="Search wallets..."
+                    @triggerClass="form-select form-input"
+                    @infiniteScroll={{false}}
+                    @renderInPlace={{true}}
+                    @onChange={{@options.setToWallet}}
+                    as |w|
+                >
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col truncate flex-1">
+                            <span class="text-sm font-medium truncate">{{n-a w.name}}</span>
+                            <span class="text-xs text-gray-500 truncate">{{n-a w.owner_name}}</span>
+                        </div>
+                        <span class="ml-2 text-xs text-gray-500 shrink-0">{{format-currency w.balance w.currency}}</span>
+                    </div>
+                </ModelSelect>
+            </InputGroup>
+
+            {{! Amount input }}
+            <InputGroup @name="Amount" @helpText="Enter the amount to transfer in major currency units.">
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">{{n-a wallet.currency}}</span>
+                    <Input
+                        @value={{@options.amount}}
+                        @type="number"
+                        min="0.01"
+                        step="0.01"
+                        class="w-full form-input pl-14"
+                        placeholder="0.00"
+                        {{on "input" @options.setAmount}}
+                    />
+                </div>
+            </InputGroup>
+
+            {{! Description input }}
+            <InputGroup @name="Description" @helpText="Optional note for this transfer.">
+                <Input
+                    @value={{@options.description}}
+                    @type="text"
+                    class="w-full form-input"
+                    placeholder="Internal transfer"
+                    {{on "input" @options.setDescription}}
+                />
+            </InputGroup>
+        {{/let}}
+    </div>
+</Modal::Default>
