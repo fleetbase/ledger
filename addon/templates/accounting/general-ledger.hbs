@@ -1,24 +1,24 @@
-<Layout::Section::Header @title="General Ledger" @actionsWrapperClass="flex flex-row items-center space-x-2">
+<Layout::Section::Header @title="General Ledger">
     <div class="flex flex-row items-center space-x-2">
         <DatePicker
             @value={{this.date_from}}
             @onChange={{this.setDateFrom}}
-            @placeholder="From date"
+            @placeholder="From Date"
             class="w-40 form-input form-input-sm"
         />
         <DatePicker
             @value={{this.date_to}}
             @onChange={{this.setDateTo}}
-            @placeholder="To date"
+            @placeholder="To Date"
             class="w-40 form-input form-input-sm"
         />
-        <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+        <div class="fleetbase-model-select fleetbase-power-select ember-model-select w-40">
             <PowerSelect
                 @options={{this.accountTypes}}
                 @selected={{this.selectedType}}
                 @onChange={{this.setType}}
                 @searchEnabled={{false}}
-                @triggerClass="form-select form-input form-input-sm"
+                @triggerClass="form-select form-input"
                 @renderInPlace={{true}}
                 as |opt|
             >
