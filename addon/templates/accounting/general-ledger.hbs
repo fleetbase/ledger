@@ -1,39 +1,36 @@
-<Layout::Section::Header @title="General Ledger">
+<Layout::Section::Header @title="General Ledger" @actionsWrapperClass="flex flex-row items-center space-x-2">
     <div class="flex flex-row items-center space-x-2">
         <DatePicker
-            @value={{this.date_from}}
-            @onChange={{this.setDateFrom}}
-            @placeholder="From Date"
-            class="w-40 form-input form-input-sm"
+            @value={{this.dateRange}}
+            @range={{true}}
+            @onSelect={{this.onDateRangeChanged}}
+            @autoClose={{true}}
+            @placeholder="Select date range"
+            class="w-52 form-input form-input-sm"
         />
-        <DatePicker
-            @value={{this.date_to}}
-            @onChange={{this.setDateTo}}
-            @placeholder="To Date"
-            class="w-40 form-input form-input-sm"
-        />
-        <div class="fleetbase-model-select fleetbase-power-select ember-model-select w-40">
+        <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
             <PowerSelect
                 @options={{this.accountTypes}}
                 @selected={{this.selectedType}}
                 @onChange={{this.setType}}
                 @searchEnabled={{false}}
-                @triggerClass="form-select form-input"
+                @triggerClass="form-select form-input form-input-sm"
                 @renderInPlace={{true}}
                 as |opt|
             >
                 {{opt.label}}
             </PowerSelect>
         </div>
-        <Button @size="sm" {{on "click" this.expandAll}}>
-            <FaIcon @icon="chevron-down" class="mr-1" /> Expand All
-        </Button>
-        <Button @size="sm" {{on "click" this.collapseAll}}>
-            <FaIcon @icon="chevron-right" class="mr-1" /> Collapse All
-        </Button>
+        <Button
+            @size="sm"
+            @type="default"
+            @icon={{if this.allExpanded "chevron-up" "chevron-down"}}
+            @helpText={{if this.allExpanded "Collapse All" "Expand All"}}
+            {{on "click" this.toggleExpandAll}}
+        />
     </div>
 </Layout::Section::Header>
-<Layout::Section::Body>
+<Layout::Section::Body class="overflow-y-scroll h-full">
     <div class="p-4 space-y-4">
 
         {{! ── Account list ─────────────────────────────────────────────────── }}
