@@ -82,7 +82,7 @@ class GatewayTransaction extends Model
     /**
      * The attributes that should be appended to the model's array form.
      */
-    protected $appends = ['public_id'];
+    protected $appends = [];
 
     // -------------------------------------------------------------------------
     // Relationships

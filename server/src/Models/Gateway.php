@@ -84,7 +84,7 @@ class Gateway extends Model
     /**
      * The attributes that should be appended to the model's array form.
      */
-    protected $appends = ['public_id'];
+    protected $appends = [];
 
     /**
      * The attributes that should be hidden for serialization.

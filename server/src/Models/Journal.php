@@ -82,7 +82,7 @@ class Journal extends Model
      *
      * @var array
      */
-    protected $appends = ['public_id'];
+    protected $appends = [];
 
     /**
      * The attributes excluded from the model's JSON form.

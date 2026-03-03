@@ -108,7 +108,7 @@ class Wallet extends Model
     /**
      * Dynamic attributes that are appended to object.
      */
-    protected $appends = ['public_id', 'type', 'formatted_balance', 'is_frozen'];
+    protected $appends = ['type', 'formatted_balance', 'is_frozen'];
 
     // -------------------------------------------------------------------------
     // Status Constants
