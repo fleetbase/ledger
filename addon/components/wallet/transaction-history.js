@@ -18,10 +18,11 @@ export default class WalletTransactionHistoryComponent extends Component {
         const wallet = this.args.wallet;
         if (!wallet?.id) return;
         try {
-            const result = yield this.fetch.get(`wallets/${wallet.id}/transactions`, {
-                namespace: 'ledger/int/v1',
-                params: { page: this.page, limit: 20 },
-            });
+            const result = yield this.fetch.get(
+                `wallets/${wallet.id}/transactions`,
+                { page: this.page, limit: 20 },
+                { namespace: 'ledger/int/v1' }
+            );
             this.transactions = result?.data ?? [];
             this.meta = result?.meta ?? null;
         } catch {

@@ -1,6 +1,8 @@
 <div class="p-4">
     {{#if this.loadTransactions.isRunning}}
-        <LoadingIndicator />
+        <div class="flex items-center justify-center py-8">
+            <Spinner />
+        </div>
     {{else}}
         <table class="w-full text-sm">
             <thead>

@@ -9,6 +9,14 @@ export default class LedgerTransactionModel extends Model {
     @attr('string') type;
     @attr('string') direction;
     @attr('string') status;
+
+    @computed('direction') get direction_sign() {
+        return this.direction === 'debit' ? '-' : '+';
+    }
+
+    @computed('direction') get direction_color() {
+        return this.direction === 'debit' ? 'red' : 'green';
+    }
     // Monetary
     @attr('number') amount;
     @attr('number') fee_amount;
