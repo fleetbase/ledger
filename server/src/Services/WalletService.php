@@ -118,26 +118,12 @@ class WalletService
         }
 
         return DB::transaction(function () use ($wallet, $amount, $description, $type, $options) {
-            // Double-entry: DEBIT Cash, CREDIT Wallet Liability
-            $cashAccount   = $options['source_account'] ?? $this->getDefaultCashAccount($wallet->company_uuid);
-            $walletAccount = $this->getWalletAccount($wallet);
-
-            $this->ledgerService->createJournalEntry(
-                $cashAccount,
-                $walletAccount,
-                $amount,
-                $description ?: "Deposit to wallet {$wallet->public_id}",
-                array_merge($options, [
-                    'company_uuid' => $wallet->company_uuid,
-                    'currency'     => $wallet->currency,
-                    'type'         => 'wallet_deposit',
-                ])
-            );
+            $desc = $description ?: "Deposit to wallet {$wallet->public_id}";
 
             // Update wallet balance
             $newBalance = $wallet->credit($amount);
 
-            // Create Transaction audit record (owner = wallet)
+            // Create the authoritative Transaction record first
             $transaction = Transaction::create([
                 'company_uuid'           => $wallet->company_uuid,
                 'owner_uuid'             => $wallet->uuid,
@@ -149,12 +135,31 @@ class WalletService
                 'amount'                 => $amount,
                 'balance_after'          => $newBalance,
                 'currency'               => $wallet->currency,
-                'description'            => $description ?: "Deposit to wallet {$wallet->public_id}",
+                'description'            => $desc,
                 'reference'              => $options['reference'] ?? null,
                 'subject_uuid'           => $options['subject_uuid'] ?? null,
                 'subject_type'           => $options['subject_type'] ?? null,
                 'meta'                   => $options['meta'] ?? null,
             ]);
+
+            // Double-entry: DEBIT Cash, CREDIT Wallet Liability
+            // Link the journal entry to the Transaction created above
+            $cashAccount   = $options['source_account'] ?? $this->getDefaultCashAccount($wallet->company_uuid);
+            $walletAccount = $this->getWalletAccount($wallet);
+
+            $this->ledgerService->createJournalEntry(
+                $cashAccount,
+                $walletAccount,
+                $amount,
+                $desc,
+                [
+                    'company_uuid'     => $wallet->company_uuid,
+                    'currency'         => $wallet->currency,
+                    'transaction_uuid' => $transaction->uuid,
+                    'reference'        => $options['reference'] ?? null,
+                    'meta'             => $options['meta'] ?? [],
+                ]
+            );
 
             Log::channel('ledger')->info('Wallet deposit completed.', [
                 'wallet_uuid'    => $wallet->uuid,
@@ -204,26 +209,12 @@ class WalletService
         }
 
         return DB::transaction(function () use ($wallet, $amount, $description, $type, $options) {
-            // Double-entry: DEBIT Wallet Liability, CREDIT Cash
-            $walletAccount = $this->getWalletAccount($wallet);
-            $cashAccount   = $options['destination_account'] ?? $this->getDefaultCashAccount($wallet->company_uuid);
-
-            $this->ledgerService->createJournalEntry(
-                $walletAccount,
-                $cashAccount,
-                $amount,
-                $description ?: "Withdrawal from wallet {$wallet->public_id}",
-                array_merge($options, [
-                    'company_uuid' => $wallet->company_uuid,
-                    'currency'     => $wallet->currency,
-                    'type'         => 'wallet_withdrawal',
-                ])
-            );
+            $desc = $description ?: "Withdrawal from wallet {$wallet->public_id}";
 
             // Update wallet balance
             $newBalance = $wallet->debit($amount);
 
-            // Create Transaction audit record (owner = wallet)
+            // Create the authoritative Transaction record first
             $transaction = Transaction::create([
                 'company_uuid'           => $wallet->company_uuid,
                 'owner_uuid'             => $wallet->uuid,
@@ -235,12 +226,31 @@ class WalletService
                 'amount'                 => $amount,
                 'balance_after'          => $newBalance,
                 'currency'               => $wallet->currency,
-                'description'            => $description ?: "Withdrawal from wallet {$wallet->public_id}",
+                'description'            => $desc,
                 'reference'              => $options['reference'] ?? null,
                 'subject_uuid'           => $options['subject_uuid'] ?? null,
                 'subject_type'           => $options['subject_type'] ?? null,
                 'meta'                   => $options['meta'] ?? null,
             ]);
+
+            // Double-entry: DEBIT Wallet Liability, CREDIT Cash
+            // Link the journal entry to the Transaction created above
+            $walletAccount = $this->getWalletAccount($wallet);
+            $cashAccount   = $options['destination_account'] ?? $this->getDefaultCashAccount($wallet->company_uuid);
+
+            $this->ledgerService->createJournalEntry(
+                $walletAccount,
+                $cashAccount,
+                $amount,
+                $desc,
+                [
+                    'company_uuid'     => $wallet->company_uuid,
+                    'currency'         => $wallet->currency,
+                    'transaction_uuid' => $transaction->uuid,
+                    'reference'        => $options['reference'] ?? null,
+                    'meta'             => $options['meta'] ?? [],
+                ]
+            );
 
             Log::channel('ledger')->info('Wallet withdrawal completed.', [
                 'wallet_uuid'    => $wallet->uuid,
@@ -294,31 +304,14 @@ class WalletService
         }
 
         return DB::transaction(function () use ($fromWallet, $toWallet, $amount, $description, $options) {
-            $desc = $description ?: "Transfer from {$fromWallet->public_id} to {$toWallet->public_id}";
-
-            // Double-entry: DEBIT From Wallet Liability, CREDIT To Wallet Liability
-            $fromAccount = $this->getWalletAccount($fromWallet);
-            $toAccount   = $this->getWalletAccount($toWallet);
-
-            $this->ledgerService->createJournalEntry(
-                $fromAccount,
-                $toAccount,
-                $amount,
-                $desc,
-                array_merge($options, [
-                    'company_uuid' => $fromWallet->company_uuid,
-                    'currency'     => $fromWallet->currency,
-                    'type'         => 'wallet_transfer',
-                ])
-            );
+            $desc      = $description ?: "Transfer from {$fromWallet->public_id} to {$toWallet->public_id}";
+            $reference = $options['reference'] ?? null;
 
             // Update balances
             $fromNewBalance = $fromWallet->debit($amount);
             $toNewBalance   = $toWallet->credit($amount);
 
-            $reference = $options['reference'] ?? null;
-
-            // Create Transaction records for both sides (owner = respective wallet)
+            // Create the authoritative Transaction records for both sides first
             $fromTransaction = Transaction::create([
                 'company_uuid'  => $fromWallet->company_uuid,
                 'owner_uuid'    => $fromWallet->uuid,
@@ -354,6 +347,28 @@ class WalletService
                     'from_wallet_public_id' => $fromWallet->public_id,
                 ]),
             ]);
+
+            // Double-entry: DEBIT From Wallet Liability, CREDIT To Wallet Liability
+            // Link the journal entry to the debit (from) transaction as the primary reference
+            $fromAccount = $this->getWalletAccount($fromWallet);
+            $toAccount   = $this->getWalletAccount($toWallet);
+
+            $this->ledgerService->createJournalEntry(
+                $fromAccount,
+                $toAccount,
+                $amount,
+                $desc,
+                [
+                    'company_uuid'     => $fromWallet->company_uuid,
+                    'currency'         => $fromWallet->currency,
+                    'transaction_uuid' => $fromTransaction->uuid,
+                    'reference'        => $reference,
+                    'meta'             => array_merge($options['meta'] ?? [], [
+                        'from_transaction_uuid' => $fromTransaction->uuid,
+                        'to_transaction_uuid'   => $toTransaction->uuid,
+                    ]),
+                ]
+            );
 
             Log::channel('ledger')->info('Wallet transfer completed.', [
                 'from_wallet' => $fromWallet->uuid,

@@ -64,6 +64,7 @@ class Gateway extends Model
         'config',
         'capabilities',
         'is_sandbox',
+        'environment',
         'status',
         'return_url',
         'webhook_url',
@@ -80,6 +81,21 @@ class Gateway extends Model
         'capabilities' => 'array',
         'is_sandbox'   => 'boolean',
     ];
+
+    /**
+     * Boot the model — sync environment <-> is_sandbox on save.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $gateway) {
+            // Keep is_sandbox in sync with the environment string
+            if ($gateway->isDirty('environment')) {
+                $gateway->is_sandbox = $gateway->environment === 'sandbox';
+            } elseif ($gateway->isDirty('is_sandbox')) {
+                $gateway->environment = $gateway->is_sandbox ? 'sandbox' : 'live';
+            }
+        });
+    }
 
     /**
      * The attributes that should be appended to the model's array form.
@@ -104,6 +120,7 @@ class Gateway extends Model
         'description',
         'capabilities',
         'is_sandbox',
+        'environment',
         'status',
         'return_url',
         'webhook_url',

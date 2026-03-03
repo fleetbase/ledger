@@ -35,27 +35,29 @@ class LedgerService
     // =========================================================================
 
     /**
-     * Create a double-entry journal entry and the corresponding core Transaction record.
+     * Create a double-entry journal entry (bookkeeping record only).
      *
-     * Every financial movement in Ledger is represented as a pair of records:
-     *   1. A `Transaction` (core-api primitive) — the canonical, auditable money-movement record.
-     *   2. A `Journal` (Ledger model) — the double-entry bookkeeping entry that links the
-     *      debit and credit accounts to that transaction.
+     * This method creates ONLY the Journal (double-entry) record. It does NOT
+     * create a Transaction record. The caller (WalletService, InvoiceService, etc.)
+     * is responsible for creating the authoritative Transaction record and passing
+     * its UUID via $options['transaction_uuid'] so the journal can be linked to it.
+     *
+     * This separation prevents duplicate Transaction records when wallet operations
+     * (deposit, withdraw, transfer) call this method after already creating their
+     * own Transaction records.
      *
      * All monetary amounts are stored in the smallest currency unit (e.g. cents for USD).
      *
      * Supported $options keys:
-     *   - company_uuid    (string)  Company context; falls back to session('company').
-     *   - currency        (string)  ISO 4217 currency code; defaults to account currency or 'USD'.
-     *   - type            (string)  Transaction type label (e.g. 'wallet_deposit', 'invoice_payment').
-     *   - status          (string)  Transaction status; defaults to 'completed'.
-     *   - date            (mixed)   Journal entry date; defaults to now().
-     *   - transaction_id  (string)  External/gateway transaction reference ID.
-     *   - subject_uuid    (string)  UUID of the polymorphic subject (order, driver, customer, etc.).
-     *   - subject_type    (string)  Fully-qualified class name of the subject.
-     *   - gateway_uuid    (string)  UUID of the payment gateway used (if applicable).
-     *   - meta            (array)   Arbitrary key-value metadata stored on both records.
-     *   - notes           (string)  Human-readable notes attached to the transaction.
+     *   - company_uuid      (string)  Company context; falls back to session('company').
+     *   - currency          (string)  ISO 4217 currency code; defaults to account currency or 'USD'.
+     *   - transaction_uuid  (string)  UUID of the caller's Transaction record to link to this journal.
+     *   - reference         (string)  Human-readable reference (invoice number, order ID, etc.).
+     *   - memo              (string)  Additional memo text; defaults to description.
+     *   - journal_type      (string)  Journal entry type; defaults to 'general'.
+     *   - is_system_entry   (bool)    Whether this is an automated system entry; defaults to true.
+     *   - entry_date        (mixed)   Journal entry date; defaults to now().
+     *   - meta              (array)   Arbitrary key-value metadata.
      *
      * @param Account $debitAccount  the account to debit
      * @param Account $creditAccount the account to credit
@@ -73,44 +75,12 @@ class LedgerService
         return DB::transaction(function () use ($debitAccount, $creditAccount, $amount, $description, $options) {
             $companyUuid = $options['company_uuid'] ?? session('company');
             $currency    = $options['currency'] ?? $debitAccount->currency ?? 'USD';
-            $type        = $options['type'] ?? 'ledger';
-            $status      = $options['status'] ?? 'completed';
             $meta        = $options['meta'] ?? [];
 
-            // Build the Transaction payload
-            $transactionPayload = [
-                'company_uuid' => $companyUuid,
-                'amount'       => $amount,
-                'currency'     => $currency,
-                'description'  => $description,
-                'type'         => $type,
-                'status'       => $status,
-                'meta'         => $meta,
-            ];
-
-            if (!empty($options['transaction_id'])) {
-                $transactionPayload['gateway_transaction_id'] = $options['transaction_id'];
-            }
-            if (!empty($options['subject_uuid'])) {
-                $transactionPayload['subject_uuid'] = $options['subject_uuid'];
-            }
-            if (!empty($options['subject_type'])) {
-                $transactionPayload['subject_type'] = $options['subject_type'];
-            }
-            if (!empty($options['gateway_uuid'])) {
-                $transactionPayload['gateway_uuid'] = $options['gateway_uuid'];
-            }
-            if (!empty($options['notes'])) {
-                $transactionPayload['notes'] = $options['notes'];
-            }
-
-            // Create the canonical Transaction record in core-api
-            $transaction = Transaction::create($transactionPayload);
-
-            // Create the double-entry Journal record
+            // Create the double-entry Journal record, linked to the caller's Transaction if provided
             $journal = Journal::create([
                 'company_uuid'        => $companyUuid,
-                'transaction_uuid'    => $transaction->uuid,
+                'transaction_uuid'    => $options['transaction_uuid'] ?? null,
                 'debit_account_uuid'  => $debitAccount->uuid,
                 'credit_account_uuid' => $creditAccount->uuid,
                 'amount'              => $amount,

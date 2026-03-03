@@ -36,6 +36,7 @@ class Gateway extends FleetbaseResource
             'description'        => $this->description,
             'capabilities'       => $this->capabilities ?? [],
             'is_sandbox'         => $this->is_sandbox,
+            'environment'        => $this->environment ?? ($this->is_sandbox ? 'sandbox' : 'live'),
             'status'             => $this->status,
             'return_url'         => $this->return_url,
             'webhook_url'        => $this->webhook_url,
