@@ -37,9 +37,9 @@
     <div class="p-4 space-y-4">
 
         {{! ── Account list ─────────────────────────────────────────────────── }}
-        {{#if this.isLoading}}
+        {{#if this.loadGeneralLedger.isRunning}}
             <div class="flex items-center justify-center py-20">
-                <LoadingIndicator />
+                <Spinner />
             </div>
         {{else if this.accounts.length}}
             {{#each this.accounts as |row|}}

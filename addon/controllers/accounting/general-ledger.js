@@ -17,7 +17,6 @@ export default class AccountingGeneralLedgerController extends Controller {
     @service fetch;
 
     @tracked accounts = [];
-    @tracked isLoading = false;
     @tracked date_from = null;
     @tracked date_to = null;
     @tracked type = null;
@@ -37,7 +36,6 @@ export default class AccountingGeneralLedgerController extends Controller {
     }
 
     @task *loadGeneralLedger() {
-        this.isLoading = true;
         try {
             const params = {};
             if (this.date_from) params.date_from = this.date_from;
@@ -48,8 +46,6 @@ export default class AccountingGeneralLedgerController extends Controller {
             this.accounts = result?.data?.accounts ?? [];
         } catch {
             this.accounts = [];
-        } finally {
-            this.isLoading = false;
         }
     }
 
