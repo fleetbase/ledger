@@ -12,7 +12,7 @@ export default class LedgerWalletModel extends Model {
     @attr('string') type;
     @attr('string') status;
     @attr('string') currency;
-    @attr('number') balance;
+    @attr('string') balance;
     @attr('string') formatted_balance;
     @attr('boolean') is_frozen;
     @attr('raw') meta;

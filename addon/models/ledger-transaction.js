@@ -18,15 +18,15 @@ export default class LedgerTransactionModel extends Model {
         return this.direction === 'debit' ? 'red' : 'green';
     }
     // Monetary
-    @attr('number') amount;
-    @attr('number') fee_amount;
-    @attr('number') tax_amount;
-    @attr('number') net_amount;
-    @attr('number') balance_after;
+    @attr('string') amount;
+    @attr('string') fee_amount;
+    @attr('string') tax_amount;
+    @attr('string') net_amount;
+    @attr('string') balance_after;
     @attr('string') currency;
-    @attr('number') exchange_rate;
+    @attr('string') exchange_rate;
     @attr('string') settled_currency;
-    @attr('number') settled_amount;
+    @attr('string') settled_amount;
     // Polymorphic roles
     @attr('string') subject_uuid;
     @attr('string') subject_type;

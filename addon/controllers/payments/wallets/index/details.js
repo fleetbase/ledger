@@ -34,29 +34,29 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
             acceptButtonText: 'Add Funds',
             acceptButtonIcon: 'plus-circle',
             wallet,
-            amount: null,
+            // MoneyInput @onChange fires with the already-converted cents integer
+            amount: 0,
             description: '',
-            setAmount: (event) => {
-                options.amount = event.target.value;
+            // MoneyInput calls onChange(centsInteger, detail) — store directly
+            setAmount: (centsValue) => {
+                options.amount = centsValue;
             },
             setDescription: (event) => {
                 options.description = event.target.value;
             },
             confirm: async (modal) => {
-                const amountFloat = parseFloat(options.amount);
-                if (!amountFloat || amountFloat <= 0) {
+                if (!options.amount || options.amount <= 0) {
                     this.notifications.warning('Please enter a valid amount greater than zero.');
                     return;
                 }
                 modal.startLoading();
                 try {
-                    const amountInCents = Math.round(amountFloat * 100);
                     await this.fetch.post(
                         `wallets/${wallet.id}/credit`,
-                        { amount: amountInCents, description: options.description || 'Manual top-up' },
+                        { amount: options.amount, description: options.description || 'Manual top-up' },
                         { namespace: 'ledger/int/v1' }
                     );
-                    this.notifications.success(`${wallet.currency} ${amountFloat.toFixed(2)} added to ${wallet.name}.`);
+                    this.notifications.success(`Funds added to ${wallet.name}.`);
                     await wallet.reload();
                     modal.done();
                 } catch (error) {
@@ -78,13 +78,15 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
             acceptButtonIcon: 'exchange-alt',
             wallet,
             toWallet: null,
-            amount: null,
+            // MoneyInput @onChange fires with the already-converted cents integer
+            amount: 0,
             description: '',
             setToWallet: (selectedWallet) => {
                 options.toWallet = selectedWallet;
             },
-            setAmount: (event) => {
-                options.amount = event.target.value;
+            // MoneyInput calls onChange(centsInteger, detail) — store directly
+            setAmount: (centsValue) => {
+                options.amount = centsValue;
             },
             setDescription: (event) => {
                 options.description = event.target.value;
@@ -94,8 +96,7 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
                     this.notifications.warning('Please select a destination wallet.');
                     return;
                 }
-                const amountFloat = parseFloat(options.amount);
-                if (!amountFloat || amountFloat <= 0) {
+                if (!options.amount || options.amount <= 0) {
                     this.notifications.warning('Please enter a valid amount greater than zero.');
                     return;
                 }
@@ -105,17 +106,16 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
                 }
                 modal.startLoading();
                 try {
-                    const amountInCents = Math.round(amountFloat * 100);
                     await this.fetch.post(
                         `wallets/${wallet.id}/transfer`,
                         {
                             to_wallet_uuid: options.toWallet.id,
-                            amount: amountInCents,
+                            amount: options.amount,
                             description: options.description || 'Internal transfer',
                         },
                         { namespace: 'ledger/int/v1' }
                     );
-                    this.notifications.success(`${wallet.currency} ${amountFloat.toFixed(2)} transferred to ${options.toWallet.name}.`);
+                    this.notifications.success(`Funds transferred to ${options.toWallet.name}.`);
                     await wallet.reload();
                     modal.done();
                 } catch (error) {
