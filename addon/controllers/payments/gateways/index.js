@@ -7,21 +7,7 @@ export default class PaymentsGatewaysIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = [
-        'page',
-        'limit',
-        'sort',
-        'query',
-        'public_id',
-        'name',
-        'code',
-        'driver',
-        'environment',
-        'status',
-        'is_default',
-        'created_at',
-        'updated_at',
-    ];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'public_id', 'name', 'code', 'driver', 'environment', 'status', 'is_default', 'created_at', 'updated_at'];
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';

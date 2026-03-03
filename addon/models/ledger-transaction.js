@@ -89,6 +89,7 @@ export default class LedgerTransactionModel extends Model {
         }
         return formatDate(this.created_at, 'dd, MMM');
     }
+
     @computed('updated_at') get updatedAtAgo() {
         if (!isValidDate(this.updated_at)) {
             return null;
@@ -109,6 +110,7 @@ export default class LedgerTransactionModel extends Model {
         }
         return formatDate(this.updated_at, 'dd, MMM');
     }
+
     @computed('settled_at') get settledAtAgo() {
         if (!isValidDate(this.settled_at)) {
             return null;
@@ -149,6 +151,7 @@ export default class LedgerTransactionModel extends Model {
         }
         return formatDate(this.voided_at, 'dd, MMM');
     }
+
     @computed('reversed_at') get reversedAtAgo() {
         if (!isValidDate(this.reversed_at)) {
             return null;

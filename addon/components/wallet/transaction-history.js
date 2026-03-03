@@ -6,7 +6,6 @@ import { task } from 'ember-concurrency';
 export default class WalletTransactionHistoryComponent extends Component {
     @service fetch;
     @service intl;
-
     @tracked transactions = [];
     @tracked meta = null;
     @tracked page = 1;
@@ -18,14 +17,12 @@ export default class WalletTransactionHistoryComponent extends Component {
                 valuePath: 'createdAt',
                 resizable: true,
                 sortable: false,
-                width: '130px',
             },
             {
                 label: this.intl.t('column.type'),
                 valuePath: 'type',
                 resizable: true,
                 sortable: false,
-                width: '120px',
             },
             {
                 label: this.intl.t('column.description'),
@@ -39,7 +36,6 @@ export default class WalletTransactionHistoryComponent extends Component {
                 cellComponent: 'table/cell/currency',
                 resizable: true,
                 sortable: false,
-                width: '120px',
             },
             {
                 label: this.intl.t('column.balance-after'),
@@ -47,7 +43,6 @@ export default class WalletTransactionHistoryComponent extends Component {
                 cellComponent: 'table/cell/currency',
                 resizable: true,
                 sortable: false,
-                width: '130px',
             },
             {
                 label: this.intl.t('column.status'),
@@ -55,7 +50,6 @@ export default class WalletTransactionHistoryComponent extends Component {
                 cellComponent: 'table/cell/status',
                 resizable: true,
                 sortable: false,
-                width: '110px',
             },
         ];
     }
@@ -74,7 +68,7 @@ export default class WalletTransactionHistoryComponent extends Component {
             const result = yield this.fetch.get(
                 `wallets/${wallet.id}/transactions`,
                 { page: this.page, limit: 20 },
-                { namespace: 'ledger/int/v1' }
+                { namespace: 'ledger/int/v1', normalizeToEmberData: true, normalizeModelType: 'ledger-transaction' }
             );
             this.transactions = result?.data ?? [];
             this.meta = result?.meta ?? null;

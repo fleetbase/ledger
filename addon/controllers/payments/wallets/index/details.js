@@ -102,11 +102,7 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
                 }
                 modal.startLoading();
                 try {
-                    await this.fetch.post(
-                        `wallets/${wallet.id}/credit`,
-                        { amount: options.amount, description: options.description || 'Manual top-up' },
-                        { namespace: 'ledger/int/v1' }
-                    );
+                    await this.fetch.post(`wallets/${wallet.id}/credit`, { amount: options.amount, description: options.description || 'Manual top-up' }, { namespace: 'ledger/int/v1' });
                     this.notifications.success(`Funds added to ${wallet.name}.`);
                     await wallet.reload();
                     modal.done();

@@ -7,22 +7,7 @@ export default class PaymentsWalletsIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = [
-        'page',
-        'limit',
-        'sort',
-        'query',
-        'public_id',
-        'name',
-        'type',
-        'status',
-        'currency',
-        'is_frozen',
-        'subject',
-        'subject_type',
-        'created_at',
-        'updated_at',
-    ];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'public_id', 'name', 'type', 'status', 'currency', 'is_frozen', 'subject', 'subject_type', 'created_at', 'updated_at'];
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
@@ -62,31 +47,31 @@ export default class PaymentsWalletsIndexController extends Controller {
 
     get columns() {
         return [
-            // ── Default visible columns ──────────────────────────────────────
-            {
-                sticky: true,
-                label: this.intl.t('column.name'),
-                valuePath: 'name',
-                cellComponent: 'table/cell/anchor',
-                action: this.walletActions.transition.view,
-                width: 220,
-                resizable: true,
-                sortable: true,
-                filterable: true,
-                filterParam: 'name',
-                filterComponent: 'filter/string',
-            },
             // ── Owner (subject) column ───────────────────────────────────────
             {
+                sticky: true,
                 label: this.intl.t('column.owner'),
                 valuePath: 'owner_name',
                 cellComponent: 'table/cell/anchor',
                 action: this.walletActions.transition.view,
-                width: 180,
+                width: 200,
                 resizable: true,
                 sortable: false,
                 filterable: true,
                 filterParam: 'subject',
+                filterComponent: 'filter/string',
+            },
+            // ── Default visible columns ──────────────────────────────────────
+            {
+                label: this.intl.t('column.name'),
+                valuePath: 'name',
+                cellComponent: 'table/cell/anchor',
+                action: this.walletActions.transition.view,
+                width: 160,
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'name',
                 filterComponent: 'filter/string',
             },
             {
