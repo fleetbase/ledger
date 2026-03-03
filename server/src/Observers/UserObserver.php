@@ -25,7 +25,9 @@ use Illuminate\Support\Facades\Log;
  */
 class UserObserver
 {
-    public function __construct(protected WalletService $walletService) {}
+    public function __construct(protected WalletService $walletService)
+    {
+    }
 
     /**
      * Handle the User "created" event.

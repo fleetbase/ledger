@@ -140,8 +140,6 @@ class Transaction extends FleetbaseResource
     /**
      * Attempt to resolve a display name from a polymorphic relationship model.
      * Tries common name fields in order: name, display_name, full_name, email.
-     *
-     * @param mixed $model
      */
     private function resolveDisplayName($model): ?string
     {
@@ -161,8 +159,6 @@ class Transaction extends FleetbaseResource
     /**
      * Resolve a polymorphic model to a simple identifier array.
      * Returns uuid + public_id + type so the frontend can link to the resource.
-     *
-     * @param mixed $model
      */
     private function resolvePolymorphicResource($model): ?array
     {

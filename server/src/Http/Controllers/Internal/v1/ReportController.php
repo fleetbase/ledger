@@ -3,8 +3,8 @@
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
 use Fleetbase\Http\Controllers\Controller;
-use Fleetbase\Ledger\Models\Wallet;
 use Fleetbase\Ledger\Models\Transaction;
+use Fleetbase\Ledger\Models\Wallet;
 use Fleetbase\Ledger\Services\LedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

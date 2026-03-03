@@ -44,6 +44,7 @@ class ProvisionLedgerDefaults extends Command
 
         if ($companies->isEmpty()) {
             $this->warn('[Ledger] No companies found to provision.');
+
             return self::SUCCESS;
         }
 
@@ -88,7 +89,7 @@ class ProvisionLedgerDefaults extends Command
         $bar->finish();
         $this->newLine(2);
 
-         // ── Users (personal wallets for all users) ───────────────────────────
+        // ── Users (personal wallets for all users) ───────────────────────────
         if (!$skipWallets) {
             $usersQuery = User::whereNotNull('company_uuid');
             if ($companyUuid) {
@@ -129,6 +130,7 @@ class ProvisionLedgerDefaults extends Command
 
         if ($errors > 0) {
             $this->warn("[Ledger] {$errors} error(s) occurred — check logs for details.");
+
             return self::FAILURE;
         }
 

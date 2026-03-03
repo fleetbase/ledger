@@ -21,7 +21,9 @@ use Illuminate\Support\Facades\Log;
  */
 class CompanyObserver
 {
-    public function __construct(protected WalletService $walletService) {}
+    public function __construct(protected WalletService $walletService)
+    {
+    }
 
     /**
      * Handle the Company "created" event.

@@ -614,7 +614,6 @@ class WalletService
      * Refund Reserve) owned by the company itself. Safe to call multiple times
      * — uses firstOrCreate keyed on (company_uuid, subject_uuid, subject_type, name).
      *
-     * @param  \Fleetbase\Models\Company  $company
      * @return \Illuminate\Support\Collection<\Fleetbase\Ledger\Models\Wallet>
      */
     public function provisionCompanyWallets(Company $company): Collection
@@ -679,8 +678,7 @@ class WalletService
      * Safe to call multiple times — uses firstOrCreate keyed on
      * (company_uuid, subject_uuid, subject_type).
      *
-     * @param  \Fleetbase\Models\User  $user
-     * @return \Fleetbase\Ledger\Models\Wallet|null  null if the user has no company
+     * @return Wallet|null null if the user has no company
      */
     public function provisionUserWallet(User $user): ?Wallet
     {

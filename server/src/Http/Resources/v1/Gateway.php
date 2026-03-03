@@ -27,21 +27,21 @@ class Gateway extends FleetbaseResource
     public function toArray($request): array
     {
         return [
-            'id'           => $this->when(Http::isInternalRequest(), $this->uuid, $this->public_id),
-            'uuid'         => $this->when(Http::isInternalRequest(), $this->uuid),
-            'public_id'    => $this->when(Http::isInternalRequest(), $this->public_id),
-            'company_uuid' => $this->when(Http::isInternalRequest(), $this->company_uuid),
-            'name'         => $this->name,
-            'driver'       => $this->driver,
-            'description'  => $this->description,
-            'capabilities' => $this->capabilities ?? [],
-            'is_sandbox'   => $this->is_sandbox,
-            'status'       => $this->status,
+            'id'                 => $this->when(Http::isInternalRequest(), $this->uuid, $this->public_id),
+            'uuid'               => $this->when(Http::isInternalRequest(), $this->uuid),
+            'public_id'          => $this->when(Http::isInternalRequest(), $this->public_id),
+            'company_uuid'       => $this->when(Http::isInternalRequest(), $this->company_uuid),
+            'name'               => $this->name,
+            'driver'             => $this->driver,
+            'description'        => $this->description,
+            'capabilities'       => $this->capabilities ?? [],
+            'is_sandbox'         => $this->is_sandbox,
+            'status'             => $this->status,
             'return_url'         => $this->return_url,
             'webhook_url'        => $this->webhook_url,
             'system_webhook_url' => $this->getWebhookUrl(),
-            'created_at'   => $this->created_at,
-            'updated_at'   => $this->updated_at,
+            'created_at'         => $this->created_at,
+            'updated_at'         => $this->updated_at,
         ];
     }
 }

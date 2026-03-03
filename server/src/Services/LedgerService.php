@@ -5,8 +5,8 @@ namespace Fleetbase\Ledger\Services;
 use Fleetbase\Ledger\Models\Account;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Models\Journal;
-use Fleetbase\Ledger\Models\Wallet;
 use Fleetbase\Ledger\Models\Transaction;
+use Fleetbase\Ledger\Models\Wallet;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 

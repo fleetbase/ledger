@@ -49,6 +49,7 @@ class BackfillTransactionDirection extends Command
 
         if ($total === 0) {
             $this->info('[Ledger] All transactions already have a direction set.');
+
             return self::SUCCESS;
         }
 
