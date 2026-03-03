@@ -76,6 +76,19 @@ export default class PaymentsWalletsIndexController extends Controller {
                 filterParam: 'name',
                 filterComponent: 'filter/string',
             },
+            // ── Owner (subject) column ───────────────────────────────────────
+            {
+                label: this.intl.t('column.owner'),
+                valuePath: 'owner_name',
+                cellComponent: 'table/cell/anchor',
+                action: this.walletActions.transition.view,
+                width: 180,
+                resizable: true,
+                sortable: false,
+                filterable: true,
+                filterParam: 'subject',
+                filterComponent: 'filter/string',
+            },
             {
                 label: this.intl.t('column.type'),
                 valuePath: 'type',
@@ -145,17 +158,6 @@ export default class PaymentsWalletsIndexController extends Controller {
                 sortable: true,
                 filterable: true,
                 filterComponent: 'filter/date',
-            },
-            // ── Owner (subject) column ───────────────────────────────────────
-            {
-                label: this.intl.t('column.owner'),
-                valuePath: 'owner_name',
-                width: 180,
-                resizable: true,
-                sortable: false,
-                filterable: true,
-                filterParam: 'subject',
-                filterComponent: 'filter/string',
             },
             // ── Hidden / toggleable columns ──────────────────────────────────
             {

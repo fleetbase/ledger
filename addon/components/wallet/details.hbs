@@ -19,7 +19,7 @@
 
             <div class="field-info-container">
                 <div class="field-name">Currency</div>
-                <div class="field-value">{{n-a @resource.currency}}</div>
+                <div class="field-value uppercase">{{n-a @resource.currency}}</div>
             </div>
 
             <div class="field-info-container">
@@ -46,11 +46,11 @@
 
             <div class="field-info-container col-span-2">
                 <div class="field-name">Current Balance</div>
-                <div class="field-value text-xl font-bold text-gray-900 dark:text-white">{{format-currency @resource.balance @resource.currency}}</div>
+                <div class="field-value text-lg font-bold text-gray-900 dark:text-white">{{format-currency @resource.balance @resource.currency}}</div>
             </div>
 
             <div class="col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
-                Owner
+                Owner Details
             </div>
 
             <div class="field-info-container">
@@ -75,7 +75,7 @@
     </ContentPanel>
 
     {{! RECORD INFO }}
-    <ContentPanel @title="Record Info" @open={{false}} @wrapperClass="bordered-top">
+    <ContentPanel @title="Record Info" @open={{true}} @wrapperClass="bordered-top">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
 
             <div class="field-info-container">
