@@ -134,6 +134,7 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 // ----------------------------------------------------------------
                                 // Reports & Financial Statements
                                 // ----------------------------------------------------------------
+                                $router->get('reports/general-ledger', 'ReportController@generalLedger');
                                 $router->get('reports/dashboard', 'ReportController@dashboard');
                                 $router->get('reports/trial-balance', 'ReportController@trialBalance');
                                 $router->get('reports/balance-sheet', 'ReportController@balanceSheet');
