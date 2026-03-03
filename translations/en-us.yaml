@@ -45,6 +45,7 @@ column:
   gateway: Gateway
   payment-method: Payment Method
   reference: Reference
+  memo: Memo
   period: Period
   settled-at: Settled At
   failure-reason: Failure Reason

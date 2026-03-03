@@ -7,13 +7,13 @@ export default class AccountingJournalIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'entry_source', 'currency'];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status', 'currency'];
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-entry_date';
     @tracked query = null;
     @tracked type = null;
-    @tracked entry_source = null;
+    @tracked status = null;
     @tracked currency = null;
     @tracked table = null;
 
@@ -80,39 +80,54 @@ export default class AccountingJournalIndexController extends Controller {
                 ],
             },
             {
+                label: this.intl.t('column.status'),
+                valuePath: 'status',
+                cellComponent: 'table/cell/status',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'status',
+                filterComponent: 'filter/select',
+                filterOptions: [
+                    { label: 'Posted', value: 'posted' },
+                    { label: 'Draft', value: 'draft' },
+                    { label: 'Voided', value: 'voided' },
+                ],
+            },
+            {
                 label: this.intl.t('column.debit-account'),
-                valuePath: 'debit_account_name',
+                valuePath: 'debit_account.code',
                 resizable: true,
                 filterable: true,
-                filterParam: 'debit_account',
+                filterParam: 'debitAccount',
                 filterComponent: 'filter/string',
             },
             {
                 label: this.intl.t('column.credit-account'),
-                valuePath: 'credit_account_name',
+                valuePath: 'credit_account.code',
                 resizable: true,
                 filterable: true,
-                filterParam: 'credit_account',
+                filterParam: 'creditAccount',
                 filterComponent: 'filter/string',
             },
             {
                 label: this.intl.t('column.amount'),
                 valuePath: 'amount',
+                cellComponent: 'table/cell/currency',
                 resizable: true,
                 sortable: true,
             },
             {
-                label: this.intl.t('column.source'),
-                valuePath: 'entry_source',
+                label: this.intl.t('column.reference'),
+                valuePath: 'reference',
                 resizable: true,
-                sortable: true,
-                filterable: true,
-                filterParam: 'entry_source',
-                filterComponent: 'filter/select',
-                filterOptions: [
-                    { label: 'System', value: 'system' },
-                    { label: 'Manual', value: 'manual' },
-                ],
+                hidden: true,
+            },
+            {
+                label: this.intl.t('column.memo'),
+                valuePath: 'memo',
+                resizable: true,
+                hidden: true,
             },
         ];
     }

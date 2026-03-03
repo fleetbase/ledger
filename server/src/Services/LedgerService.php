@@ -116,6 +116,11 @@ class LedgerService
                 'amount'              => $amount,
                 'currency'            => $currency,
                 'description'         => $description,
+                'type'                => $options['journal_type'] ?? 'general',
+                'status'              => 'posted',
+                'reference'           => $options['reference'] ?? null,
+                'memo'                => $options['memo'] ?? $description,
+                'is_system_entry'     => $options['is_system_entry'] ?? true,
                 'entry_date'          => $options['entry_date'] ?? now(),
                 'meta'                => $meta,
             ]);

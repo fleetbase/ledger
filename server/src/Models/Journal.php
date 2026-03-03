@@ -52,6 +52,12 @@ class Journal extends Model
         'transaction_uuid',
         'debit_account_uuid',
         'credit_account_uuid',
+        'number',
+        'type',
+        'status',
+        'reference',
+        'memo',
+        'is_system_entry',
         'amount',
         'currency',
         'description',
@@ -65,9 +71,10 @@ class Journal extends Model
      * @var array
      */
     protected $casts = [
-        'amount' => 'integer',
-        'entry_date' => 'date',
-        'meta'   => Json::class,
+        'amount'          => 'integer',
+        'entry_date'      => 'date',
+        'is_system_entry' => 'boolean',
+        'meta'            => Json::class,
     ];
 
     /**
@@ -83,6 +90,27 @@ class Journal extends Model
      * @var array
      */
     protected $hidden = [];
+
+    /**
+     * Auto-generate a sequential journal entry number on creation.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (Journal $journal) {
+            if (empty($journal->number)) {
+                $count          = static::where('company_uuid', $journal->company_uuid)->count() + 1;
+                $journal->number = 'JE-' . str_pad($count, 5, '0', STR_PAD_LEFT);
+            }
+            if (empty($journal->status)) {
+                $journal->status = 'posted';
+            }
+            if (empty($journal->type)) {
+                $journal->type = 'general';
+            }
+        });
+    }
 
     /**
      * The transaction this journal entry belongs to.
