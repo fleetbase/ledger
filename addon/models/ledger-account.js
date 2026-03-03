@@ -10,9 +10,8 @@ export default class LedgerAccountModel extends Model {
     @attr('string') type;
     @attr('string') status;
     @attr('string') currency;
-    @attr('number') balance;
+    @attr('string') balance;
     @attr('string') description;
-    @attr('boolean') is_active;
     @attr('raw') meta;
     @attr('date') created_at;
     @attr('date') updated_at;

@@ -7,12 +7,12 @@ export default class LedgerInvoiceModel extends Model {
     @attr('string') number;
     @attr('string') status;
     @attr('string') currency;
-    @attr('number') subtotal;
-    @attr('number') tax_amount;
-    @attr('number') discount_amount;
-    @attr('number') total;
-    @attr('number') amount_paid;
-    @attr('number') balance;
+    @attr('string') subtotal;
+    @attr('string') tax_amount;
+    @attr('string') discount_amount;
+    @attr('string') total;
+    @attr('string') amount_paid;
+    @attr('string') balance;
     @attr('string') customer_uuid;
     @attr('string') customer_type;
     @attr('string') notes;
