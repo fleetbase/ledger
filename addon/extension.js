@@ -18,12 +18,6 @@ export default {
                     route: 'console.ledger.billing.invoices',
                 },
                 {
-                    title: 'Billing Transactions',
-                    description: 'View all billing and payment transaction records.',
-                    icon: 'receipt',
-                    route: 'console.ledger.billing.transactions',
-                },
-                {
                     title: 'Wallets',
                     description: 'Manage driver, customer, and company wallets and balances.',
                     icon: 'wallet',
