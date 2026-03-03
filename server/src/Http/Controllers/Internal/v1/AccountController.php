@@ -59,10 +59,10 @@ class AccountController extends LedgerResourceController
             $isDebit  = $journal->debit_account_uuid === $account->uuid;
             $isCredit = $journal->credit_account_uuid === $account->uuid;
 
-            $debitAmount  = $isDebit  ? (int) $journal->amount : 0;
+            $debitAmount  = $isDebit ? (int) $journal->amount : 0;
             $creditAmount = $isCredit ? (int) $journal->amount : 0;
 
-            $totalDebits  += $debitAmount;
+            $totalDebits += $debitAmount;
             $totalCredits += $creditAmount;
 
             // Running balance follows normal balance convention:

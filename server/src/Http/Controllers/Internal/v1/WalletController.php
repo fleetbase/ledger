@@ -119,7 +119,7 @@ class WalletController extends LedgerResourceController
         );
 
         $gatewayResponse = $result['gateway_response'];
-        $response = [
+        $response        = [
             'wallet'           => new WalletResource($wallet->fresh()),
             'status'           => $gatewayResponse->status ?? 'unknown',
             'gateway_response' => $gatewayResponse,

@@ -9,7 +9,7 @@ export default {
         menuService.registerHeaderMenuItem('Ledger', 'console.ledger', {
             icon: 'calculator',
             priority: 4,
-            description: 'The financial backbone of your Fleetbase operation — invoicing, payments, accounting, and real-time financial reporting in one place.',
+            description: 'Invoicing, payments, accounting, and real-time financial reporting.',
             shortcuts: [
                 {
                     title: 'Invoices',
@@ -25,7 +25,7 @@ export default {
                 },
                 {
                     title: 'Transactions',
-                    description: 'A chronological record of every payment transaction processed across all wallets and gateways.',
+                    description: 'A chronological record of every transaction.',
                     icon: 'money-bill-transfer',
                     route: 'console.ledger.payments.transactions',
                 },
@@ -52,42 +52,6 @@ export default {
                     description: 'Review all posted transactions across every account.',
                     icon: 'book-open',
                     route: 'console.ledger.accounting.general-ledger',
-                },
-                {
-                    title: 'Income Statement',
-                    description: 'Profit and loss report for a selected period.',
-                    icon: 'chart-line',
-                    route: 'console.ledger.reports.income-statement',
-                },
-                {
-                    title: 'Balance Sheet',
-                    description: 'Snapshot of assets, liabilities, and equity at a point in time.',
-                    icon: 'scale-balanced',
-                    route: 'console.ledger.reports.balance-sheet',
-                },
-                {
-                    title: 'Cash Flow',
-                    description: 'Statement of cash inflows and outflows by activity.',
-                    icon: 'arrow-right-arrow-left',
-                    route: 'console.ledger.reports.cash-flow',
-                },
-                {
-                    title: 'Trial Balance',
-                    description: 'Verify that total debits equal total credits across all accounts.',
-                    icon: 'list-check',
-                    route: 'console.ledger.reports.trial-balance',
-                },
-                {
-                    title: 'AR Aging',
-                    description: 'Accounts receivable aging report broken down by overdue bucket.',
-                    icon: 'clock',
-                    route: 'console.ledger.reports.ar-aging',
-                },
-                {
-                    title: 'Wallet Summary',
-                    description: 'Aggregated wallet balances and top wallet holders.',
-                    icon: 'ranking-star',
-                    route: 'console.ledger.reports.wallet-summary',
                 },
             ],
         });
@@ -176,6 +140,9 @@ export default {
 
         widgetService.registerDashboard('ledger');
         widgetService.registerWidgets('ledger', widgets);
-        widgetService.registerWidgets('dashboard', widgets);
+        widgetService.registerWidgets(
+            'dashboard',
+            widgets.filter((w) => ['ledger-overview', 'ledger-revenue-chart', 'ledger-invoice-summary'].includes(w.id))
+        );
     },
 };

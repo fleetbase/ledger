@@ -394,7 +394,7 @@ class ReportController extends Controller
                 ],
                 'wallet_counts'      => $walletCounts,
                 'period_stats'       => $periodStats,
-                'top_wallets' => $topWallets,
+                'top_wallets'        => $topWallets,
             ],
         ]);
     }
@@ -457,10 +457,10 @@ class ReportController extends Controller
                 $isDebit  = $journal->debit_account_uuid === $account->uuid;
                 $isCredit = $journal->credit_account_uuid === $account->uuid;
 
-                $debitAmount  = $isDebit  ? (int) $journal->amount : 0;
+                $debitAmount  = $isDebit ? (int) $journal->amount : 0;
                 $creditAmount = $isCredit ? (int) $journal->amount : 0;
 
-                $totalDebits  += $debitAmount;
+                $totalDebits += $debitAmount;
                 $totalCredits += $creditAmount;
 
                 if ($isDebitNormal) {
