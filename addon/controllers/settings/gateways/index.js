@@ -19,7 +19,7 @@ export default class SettingsGatewaysIndexController extends Controller {
         { label: 'Driver', valuePath: 'driver_label', width: '120px' },
         { label: 'Environment', valuePath: 'environment', width: '100px' },
         { label: 'Default', valuePath: 'is_default_label', width: '80px', cellComponent: 'table/cell/base' },
-        { label: 'Status', valuePath: 'status_label', width: '90px', component: 'table/cell/status' },
+        { label: 'Status', valuePath: 'status_label', width: '90px', cellComponent: 'table/cell/status' },
     ];
 
     get actionButtons() {
@@ -30,40 +30,16 @@ export default class SettingsGatewaysIndexController extends Controller {
         this.query = query;
     }
 
-    @task *loadDrivers() {
-        try {
-            const result = yield this.fetch.get('gateways/drivers', {}, { namespace: 'ledger/int/v1' });
-            this.availableDrivers = result?.data ?? [];
-        } catch {
-            this.availableDrivers = [];
-        }
-    }
-
     @action addGateway() {
-        this.loadDrivers.perform().then(() => {
-            this.modalsManager.show('modals/gateway-form', {
-                title: 'Add Payment Gateway',
-                availableDrivers: this.availableDrivers,
-                confirm: async (modal) => {
-                    modal.startLoading();
-                    try {
-                        const gateway = modal.getOption('gateway');
-                        const record = this.store.createRecord('ledger-gateway', gateway);
-                        await record.save();
-                        this.notifications.success('Gateway added.');
-                        this.hostRouter.refresh();
-                        modal.done();
-                    } catch (error) {
-                        this.notifications.serverError(error);
-                        modal.stopLoading();
-                    }
-                },
-            });
-        });
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.new');
     }
 
     @action viewGateway(gateway) {
-        this.hostRouter.transitionTo('console.ledger.settings.gateways.index.details', gateway.id);
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.details', gateway.id);
+    }
+
+    @action editGateway(gateway) {
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.edit', gateway);
     }
 
     @action async deleteGateway(gateway) {

@@ -26,7 +26,7 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
 
     @action editGateway() {
         const gateway = this.model;
-        this.modalsManager.show('modals/gateway-form', { gateway });
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.edit', gateway);
     }
 
     @action async deleteGateway() {
@@ -39,7 +39,7 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
                 try {
                     await gateway.destroyRecord();
                     this.notifications.success('Gateway deleted.');
-                    this.hostRouter.transitionTo('payments.gateways.index');
+                    this.hostRouter.transitionTo('console.ledger.payments.gateways.index');
                     modal.done();
                 } catch (error) {
                     this.notifications.serverError(error);

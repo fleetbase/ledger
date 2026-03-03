@@ -23,23 +23,7 @@ export default class SettingsGatewaysIndexDetailsController extends Controller {
     }
 
     @action editGateway() {
-        this.modalsManager.show('modals/gateway-form', {
-            title: 'Edit Payment Gateway',
-            gateway: this.model.serialize(),
-            confirm: async (modal) => {
-                modal.startLoading();
-                try {
-                    const updates = modal.getOption('gateway');
-                    this.model.setProperties(updates);
-                    await this.model.save();
-                    this.notifications.success('Gateway updated.');
-                    modal.done();
-                } catch (error) {
-                    this.notifications.serverError(error);
-                    modal.stopLoading();
-                }
-            },
-        });
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.edit', this.model);
     }
 
     @action async deleteGateway() {
@@ -51,7 +35,7 @@ export default class SettingsGatewaysIndexDetailsController extends Controller {
                 try {
                     await this.model.destroyRecord();
                     this.notifications.success('Gateway removed.');
-                    this.hostRouter.transitionTo('console.ledger.settings.gateways.index');
+                    this.hostRouter.transitionTo('console.ledger.payments.gateways.index');
                     modal.done();
                 } catch (error) {
                     this.notifications.serverError(error);
