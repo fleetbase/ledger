@@ -72,7 +72,6 @@ export default class BillingInvoiceTemplatesIndexController extends Controller {
             {
                 label: 'Default',
                 valuePath: 'is_default',
-                cellComponent: 'table/cell/boolean',
                 resizable: true,
                 sortable: true,
             },
