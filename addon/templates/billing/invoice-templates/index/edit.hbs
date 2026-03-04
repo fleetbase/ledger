@@ -1,7 +1,9 @@
-<TemplateBuilder
-    @template={{this.template}}
-    @contextSchemas={{this.contextSchemas}}
-    @isSaving={{this.isSaving}}
-    @onSave={{perform this.save}}
-    @onPreview={{perform this.preview}}
-/>
+<EmberWormhole @to="ledger-template-builder-outlet">
+    <TemplateBuilder
+        @template={{this.template}}
+        @contextSchemas={{this.contextSchemas}}
+        @isSaving={{this.isSaving}}
+        @onSave={{perform this.save}}
+        @onPreview={{perform this.preview}}
+    />
+</EmberWormhole>
