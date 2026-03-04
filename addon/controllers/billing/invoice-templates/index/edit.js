@@ -72,8 +72,4 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
             this.notifications.serverError(err);
         }
     }
-
-    @action preview(templateData) {
-        return this.invoiceTemplateActions.preview(templateData);
-    }
 }

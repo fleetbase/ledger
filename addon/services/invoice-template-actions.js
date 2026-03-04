@@ -40,9 +40,7 @@ export default class InvoiceTemplateActionsService extends ResourceActionService
 
         try {
             const isPersistedTemplate = templateData?.id && !templateData?.isNew;
-            const endpoint = isPersistedTemplate
-                ? `templates/${templateData.id}/preview`
-                : 'templates/preview';
+            const endpoint = isPersistedTemplate ? `templates/${templateData.id}/preview` : 'templates/preview';
 
             const { html } = await this.fetch.post(endpoint, { template: templateData });
 

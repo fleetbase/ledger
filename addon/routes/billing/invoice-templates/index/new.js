@@ -31,10 +31,7 @@ function normaliseContextSchemas(response) {
             namespace,
             label: schema.label ?? namespace,
             icon: schema.icon ?? 'tag',
-            variables: [
-                ...(schema.variables ?? []),
-                ...(schema.global_variables ?? []),
-            ].map((v) => ({
+            variables: [...(schema.variables ?? []), ...(schema.global_variables ?? [])].map((v) => ({
                 path: v.path,
                 label: v.label ?? v.name ?? v.path,
                 type: v.type ?? 'string',
