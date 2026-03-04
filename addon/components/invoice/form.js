@@ -1,41 +1,37 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
+import { inject as service } from '@ember/service';
 
 /**
  * Invoice form component.
  *
  * Receives @resource (a ledger-invoice Ember Data record) and manages
- * the line-items array locally, writing it back to @resource.items
- * whenever items change so the parent save action picks it up.
+ * the line-items array by creating / updating ledger-invoice-item records
+ * in the Ember Data store and setting them on the invoice's `items` hasMany.
+ *
+ * The saveTask in invoice-actions.js reads `record.items` directly — no
+ * side-channel properties needed.
  */
 export default class InvoiceFormComponent extends Component {
+    @service store;
+    @service currentUser;
+
     @tracked items = [];
-    @tracked currency = 'USD';
+    @tracked currency;
+
+    get companyCurrency() {
+        return this.currentUser.getCompany()?.currency ?? 'USD';
+    }
 
     constructor() {
         super(...arguments);
         const invoice = this.args.resource;
+        this.currency = invoice?.currency ?? this.companyCurrency;
 
-        // Seed the local items array from the record
+        // Seed local items from the existing hasMany relationship (edit case)
         if (invoice?.items?.length) {
-            this.items = invoice.items.map((item) => ({
-                uuid:        item.uuid ?? null,
-                description: item.description ?? '',
-                quantity:    item.quantity ?? 1,
-                unit_price:  item.unit_price ?? 0,
-                tax_rate:    item.tax_rate ?? 0,
-                amount:      item.amount ?? 0,
-                tax_amount:  item.tax_amount ?? 0,
-            }));
-        }
-
-        this.currency = invoice?.currency ?? 'USD';
-
-        // Seed _pendingItems immediately so the saveTask always has a value
-        // even if the user saves without interacting with the line-items panel.
-        if (invoice) {
-            invoice._pendingItems = this.items;
+            this.items = invoice.items.map((item) => this._toPlain(item));
         }
     }
 
@@ -43,16 +39,48 @@ export default class InvoiceFormComponent extends Component {
     // Actions
     // -------------------------------------------------------------------------
 
+    /**
+     * Called by Invoice::LineItems @onChange whenever the user adds, removes,
+     * or edits a line item. Receives a plain-object array from the child
+     * component. We upsert each item as a ledger-invoice-item store record and
+     * update the invoice's `items` hasMany so the saveTask can serialise them.
+     */
     @action
     onItemsChange(updatedItems) {
         this.items = updatedItems;
-        // Expose items on the resource so the save action can include them
-        if (this.args.resource) {
-            // Use direct property assignment so the value is readable by the
-            // saveTask at save time. Ember Data's .set() silently ignores
-            // writes to undeclared attribute names.
-            this.args.resource._pendingItems = updatedItems;
-        }
+
+        const invoice = this.args.resource;
+        if (!invoice) return;
+
+        // Build or update ledger-invoice-item records in the store
+        const itemRecords = updatedItems.map((plain) => {
+            const existing = plain.uuid
+                ? this.store.peekRecord('ledger-invoice-item', plain.uuid)
+                : null;
+
+            if (existing) {
+                existing.description = plain.description;
+                existing.quantity    = plain.quantity;
+                existing.unit_price  = plain.unit_price;
+                existing.tax_rate    = plain.tax_rate;
+                existing.amount      = plain.amount;
+                existing.tax_amount  = plain.tax_amount;
+                return existing;
+            }
+
+            return this.store.createRecord('ledger-invoice-item', {
+                description: plain.description,
+                quantity:    plain.quantity,
+                unit_price:  plain.unit_price,
+                tax_rate:    plain.tax_rate,
+                amount:      plain.amount,
+                tax_amount:  plain.tax_amount,
+                invoice,
+            });
+        });
+
+        // Replace the hasMany content so saveTask reads the latest set
+        invoice.items = itemRecords;
     }
 
     @action
@@ -78,5 +106,17 @@ export default class InvoiceFormComponent extends Component {
             this.args.resource.template      = template;
             this.args.resource.template_uuid = template?.id ?? null;
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    _toPlain(item) {
+        if (typeof item.getProperties === 'function') {
+            const { uuid, description, quantity, unit_price, amount, tax_rate, tax_amount } = item;
+            return { uuid, description, quantity, unit_price, amount, tax_rate, tax_amount };
+        }
+        return { ...item };
     }
 }
