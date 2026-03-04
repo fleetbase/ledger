@@ -3,9 +3,11 @@
 namespace Fleetbase\Ledger\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\Casts\Money;
 use Fleetbase\Casts\PolymorphicType;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Models\Model;
+use Fleetbase\Models\Template;
 use Fleetbase\Models\Transaction;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasMetaAttributes;
@@ -71,6 +73,7 @@ class Invoice extends Model
         'customer_type',
         'order_uuid',
         'transaction_uuid',
+        'template_uuid',
         'number',
         'date',
         'due_date',
@@ -97,11 +100,11 @@ class Invoice extends Model
     protected $casts = [
         'date'          => 'date',
         'due_date'      => 'date',
-        'subtotal'      => 'integer',
-        'tax'           => 'integer',
-        'total_amount'  => 'integer',
-        'amount_paid'   => 'integer',
-        'balance'       => 'integer',
+        'subtotal'      => Money::class,
+        'tax'           => Money::class,
+        'total_amount'  => Money::class,
+        'amount_paid'   => Money::class,
+        'balance'       => Money::class,
         'customer_type' => PolymorphicType::class,
         'meta'          => Json::class,
         'sent_at'       => 'datetime',
@@ -145,6 +148,14 @@ class Invoice extends Model
     public function transaction(): BelongsTo
     {
         return $this->belongsTo(Transaction::class, 'transaction_uuid');
+    }
+
+    /**
+     * The template used to render this invoice.
+     */
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(Template::class, 'template_uuid');
     }
 
     /**

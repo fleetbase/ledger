@@ -3,6 +3,7 @@
 namespace Fleetbase\Ledger\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\Casts\Money;
 use Fleetbase\Models\Model;
 use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasUuid;
@@ -51,10 +52,10 @@ class InvoiceItem extends Model
      */
     protected $casts = [
         'quantity'   => 'integer',
-        'unit_price' => 'integer',
-        'amount'     => 'integer',
+        'unit_price' => Money::class,
+        'amount'     => Money::class,
         'tax_rate'   => 'decimal:2',
-        'tax_amount' => 'integer',
+        'tax_amount' => Money::class,
         'meta'       => Json::class,
     ];
 
@@ -81,7 +82,8 @@ class InvoiceItem extends Model
     }
 
     /**
-     * Calculate the line item amount.
+     * Calculate the line item amount from quantity and unit_price.
+     * All monetary values are stored as integer cents.
      */
     public function calculateAmount(): void
     {
