@@ -31,6 +31,12 @@ export default class InvoiceFormComponent extends Component {
         }
 
         this.currency = invoice?.currency ?? 'USD';
+
+        // Seed _pendingItems immediately so the saveTask always has a value
+        // even if the user saves without interacting with the line-items panel.
+        if (invoice) {
+            invoice._pendingItems = this.items;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -42,7 +48,10 @@ export default class InvoiceFormComponent extends Component {
         this.items = updatedItems;
         // Expose items on the resource so the save action can include them
         if (this.args.resource) {
-            this.args.resource.set('_pendingItems', updatedItems);
+            // Use direct property assignment so the value is readable by the
+            // saveTask at save time. Ember Data's .set() silently ignores
+            // writes to undeclared attribute names.
+            this.args.resource._pendingItems = updatedItems;
         }
     }
 

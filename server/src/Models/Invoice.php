@@ -59,6 +59,16 @@ class Invoice extends Model
     protected $searchableColumns = ['number', 'public_id'];
 
     /**
+     * The model's default attribute values.
+     *
+     * @var array
+     */
+    protected $attributes = [
+        'status'   => 'draft',
+        'currency' => 'USD',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
