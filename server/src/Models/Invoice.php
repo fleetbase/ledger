@@ -64,8 +64,7 @@ class Invoice extends Model
      * @var array
      */
     protected $attributes = [
-        'status'   => 'draft',
-        'currency' => 'USD',
+        'status' => 'draft',
     ];
 
     /**
