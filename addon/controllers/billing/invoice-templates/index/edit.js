@@ -9,6 +9,7 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
     @service hostRouter;
     @service notifications;
     @service modalsManager;
+    @service invoiceTemplateActions;
     @service intl;
     @service fetch;
 
@@ -72,16 +73,7 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
         }
     }
 
-    @task *preview(templateData) {
-        try {
-            const { html } = yield this.fetch.post(`templates/${this.template.id}/preview`, { template: templateData });
-            const win = window.open('', '_blank');
-            if (win) {
-                win.document.write(html);
-                win.document.close();
-            }
-        } catch (err) {
-            this.notifications.serverError(err);
-        }
+    @action preview(templateData) {
+        return this.invoiceTemplateActions.preview(templateData);
     }
 }

@@ -3,12 +3,12 @@ import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
-
 export default class BillingInvoiceTemplatesIndexNewController extends Controller {
     @service store;
     @service hostRouter;
     @service notifications;
     @service modalsManager;
+    @service invoiceTemplateActions;
     @service intl;
     @service fetch;
 
@@ -83,18 +83,7 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
         }
     }
 
-    @task *preview(templateData) {
-        try {
-            // POST to core-api preview endpoint with the current unsaved template data
-            const { html } = yield this.fetch.post('templates/preview', { template: templateData });
-            // Open the preview HTML in a new tab
-            const win = window.open('', '_blank');
-            if (win) {
-                win.document.write(html);
-                win.document.close();
-            }
-        } catch (err) {
-            this.notifications.serverError(err);
-        }
+    @action preview(templateData) {
+        return this.invoiceTemplateActions.preview(templateData);
     }
 }
