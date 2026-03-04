@@ -1,27 +1,25 @@
-<div class="form-wrapper" ...attributes>
-    {{! INVOICE DETAILS }}
+<div class="invoice-form" ...attributes>
+
+    {{! ── INVOICE DETAILS ─────────────────────────────────────────────────── }}
     <ContentPanel @title="Invoice Details" @open={{true}} @wrapperClass="bordered-top">
         <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
 
-            {{! Identification }}
-            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
-                Identification
-            </div>
-
-            <InputGroup @name="Invoice Number" @wrapperClass="col-span-2">
+            {{! Invoice Number }}
+            <InputGroup @name="Invoice Number">
                 <Input
                     @value={{@resource.number}}
                     @type="text"
                     class="w-full form-input"
-                    placeholder="e.g. INV-0001"
+                    placeholder="Auto-generated if left blank"
                     disabled={{cannot-write @resource}}
                 />
             </InputGroup>
 
+            {{! Status }}
             <InputGroup @name="Status">
                 <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                     <PowerSelect
-                        @options={{array "draft" "sent" "partial" "paid" "overdue" "voided" "uncollectible"}}
+                        @options={{array "draft" "sent" "viewed" "partial" "paid" "overdue" "cancelled"}}
                         @selected={{@resource.status}}
                         @onChange={{fn (mut @resource.status)}}
                         @placeholder="Select status"
@@ -34,61 +32,74 @@
                 </div>
             </InputGroup>
 
+            {{! Currency }}
             <InputGroup @name="Currency">
-                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
-                    <PowerSelect
-                        @options={{array "USD" "EUR" "GBP" "AED" "SAR" "QAR" "KWD" "BHD" "OMR" "JOD" "EGP" "NGN" "KES" "GHS" "ZAR" "INR" "PKR" "BDT" "LKR" "MYR" "SGD" "IDR" "PHP" "THB" "VND" "CNY" "JPY" "KRW" "AUD" "CAD" "NZD" "CHF" "SEK" "NOK" "DKK" "PLN" "CZK" "HUF" "RON" "BGN" "HRK" "TRY" "RUB" "UAH" "BRL" "MXN" "ARS" "CLP" "COP" "PEN" "UYU"}}
-                        @selected={{@resource.currency}}
-                        @onChange={{fn (mut @resource.currency)}}
-                        @placeholder="Select currency"
-                        @triggerClass="form-select form-input"
-                        @disabled={{cannot-write @resource}}
-                        as |option|
-                    >
-                        <div class="text-sm">{{option}}</div>
-                    </PowerSelect>
-                </div>
-            </InputGroup>
-
-            {{! Customer }}
-            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
-                Customer
-            </div>
-
-            <InputGroup @name="Customer UUID" @wrapperClass="col-span-2">
-                <Input
-                    @value={{@resource.customer_uuid}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="Customer UUID"
-                    disabled={{cannot-write @resource}}
+                <CurrencySelect
+                    @currency={{this.currency}}
+                    @onCurrencyChange={{this.onCurrencyChange}}
+                    @triggerClass="w-full form-select form-input"
+                    @disabled={{cannot-write @resource}}
                 />
             </InputGroup>
 
-            <InputGroup @name="Customer Type">
-                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
-                    <PowerSelect
-                        @options={{array "contact" "vendor" "user"}}
-                        @selected={{@resource.customer_type}}
-                        @onChange={{fn (mut @resource.customer_type)}}
-                        @placeholder="Select customer type"
-                        @triggerClass="form-select form-input"
-                        @disabled={{cannot-write @resource}}
-                        as |option|
-                    >
-                        <div class="capitalize text-sm">{{option}}</div>
-                    </PowerSelect>
-                </div>
+            {{! Template }}
+            <InputGroup @name="Invoice Template">
+                <ModelSelect
+                    @modelName="template"
+                    @selectedModel={{@resource.template}}
+                    @placeholder="Select a template (optional)"
+                    @triggerClass="form-select form-input"
+                    @infiniteScroll={{false}}
+                    @renderInPlace={{true}}
+                    @allowClear={{true}}
+                    @disabled={{cannot-write @resource}}
+                    @onChange={{this.onTemplateChange}}
+                    as |model|
+                >
+                    <div class="flex items-center gap-2">
+                        <FaIcon @icon="file-invoice" class="text-gray-400" />
+                        <span>{{model.name}}</span>
+                    </div>
+                </ModelSelect>
             </InputGroup>
 
-            {{! Dates }}
-            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
-                Dates
-            </div>
+        </div>
+    </ContentPanel>
 
-            <InputGroup @name="Issue Date">
+    {{! ── CUSTOMER ────────────────────────────────────────────────────────── }}
+    <ContentPanel @title="Customer" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 no-input-group-padding text-xs">
+
+            <InputGroup @name="Customer">
+                <ModelSelect
+                    @modelName="customer"
+                    @selectedModel={{@resource.customer}}
+                    @placeholder="Search contacts or vendors…"
+                    @triggerClass="form-select form-input"
+                    @infiniteScroll={{false}}
+                    @renderInPlace={{true}}
+                    @allowClear={{true}}
+                    @disabled={{cannot-write @resource}}
+                    @onChange={{this.onCustomerChange}}
+                    as |model|
+                >
+                    <div class="flex items-center gap-2">
+                        <FaIcon @icon={{if model.isVendor "warehouse" "user"}} class="text-gray-400" />
+                        <span class="uppercase">{{model.name}}</span>
+                    </div>
+                </ModelSelect>
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    {{! ── DATES ───────────────────────────────────────────────────────────── }}
+    <ContentPanel @title="Dates" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
+
+            <InputGroup @name="Invoice Date">
                 <Input
-                    @value={{@resource.issued_at}}
+                    @value={{@resource.date}}
                     @type="date"
                     class="w-full form-input"
                     disabled={{cannot-write @resource}}
@@ -107,79 +118,40 @@
         </div>
     </ContentPanel>
 
-    {{! AMOUNTS }}
-    <ContentPanel @title="Amounts" @open={{true}} @wrapperClass="bordered-top">
-        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
-
-            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
-                Pricing
-            </div>
-
-            <InputGroup @name="Subtotal">
-                <Input
-                    @value={{@resource.subtotal}}
-                    @type="number"
-                    class="w-full form-input"
-                    placeholder="0.00"
-                    disabled={{cannot-write @resource}}
-                />
-            </InputGroup>
-
-            <InputGroup @name="Tax Amount">
-                <Input
-                    @value={{@resource.tax_amount}}
-                    @type="number"
-                    class="w-full form-input"
-                    placeholder="0.00"
-                    disabled={{cannot-write @resource}}
-                />
-            </InputGroup>
-
-            <InputGroup @name="Discount Amount">
-                <Input
-                    @value={{@resource.discount_amount}}
-                    @type="number"
-                    class="w-full form-input"
-                    placeholder="0.00"
-                    disabled={{cannot-write @resource}}
-                />
-            </InputGroup>
-
-            <InputGroup @name="Total">
-                <Input
-                    @value={{@resource.total}}
-                    @type="number"
-                    class="w-full form-input"
-                    placeholder="0.00"
-                    disabled={{cannot-write @resource}}
-                />
-            </InputGroup>
-
-            <InputGroup @name="Amount Paid">
-                <Input
-                    @value={{@resource.amount_paid}}
-                    @type="number"
-                    class="w-full form-input"
-                    placeholder="0.00"
-                    disabled={{cannot-write @resource}}
-                />
-            </InputGroup>
-
-        </div>
+    {{! ── LINE ITEMS ──────────────────────────────────────────────────────── }}
+    <ContentPanel @title="Line Items" @open={{true}} @wrapperClass="bordered-top">
+        <Invoice::LineItems
+            @items={{this.items}}
+            @currency={{this.currency}}
+            @disabled={{cannot-write @resource}}
+            @onChange={{this.onItemsChange}}
+        />
     </ContentPanel>
 
-    {{! NOTES }}
-    <ContentPanel @title="Notes" @open={{true}} @wrapperClass="bordered-top">
+    {{! ── NOTES & TERMS ───────────────────────────────────────────────────── }}
+    <ContentPanel @title="Notes & Terms" @open={{true}} @wrapperClass="bordered-top">
         <div class="grid grid-cols-1 gap-2 no-input-group-padding text-xs">
-            <InputGroup @name="Notes" @wrapperClass="col-span-2">
+
+            <InputGroup @name="Notes">
                 <Textarea
                     @value={{@resource.notes}}
                     class="w-full form-input"
-                    rows="4"
-                    placeholder="Add any notes or payment instructions for the customer..."
+                    rows="3"
+                    placeholder="Add any notes or payment instructions for the customer…"
                     disabled={{cannot-write @resource}}
                 />
             </InputGroup>
+
+            <InputGroup @name="Terms">
+                <Textarea
+                    @value={{@resource.terms}}
+                    class="w-full form-input"
+                    rows="3"
+                    placeholder="Payment terms, e.g. Net 30…"
+                    disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+
         </div>
     </ContentPanel>
 

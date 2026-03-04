@@ -1,26 +1,146 @@
-<div class="p-4">
-    <table class="w-full text-sm">
-        <thead>
-            <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Description</th>
-                <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Qty</th>
-                <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Unit Price</th>
-                <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{#each @invoice.line_items as |item|}}
-                <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0">
-                    <td class="py-2 text-gray-700 dark:text-gray-300">{{item.description}}</td>
-                    <td class="py-2 text-right text-gray-600">{{item.quantity}}</td>
-                    <td class="py-2 text-right text-gray-600">{{format-currency item.unit_price @invoice.currency}}</td>
-                    <td class="py-2 text-right font-medium text-gray-900 dark:text-white">{{format-currency item.total @invoice.currency}}</td>
+<div class="invoice-line-items" ...attributes>
+    {{! Line items table }}
+    <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+            <thead>
+                <tr class="border-b border-gray-200 dark:border-gray-700 text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+                    <th class="py-2 pr-2 text-left w-1/2">Description</th>
+                    <th class="py-2 px-2 text-right w-16">Qty</th>
+                    <th class="py-2 px-2 text-right w-36">Unit Price</th>
+                    <th class="py-2 px-2 text-right w-20">Tax %</th>
+                    <th class="py-2 pl-2 text-right w-36">Amount</th>
+                    {{#unless @disabled}}
+                        <th class="py-2 pl-2 w-8"></th>
+                    {{/unless}}
                 </tr>
-            {{else}}
-                <tr>
-                    <td colspan="4" class="py-4 text-center text-gray-400 text-xs">No line items</td>
+            </thead>
+            <tbody>
+                {{#each this.items as |item index|}}
+                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                        {{! Description }}
+                        <td class="py-1 pr-2">
+                            <Input
+                                @value={{item.description}}
+                                @type="text"
+                                class="w-full form-input text-xs"
+                                placeholder="Item description"
+                                disabled={{@disabled}}
+                                {{on "change" (fn this.updateDescription index)}}
+                            />
+                        </td>
+
+                        {{! Quantity }}
+                        <td class="py-1 px-2">
+                            <Input
+                                @value={{item.quantity}}
+                                @type="number"
+                                min="1"
+                                step="1"
+                                class="w-full form-input text-xs text-right"
+                                disabled={{@disabled}}
+                                {{on "change" (fn this.updateQuantity index)}}
+                            />
+                        </td>
+
+                        {{! Unit Price — MoneyInput }}
+                        <td class="py-1 px-2">
+                            <MoneyInput
+                                @value={{item.unit_price}}
+                                @currency={{@currency}}
+                                @onChange={{fn this.updateUnitPrice index}}
+                                @disabled={{@disabled}}
+                                class="w-full"
+                            />
+                        </td>
+
+                        {{! Tax Rate }}
+                        <td class="py-1 px-2">
+                            <Input
+                                @value={{item.tax_rate}}
+                                @type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                class="w-full form-input text-xs text-right"
+                                placeholder="0"
+                                disabled={{@disabled}}
+                                {{on "change" (fn this.updateTaxRate index)}}
+                            />
+                        </td>
+
+                        {{! Amount (read-only, computed) }}
+                        <td class="py-1 pl-2 text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                            {{format-currency item.amount @currency}}
+                        </td>
+
+                        {{! Remove button }}
+                        {{#unless @disabled}}
+                            <td class="py-1 pl-2 text-center">
+                                <button
+                                    type="button"
+                                    class="text-red-400 hover:text-red-600 transition-colors"
+                                    {{on "click" (fn this.removeItem index)}}
+                                >
+                                    <FaIcon @icon="times" @size="xs" />
+                                </button>
+                            </td>
+                        {{/unless}}
+                    </tr>
+                {{/each}}
+
+                {{! Empty state }}
+                {{#if (eq this.items.length 0)}}
+                    <tr>
+                        <td colspan={{if @disabled 5 6}} class="py-4 text-center text-gray-400 text-xs italic">
+                            No line items yet.
+                            {{#unless @disabled}}
+                                <button type="button" class="text-blue-500 hover:underline ml-1" {{on "click" this.addItem}}>
+                                    Add one
+                                </button>
+                            {{/unless}}
+                        </td>
+                    </tr>
+                {{/if}}
+            </tbody>
+
+            {{! Totals footer }}
+            <tfoot class="border-t border-gray-200 dark:border-gray-700">
+                <tr class="text-xs text-gray-600 dark:text-gray-400">
+                    <td colspan={{if @disabled 3 4}} class="pt-2 text-right pr-2 text-[11px] uppercase tracking-wide font-semibold">Subtotal</td>
+                    <td class="pt-2 pl-2 text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                        {{format-currency this.subtotal @currency}}
+                    </td>
+                    {{#unless @disabled}}<td></td>{{/unless}}
                 </tr>
-            {{/each}}
-        </tbody>
-    </table>
+                <tr class="text-xs text-gray-600 dark:text-gray-400">
+                    <td colspan={{if @disabled 3 4}} class="pt-1 text-right pr-2 text-[11px] uppercase tracking-wide font-semibold">Tax</td>
+                    <td class="pt-1 pl-2 text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                        {{format-currency this.tax @currency}}
+                    </td>
+                    {{#unless @disabled}}<td></td>{{/unless}}
+                </tr>
+                <tr class="text-xs">
+                    <td colspan={{if @disabled 3 4}} class="pt-1 pb-2 text-right pr-2 text-[11px] uppercase tracking-wide font-bold text-gray-800 dark:text-gray-100">Total</td>
+                    <td class="pt-1 pb-2 pl-2 text-right font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                        {{format-currency this.total @currency}}
+                    </td>
+                    {{#unless @disabled}}<td></td>{{/unless}}
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {{! Add item button }}
+    {{#unless @disabled}}
+        <div class="mt-2">
+            <button
+                type="button"
+                class="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 transition-colors"
+                {{on "click" this.addItem}}
+            >
+                <FaIcon @icon="plus" @size="xs" />
+                Add line item
+            </button>
+        </div>
+    {{/unless}}
 </div>
