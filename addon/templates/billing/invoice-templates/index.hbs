@@ -12,4 +12,10 @@
     @bulkActions={{this.bulkActions}}
     @controller={{this}}
 />
+
+{{! Wormhole target for the full-viewport template builder.
+    The new/edit child routes teleport their <TemplateBuilder> here so it
+    covers the entire viewport rather than rendering inline inside the table. }}
+<div id="ledger-template-builder-outlet" class="fixed inset-0 z-[900] bg-white dark:bg-gray-900 empty:hidden"></div>
+
 {{outlet}}

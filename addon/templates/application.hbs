@@ -33,13 +33,6 @@
         <Layout::Sidebar::Item @route="console.ledger.settings.accounting" @icon="calculator">Accounting Settings</Layout::Sidebar::Item>
     </Layout::Sidebar::Panel>
 </EmberWormhole>
-
-{{! Full-viewport wormhole target for the invoice template builder.
-    The new/edit routes teleport their <TemplateBuilder> content here so it
-    covers the entire viewport (including the sidebar) rather than rendering
-    inline inside the section container. }}
-<div id="ledger-template-builder-outlet" class="fixed inset-0 z-[900] bg-white dark:bg-gray-900 empty:hidden"></div>
-
 <Layout::Section::Container>
     {{outlet}}
 </Layout::Section::Container>
