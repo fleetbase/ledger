@@ -8,6 +8,8 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
     @service store;
     @service hostRouter;
     @service notifications;
+    @service modalsManager;
+    @service intl;
     @service fetch;
 
     @tracked isSaving = false;
@@ -19,6 +21,40 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
 
     get contextSchemas() {
         return this.model?.contextSchemas ?? [];
+    }
+
+    @action
+    close() {
+        const template = this.template;
+        // For a brand-new record, treat it as dirty if the user has given it a
+        // non-default name or added any canvas elements.
+        const hasContent = template?.content?.length > 0;
+        const hasName = template?.name && template.name !== 'Untitled Template';
+
+        if (hasContent || hasName) {
+            return this.#confirmContinueWithUnsavedChanges(template);
+        }
+
+        // Nothing meaningful was entered — discard the new record and navigate.
+        if (template?.isNew) {
+            template.rollbackAttributes();
+        }
+        return this.hostRouter.transitionTo('console.ledger.billing.invoice-templates.index');
+    }
+
+    #confirmContinueWithUnsavedChanges(template, options = {}) {
+        return this.modalsManager.confirm({
+            title: this.intl.t('common.continue-without-saving'),
+            body: this.intl.t('common.continue-without-saving-prompt', { resource: 'Invoice Template' }),
+            acceptButtonText: this.intl.t('common.continue'),
+            confirm: async () => {
+                if (template?.isNew) {
+                    template.rollbackAttributes();
+                }
+                await this.hostRouter.transitionTo('console.ledger.billing.invoice-templates.index');
+            },
+            ...options,
+        });
     }
 
     @task *save(templateData) {
