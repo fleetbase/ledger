@@ -5,6 +5,12 @@ export default buildRoutes(function () {
 
     // Receivables
     this.route('billing', function () {
+        this.route('invoice-templates', function () {
+            this.route('index', { path: '/' }, function () {
+                this.route('new');
+                this.route('edit', { path: '/:id/edit' });
+            });
+        });
         this.route('invoices', function () {
             this.route('index', { path: '/' }, function () {
                 this.route('new');
