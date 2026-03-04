@@ -1,6 +1,7 @@
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
+import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
 
 export default class BillingInvoiceTemplatesIndexEditController extends Controller {
@@ -17,6 +18,20 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
 
     get contextSchemas() {
         return this.model?.contextSchemas ?? [];
+    }
+
+    @action
+    close() {
+        const template = this.template;
+        // Prompt if the Ember Data record has unsaved changes
+        if (template?.hasDirtyAttributes) {
+            if (!window.confirm('You have unsaved changes. Leave without saving?')) {
+                return;
+            }
+            template.rollbackAttributes();
+        }
+
+        this.hostRouter.transitionTo('console.ledger.billing.invoice-templates.index');
     }
 
     @task *save(templateData) {

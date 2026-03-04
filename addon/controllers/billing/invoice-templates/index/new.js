@@ -21,6 +21,31 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
         return this.model?.contextSchemas ?? [];
     }
 
+    @action
+    close() {
+        const template = this.template;
+        // If the template has never been saved and has unsaved changes, confirm
+        // before discarding. For a brand-new record, hasDirtyAttributes is true
+        // as soon as any field is set (including the defaults set in the route).
+        // We only prompt if the user has actually changed something meaningful
+        // (i.e. the name is not the default placeholder).
+        const hasContent = template?.content?.length > 0;
+        const hasName = template?.name && template.name !== 'Untitled Template';
+
+        if (hasContent || hasName) {
+            if (!window.confirm('You have unsaved changes. Leave without saving?')) {
+                return;
+            }
+        }
+
+        // Roll back the unsaved record so it doesn't linger in the store
+        if (template?.isNew) {
+            template.rollbackAttributes();
+        }
+
+        this.hostRouter.transitionTo('console.ledger.billing.invoice-templates.index');
+    }
+
     @task *save(templateData) {
         this.isSaving = true;
         try {
