@@ -93,10 +93,13 @@ export default class InvoiceFormComponent extends Component {
 
     @action
     onCustomerChange(customer) {
-        if (this.args.resource) {
+        if (customer) {
             this.args.resource.customer      = customer;
             this.args.resource.customer_uuid = customer?.id ?? null;
-            this.args.resource.customer_type = customer?.modelName ?? null;
+            // Customers in FleetOps are Contact records with type='customer'.
+            // Utils::getMutationType('fleet-ops:contact') resolves correctly to
+            // Fleetbase\FleetOps\Models\Contact on the backend.
+            this.args.resource.customer_type = 'fleet-ops:contact';
         }
     }
 
