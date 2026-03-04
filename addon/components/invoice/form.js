@@ -96,9 +96,10 @@ export default class InvoiceFormComponent extends Component {
         if (customer) {
             this.args.resource.customer      = customer;
             this.args.resource.customer_uuid = customer?.id ?? null;
-            // Must use the namespaced type string so Utils::getMutationType() on
-            // the backend resolves to Fleetbase\FleetOps\Models\Customer.
-            this.args.resource.customer_type = 'fleet-ops:customer';
+            // Customers in FleetOps are Contact records with type='customer'.
+            // Utils::getMutationType('fleet-ops:contact') resolves correctly to
+            // Fleetbase\FleetOps\Models\Contact on the backend.
+            this.args.resource.customer_type = 'fleet-ops:contact';
         }
     }
 
