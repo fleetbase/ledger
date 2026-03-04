@@ -62,7 +62,7 @@ export default class BillingInvoiceTemplatesIndexNewRoute extends Route {
                     content: [],
                 })
             ),
-            this.fetch.get('templates/context-schemas', { for: 'ledger-invoice' }, { namespace: '~api/v1' }).catch(() => ({})),
+            this.fetch.get('templates/context-schemas', { for: 'ledger-invoice' }).catch(() => ({})),
         ]);
         return { template, contextSchemas: normaliseContextSchemas(rawSchemas) };
     }

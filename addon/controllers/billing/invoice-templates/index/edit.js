@@ -5,6 +5,7 @@ import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
 
 export default class BillingInvoiceTemplatesIndexEditController extends Controller {
+    @service store;
     @service hostRouter;
     @service notifications;
     @service modalsManager;
@@ -48,8 +49,29 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
         this.isSaving = true;
         try {
             const template = this.template;
-            Object.assign(template, templateData);
-            yield template.save();
+
+            // PUT directly so the full payload — including the `queries` array —
+            // reaches the backend in one request. The TemplateController.updateRecord()
+            // override calls _syncQueries() after updating the template record.
+            const { queries = [], ...attributes } = templateData;
+
+            // Normalise temporary client-side UUIDs (prefixed _new_) to null so
+            // the backend treats them as new records to create.
+            const normalisedQueries = queries.map((q) => ({
+                ...q,
+                uuid: q.uuid?.startsWith('_new_') ? null : (q.uuid ?? null),
+            }));
+
+            const response = yield this.fetch.put(`templates/${template.id}`, {
+                template: { ...attributes, queries: normalisedQueries },
+            });
+
+            // Push the updated record back into the store so all observers
+            // (including the builder's @template arg) reflect the latest state.
+            this.store.push(
+                this.store.normalize('template', response.template ?? response)
+            );
+
             this.notifications.success(`Invoice template "${template.name}" saved.`);
         } catch (err) {
             this.notifications.serverError(err);
@@ -61,11 +83,7 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
     @task *preview(templateData) {
         this.isPreviewing = true;
         try {
-            const html = yield this.fetch.post(
-                `templates/${this.template.id}/preview`,
-                { template: templateData },
-                { namespace: '~api/v1' }
-            );
+            const html = yield this.fetch.post(`templates/${this.template.id}/preview`, { template: templateData });
             const win = window.open('', '_blank');
             if (win) {
                 win.document.write(html);

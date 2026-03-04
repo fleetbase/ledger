@@ -52,7 +52,7 @@ export default class BillingInvoiceTemplatesIndexEditRoute extends Route {
     async model({ id }) {
         const [template, rawSchemas] = await Promise.all([
             this.store.findRecord('template', id),
-            this.fetch.get('templates/context-schemas', { for: 'ledger-invoice' }, { namespace: '~api/v1' }).catch(() => ({})),
+            this.fetch.get('templates/context-schemas', { for: 'ledger-invoice' }).catch(() => ({})),
         ]);
         return { template, contextSchemas: normaliseContextSchemas(rawSchemas) };
     }
