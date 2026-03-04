@@ -8,6 +8,8 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
     @service store;
     @service hostRouter;
     @service notifications;
+    @service modalsManager;
+    @service intl;
     @service fetch;
 
     @tracked isSaving = false;
@@ -24,26 +26,35 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
     @action
     close() {
         const template = this.template;
-        // If the template has never been saved and has unsaved changes, confirm
-        // before discarding. For a brand-new record, hasDirtyAttributes is true
-        // as soon as any field is set (including the defaults set in the route).
-        // We only prompt if the user has actually changed something meaningful
-        // (i.e. the name is not the default placeholder).
+        // For a brand-new record, treat it as dirty if the user has given it a
+        // non-default name or added any canvas elements.
         const hasContent = template?.content?.length > 0;
         const hasName = template?.name && template.name !== 'Untitled Template';
 
         if (hasContent || hasName) {
-            if (!window.confirm('You have unsaved changes. Leave without saving?')) {
-                return;
-            }
+            return this.#confirmContinueWithUnsavedChanges(template);
         }
 
-        // Roll back the unsaved record so it doesn't linger in the store
+        // Nothing meaningful was entered — discard the new record and navigate.
         if (template?.isNew) {
             template.rollbackAttributes();
         }
+        return this.hostRouter.transitionTo('console.ledger.billing.invoice-templates.index');
+    }
 
-        this.hostRouter.transitionTo('console.ledger.billing.invoice-templates.index');
+    #confirmContinueWithUnsavedChanges(template, options = {}) {
+        return this.modalsManager.confirm({
+            title: this.intl.t('common.continue-without-saving'),
+            body: this.intl.t('common.continue-without-saving-prompt', { resource: 'Invoice Template' }),
+            acceptButtonText: this.intl.t('common.continue'),
+            confirm: async () => {
+                if (template?.isNew) {
+                    template.rollbackAttributes();
+                }
+                await this.hostRouter.transitionTo('console.ledger.billing.invoice-templates.index');
+            },
+            ...options,
+        });
     }
 
     @task *save(templateData) {
