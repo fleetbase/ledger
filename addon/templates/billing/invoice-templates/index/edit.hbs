@@ -2,7 +2,7 @@
     <TemplateBuilder
         @template={{this.template}}
         @contextSchemas={{this.contextSchemas}}
-        @isSaving={{this.isSaving}}
+        @isSaving={{this.save.isRunning}}
         @onSave={{perform this.save}}
         @onPreview={{perform this.preview}}
         @onClose={{this.close}}

@@ -12,9 +12,6 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
     @service intl;
     @service fetch;
 
-    @tracked isSaving = false;
-    @tracked isPreviewing = false;
-
     get template() {
         return this.model?.template;
     }
@@ -58,7 +55,6 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
     }
 
     @task *save(templateData) {
-        this.isSaving = true;
         try {
             // POST directly so the full payload — including the `queries` array —
             // reaches the backend in one request. The TemplateController.createRecord()
@@ -69,7 +65,7 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
             // the backend treats them as new records to create.
             const normalisedQueries = queries.map((q) => ({
                 ...q,
-                uuid: q.uuid?.startsWith('_new_') ? null : (q.uuid ?? null),
+                uuid: q.uuid?.startsWith('_new_') ? null : q.uuid ?? null,
             }));
 
             const response = yield this.fetch.post('templates', {
@@ -78,24 +74,19 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
 
             // Push the saved record into the Ember Data store so the rest of
             // the app (e.g. the index list) reflects the new template.
-            const saved = this.store.push(
-                this.store.normalize('template', response.template ?? response)
-            );
+            const saved = this.store.push(this.store.normalize('template', response.template ?? response));
 
             this.notifications.success(`Invoice template "${saved.name}" created successfully.`);
-            yield this.hostRouter.transitionTo('console.ledger.billing.invoice-templates.index.edit', saved.id);
+            yield this.hostRouter.transitionTo('console.ledger.billing.invoice-templates.index');
         } catch (err) {
             this.notifications.serverError(err);
-        } finally {
-            this.isSaving = false;
         }
     }
 
     @task *preview(templateData) {
-        this.isPreviewing = true;
         try {
             // POST to core-api preview endpoint with the current unsaved template data
-            const html = yield this.fetch.post('templates/preview', { template: templateData });
+            const { html } = yield this.fetch.post('templates/preview', { template: templateData });
             // Open the preview HTML in a new tab
             const win = window.open('', '_blank');
             if (win) {
@@ -104,8 +95,6 @@ export default class BillingInvoiceTemplatesIndexNewController extends Controlle
             }
         } catch (err) {
             this.notifications.serverError(err);
-        } finally {
-            this.isPreviewing = false;
         }
     }
 }

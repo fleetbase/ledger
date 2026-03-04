@@ -12,9 +12,6 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
     @service intl;
     @service fetch;
 
-    @tracked isSaving = false;
-    @tracked isPreviewing = false;
-
     get template() {
         return this.model?.template;
     }
@@ -46,7 +43,6 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
     }
 
     @task *save(templateData) {
-        this.isSaving = true;
         try {
             const template = this.template;
 
@@ -59,7 +55,7 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
             // the backend treats them as new records to create.
             const normalisedQueries = queries.map((q) => ({
                 ...q,
-                uuid: q.uuid?.startsWith('_new_') ? null : (q.uuid ?? null),
+                uuid: q.uuid?.startsWith('_new_') ? null : q.uuid ?? null,
             }));
 
             const response = yield this.fetch.put(`templates/${template.id}`, {
@@ -68,22 +64,17 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
 
             // Push the updated record back into the store so all observers
             // (including the builder's @template arg) reflect the latest state.
-            this.store.push(
-                this.store.normalize('template', response.template ?? response)
-            );
+            this.store.push(this.store.normalize('template', response.template ?? response));
 
             this.notifications.success(`Invoice template "${template.name}" saved.`);
         } catch (err) {
             this.notifications.serverError(err);
-        } finally {
-            this.isSaving = false;
         }
     }
 
     @task *preview(templateData) {
-        this.isPreviewing = true;
         try {
-            const html = yield this.fetch.post(`templates/${this.template.id}/preview`, { template: templateData });
+            const { html } = yield this.fetch.post(`templates/${this.template.id}/preview`, { template: templateData });
             const win = window.open('', '_blank');
             if (win) {
                 win.document.write(html);
@@ -91,8 +82,6 @@ export default class BillingInvoiceTemplatesIndexEditController extends Controll
             }
         } catch (err) {
             this.notifications.serverError(err);
-        } finally {
-            this.isPreviewing = false;
         }
     }
 }

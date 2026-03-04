@@ -54,6 +54,7 @@ export default class BillingInvoiceTemplatesIndexEditRoute extends Route {
             this.store.findRecord('template', id),
             this.fetch.get('templates/context-schemas', { for: 'ledger-invoice' }).catch(() => ({})),
         ]);
+
         return { template, contextSchemas: normaliseContextSchemas(rawSchemas) };
     }
 }
