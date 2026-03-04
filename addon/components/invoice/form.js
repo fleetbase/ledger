@@ -93,10 +93,12 @@ export default class InvoiceFormComponent extends Component {
 
     @action
     onCustomerChange(customer) {
-        if (this.args.resource) {
+        if (customer) {
             this.args.resource.customer      = customer;
             this.args.resource.customer_uuid = customer?.id ?? null;
-            this.args.resource.customer_type = customer?.modelName ?? null;
+            // Must use the namespaced type string so Utils::getMutationType() on
+            // the backend resolves to Fleetbase\FleetOps\Models\Customer.
+            this.args.resource.customer_type = 'fleet-ops:customer';
         }
     }
 
