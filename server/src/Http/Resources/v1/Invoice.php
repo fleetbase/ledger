@@ -20,34 +20,47 @@ class Invoice extends FleetbaseResource
         $isInternal = Http::isInternalRequest();
 
         return [
+            // ── Identifiers ────────────────────────────────────────────────
             'id'               => $this->when($isInternal, $this->id, $this->public_id),
             'uuid'             => $this->when($isInternal, $this->uuid),
-            'public_id'        => $this->when($isInternal, $this->public_id),
+            'public_id'        => $this->public_id,
+            // ── Ownership ──────────────────────────────────────────────────
             'company_uuid'     => $this->when($isInternal, $this->company_uuid),
+            'created_by_uuid'  => $this->when($isInternal, $this->created_by_uuid),
+            'updated_by_uuid'  => $this->when($isInternal, $this->updated_by_uuid),
+            // ── Customer (polymorphic) ──────────────────────────────────────
             'customer_uuid'    => $this->when($isInternal, $this->customer_uuid),
             'customer_type'    => $this->when($isInternal, $this->customer_type ? Utils::toEmberResourceType($this->customer_type) : null),
             'customer'         => $this->whenLoaded('customer', function () {
                 return $this->setCustomerType($this->transformMorphResource($this->customer));
             }),
+            // ── Related records ────────────────────────────────────────────
             'order_uuid'       => $this->when($isInternal, $this->order_uuid),
             'order'            => $this->whenLoaded('order'),
             'transaction_uuid' => $this->when($isInternal, $this->transaction_uuid),
+            'transaction'      => $this->whenLoaded('transaction'),
             'template_uuid'    => $this->when($isInternal, $this->template_uuid),
             'template'         => $this->whenLoaded('template'),
+            // ── Invoice details ────────────────────────────────────────────
             'number'           => $this->number,
+            'status'           => $this->status,
             'date'             => $this->date,
             'due_date'         => $this->due_date,
+            // ── Monetary (all values in smallest currency unit / cents) ────
+            'currency'         => $this->currency,
             'subtotal'         => $this->subtotal,
             'tax'              => $this->tax,
             'total_amount'     => $this->total_amount,
             'amount_paid'      => $this->amount_paid,
             'balance'          => $this->balance,
-            'currency'         => $this->currency,
-            'status'           => $this->status,
+            // ── Content ────────────────────────────────────────────────────
             'notes'            => $this->notes,
             'terms'            => $this->terms,
+            // ── Line items ─────────────────────────────────────────────────
             'items'            => InvoiceItem::collection($this->whenLoaded('items')),
+            // ── Metadata ───────────────────────────────────────────────────
             'meta'             => $this->meta,
+            // ── Timestamps ─────────────────────────────────────────────────
             'sent_at'          => $this->sent_at,
             'viewed_at'        => $this->viewed_at,
             'paid_at'          => $this->paid_at,

@@ -16,17 +16,26 @@ class InvoiceItem extends FleetbaseResource
      */
     public function toArray($request)
     {
+        $isInternal = Http::isInternalRequest();
+
         return [
-            'id'           => $this->when(Http::isInternalRequest(), $this->id, $this->public_id),
-            'uuid'         => $this->when(Http::isInternalRequest(), $this->uuid),
-            'invoice_uuid' => $this->when(Http::isInternalRequest(), $this->invoice_uuid),
+            // ── Identifiers ────────────────────────────────────────────────
+            'id'           => $this->when($isInternal, $this->id, $this->public_id),
+            'uuid'         => $this->when($isInternal, $this->uuid),
+            'public_id'    => $this->public_id,
+            // ── Ownership ──────────────────────────────────────────────────
+            'invoice_uuid' => $this->when($isInternal, $this->invoice_uuid),
+            // ── Line item details ──────────────────────────────────────────
             'description'  => $this->description,
             'quantity'     => $this->quantity,
+            // ── Monetary (all values in smallest currency unit / cents) ────
             'unit_price'   => $this->unit_price,
             'amount'       => $this->amount,
-            'tax_rate'     => $this->tax_rate,
+            'tax_rate'     => $this->tax_rate,   // percentage, e.g. 10.00 = 10%
             'tax_amount'   => $this->tax_amount,
+            // ── Metadata ───────────────────────────────────────────────────
             'meta'         => $this->meta,
+            // ── Timestamps ─────────────────────────────────────────────────
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,
         ];
