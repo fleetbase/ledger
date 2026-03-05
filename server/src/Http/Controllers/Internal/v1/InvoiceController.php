@@ -7,7 +7,10 @@ use Fleetbase\Ledger\Http\Resources\v1\Invoice as InvoiceResource;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Models\InvoiceItem;
 use Fleetbase\Ledger\Services\InvoiceService;
+use Fleetbase\Services\TemplateRenderService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 
 class InvoiceController extends LedgerResourceController
@@ -126,8 +129,62 @@ class InvoiceController extends LedgerResourceController
         return new InvoiceResource($invoice->load(['customer', 'items', 'template']));
     }
 
+    /**
+     * Render the invoice using its assigned template and return the HTML.
+     *
+     * POST /invoices/{id}/preview
+     */
+    public function preview(string $id, Request $request): JsonResponse
+    {
+        $invoice  = $this->resolveInvoice($id);
+        $template = $invoice->template;
+
+        if (!$template) {
+            return response()->json(['error' => 'Invoice has no template assigned.'], 422);
+        }
+
+        $html = app(TemplateRenderService::class)->renderToHtml($template, $invoice);
+
+        return response()->json(['html' => $html]);
+    }
+
+    /**
+     * Render the invoice to a PDF and stream it as a download.
+     *
+     * POST /invoices/{id}/render-pdf
+     */
+    public function renderPdf(string $id, Request $request): Response
+    {
+        $invoice  = $this->resolveInvoice($id);
+        $template = $invoice->template;
+
+        if (!$template) {
+            abort(422, 'Invoice has no template assigned.');
+        }
+
+        $filename = $request->input('filename', 'invoice-' . $invoice->number);
+        $pdf      = app(TemplateRenderService::class)->renderToPdf($template, $invoice);
+
+        return $pdf->download($filename . '.pdf');
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Resolve an invoice by UUID or public_id, eager-loading all relations.
+     */
+    private function resolveInvoice(string $id): Invoice
+    {
+        return Invoice::where('company_uuid', session('company'))
+            ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
+            ->with(['customer', 'items', 'template'])
+            ->firstOrFail();
+    }
+
+    // -------------------------------------------------------------------------
+    // Item sync helper
     // -------------------------------------------------------------------------
 
     /**

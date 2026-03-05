@@ -4,14 +4,14 @@
     <ContentPanel @title="Invoice Details" @open={{true}} @wrapperClass="bordered-top">
         <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
 
-            {{! Invoice Number }}
+            {{! Invoice Number — auto-generated on create; read-only on edit }}
             <InputGroup @name="Invoice Number">
                 <Input
                     @value={{@resource.number}}
                     @type="text"
                     class="w-full form-input"
                     placeholder="Auto-generated if left blank"
-                    disabled={{cannot-write @resource}}
+                    disabled={{or (cannot-write @resource) (not @resource.isNew)}}
                 />
             </InputGroup>
 

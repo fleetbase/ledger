@@ -8,6 +8,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
     @service modalsManager;
     @service fetch;
     @service hostRouter;
+    @service invoiceActions;
 
     @tracked overlay = null;
 
@@ -22,6 +23,16 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
     get actionButtons() {
         const invoice = this.model;
         const buttons = [];
+
+        // Preview is available whenever the invoice has a template assigned.
+        if (invoice?.template_uuid) {
+            buttons.push({ label: 'Preview', icon: 'eye', type: 'default', helpText: 'Preview this invoice rendered with its assigned template.', onClick: () => this.invoiceActions.previewInvoice(invoice) });
+        }
+
+        // Edit is available for non-void, non-paid invoices.
+        if (!['paid', 'void'].includes(invoice?.status)) {
+            buttons.push({ label: 'Edit', icon: 'pencil', type: 'default', helpText: 'Edit this invoice.', onClick: () => this.invoiceActions.panel.edit(invoice) });
+        }
 
         if (invoice?.status === 'draft') {
             buttons.push({ label: 'Send', icon: 'paper-plane', type: 'primary', helpText: 'Send this invoice to the customer via email.', onClick: this.sendInvoice });
