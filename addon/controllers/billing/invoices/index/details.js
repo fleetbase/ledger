@@ -12,10 +12,16 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
 
     @tracked overlay = null;
 
+    /**
+     * Tab navigation for the details panel.
+     *
+     * "Line Items" has been removed — they are now displayed inline inside
+     * the Invoice::Details component.  "Transactions" remains as its own tab
+     * because it loads asynchronously from a separate endpoint.
+     */
     get tabs() {
         return [
-            { label: 'Details', route: 'billing.invoices.index.details.index' },
-            { label: 'Line Items', route: 'billing.invoices.index.details.line-items' },
+            { label: 'Details',      route: 'billing.invoices.index.details.index' },
             { label: 'Transactions', route: 'billing.invoices.index.details.transactions' },
         ];
     }
@@ -24,26 +30,59 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         const invoice = this.model;
         const buttons = [];
 
-        // Preview is available whenever the invoice has a template assigned.
+        // Preview — only when an invoice template is assigned.
         if (invoice?.template_uuid) {
-            buttons.push({ label: 'Preview', icon: 'eye', type: 'default', helpText: 'Preview this invoice rendered with its assigned template.', onClick: () => this.invoiceActions.previewInvoice(invoice) });
+            buttons.push({
+                label:    'Preview',
+                icon:     'eye',
+                type:     'default',
+                helpText: 'Preview this invoice rendered with its assigned template.',
+                onClick:  () => this.invoiceActions.previewInvoice(invoice),
+            });
         }
 
-        // Edit is available for non-void, non-paid invoices.
-        if (!['paid', 'void'].includes(invoice?.status)) {
-            buttons.push({ label: 'Edit', icon: 'pencil', type: 'default', helpText: 'Edit this invoice.', onClick: () => this.invoiceActions.panel.edit(invoice) });
+        // Edit — available for all statuses except paid / void / cancelled.
+        if (!['paid', 'void', 'cancelled'].includes(invoice?.status)) {
+            buttons.push({
+                label:    'Edit',
+                icon:     'pencil',
+                type:     'default',
+                helpText: 'Edit this invoice.',
+                onClick:  () => this.invoiceActions.panel.edit(invoice),
+            });
         }
 
+        // Send — draft invoices only.
         if (invoice?.status === 'draft') {
-            buttons.push({ label: 'Send', icon: 'paper-plane', type: 'primary', helpText: 'Send this invoice to the customer via email.', onClick: this.sendInvoice });
+            buttons.push({
+                label:    'Send',
+                icon:     'paper-plane',
+                type:     'primary',
+                helpText: 'Send this invoice to the customer via email.',
+                onClick:  this.sendInvoice,
+            });
         }
 
-        if (['sent', 'overdue', 'partial'].includes(invoice?.status)) {
-            buttons.push({ label: 'Record Payment', icon: 'check-circle', type: 'success', helpText: 'Mark a manual payment received against this invoice.', onClick: this.recordPayment });
+        // Record Payment — for open / overdue / partially-paid invoices.
+        if (['sent', 'viewed', 'overdue', 'partial'].includes(invoice?.status)) {
+            buttons.push({
+                label:    'Record Payment',
+                icon:     'check-circle',
+                type:     'success',
+                helpText: 'Mark a manual payment received against this invoice.',
+                onClick:  this.recordPayment,
+            });
         }
 
-        if (!['paid', 'void'].includes(invoice?.status)) {
-            buttons.push({ label: 'Void', icon: 'ban', type: 'danger', helpText: 'Cancel this invoice and mark it as void. This cannot be undone.', onClick: this.voidInvoice });
+        // Void — for any non-terminal status.
+        if (!['paid', 'void', 'cancelled'].includes(invoice?.status)) {
+            buttons.push({
+                label:    'Void',
+                icon:     'ban',
+                type:     'danger',
+                helpText: 'Cancel this invoice and mark it as void. This cannot be undone.',
+                onClick:  this.voidInvoice,
+            });
         }
 
         return buttons;

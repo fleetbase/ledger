@@ -27,7 +27,7 @@ export default class LedgerInvoiceModel extends Model {
     @attr('string') terms;
     @attr('number') subtotal;      // integer cents
     @attr('number') tax;           // integer cents
-    @attr('number') total_amount;  // integer cents
+    @attr('number') total_amount;  // integer cents — canonical "total" field
     @attr('number') amount_paid;   // integer cents
     @attr('number') balance;       // integer cents
     @attr('raw')    meta;
@@ -51,6 +51,39 @@ export default class LedgerInvoiceModel extends Model {
     @belongsTo('template', { async: false, inverse: null }) template;
 
     // -------------------------------------------------------------------------
+    // Monetary aliases
+    // -------------------------------------------------------------------------
+
+    /** Alias for total_amount — used by format-currency helpers. */
+    @computed('total_amount') get total() {
+        return this.total_amount;
+    }
+
+    // -------------------------------------------------------------------------
+    // Customer convenience accessors
+    // -------------------------------------------------------------------------
+
+    @computed('customer.name') get customerName() {
+        return this.customer?.name ?? null;
+    }
+
+    @computed('customer.email') get customerEmail() {
+        return this.customer?.email ?? null;
+    }
+
+    @computed('customer.phone') get customerPhone() {
+        return this.customer?.phone ?? null;
+    }
+
+    // -------------------------------------------------------------------------
+    // Template convenience accessor
+    // -------------------------------------------------------------------------
+
+    @computed('template.name') get templateName() {
+        return this.template?.name ?? null;
+    }
+
+    // -------------------------------------------------------------------------
     // Date helpers — date (invoice date)
     // -------------------------------------------------------------------------
     @computed('date') get invoiceDateAgo() {
@@ -61,6 +94,11 @@ export default class LedgerInvoiceModel extends Model {
     @computed('date') get invoiceDate() {
         if (!isValidDate(this.date)) { return null; }
         return formatDate(this.date, 'PP');
+    }
+
+    /** Alias so templates can use @resource.issuedAt consistently. */
+    @computed('date') get issuedAt() {
+        return this.invoiceDate;
     }
 
     @computed('date') get invoiceDateShort() {
@@ -97,6 +135,19 @@ export default class LedgerInvoiceModel extends Model {
     @computed('paid_at') get paidAt() {
         if (!isValidDate(this.paid_at)) { return null; }
         return formatDate(this.paid_at, 'PP HH:mm');
+    }
+
+    // -------------------------------------------------------------------------
+    // Date helpers — sent_at / viewed_at
+    // -------------------------------------------------------------------------
+    @computed('sent_at') get sentAt() {
+        if (!isValidDate(this.sent_at)) { return null; }
+        return formatDate(this.sent_at, 'PP HH:mm');
+    }
+
+    @computed('viewed_at') get viewedAt() {
+        if (!isValidDate(this.viewed_at)) { return null; }
+        return formatDate(this.viewed_at, 'PP HH:mm');
     }
 
     // -------------------------------------------------------------------------
@@ -140,5 +191,31 @@ export default class LedgerInvoiceModel extends Model {
 
     @computed('status') get isDraft() {
         return this.status === 'draft';
+    }
+
+    @computed('status') get isSent() {
+        return this.status === 'sent';
+    }
+
+    @computed('status') get isVoid() {
+        return this.status === 'void' || this.status === 'cancelled';
+    }
+
+    /**
+     * Returns a Tailwind colour name appropriate for the current status,
+     * compatible with the <Badge @color=...> component.
+     */
+    @computed('status') get statusBadgeColor() {
+        const map = {
+            draft:     'gray',
+            sent:      'blue',
+            viewed:    'indigo',
+            partial:   'yellow',
+            paid:      'green',
+            overdue:   'red',
+            cancelled: 'red',
+            void:      'red',
+        };
+        return map[this.status] ?? 'gray';
     }
 }
