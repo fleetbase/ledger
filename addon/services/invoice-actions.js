@@ -62,8 +62,8 @@ export default class InvoiceActionsService extends ResourceActionService {
         this.modalsManager.show('modals/invoice-preview', {
             title,
             modalClass: 'modal-xl',
-            acceptButtonText: this.intl.t('common.done'),
-            hideDeclineButton: true,
+            footerComponent: 'modals/invoice-preview/footer',
+            hideFooterActions: true,
             isLoading: true,
             isPdfLoading: false,
             html: null,

@@ -1,28 +1,11 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
         {{#if @options.isLoading}}
+            {{! Loading state }}
             <div class="flex items-center justify-center h-40rem">
                 <Spinner class="w-8 h-8 text-gray-400" />
             </div>
         {{else if @options.html}}
-            {{! Action toolbar — shown once HTML is available }}
-            <div class="flex items-center gap-2 mb-3">
-                <Button
-                    @icon="print"
-                    @text={{t "common.print"}}
-                    @type="default"
-                    @size="sm"
-                    @onClick={{@options.onPrint}}
-                />
-                <Button
-                    @icon="file-pdf"
-                    @text={{t "common.download-pdf"}}
-                    @type="default"
-                    @size="sm"
-                    @isLoading={{@options.isPdfLoading}}
-                    @onClick={{@options.onDownloadPdf}}
-                />
-            </div>
             {{! Rendered invoice HTML in a sandboxed iframe }}
             <iframe
                 class="border-0 w-full shadow-sm h-40rem"
@@ -31,6 +14,7 @@
                 sandbox="allow-same-origin"
             ></iframe>
         {{else}}
+            {{! No content / error state }}
             <div class="flex items-center justify-center h-40rem text-gray-400 dark:text-gray-500 text-sm">
                 {{t "ledger.modals.invoice-preview.no-content"}}
             </div>
