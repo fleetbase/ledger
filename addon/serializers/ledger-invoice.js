@@ -11,5 +11,7 @@ import LedgerSerializer from './ledger';
 export default class LedgerInvoiceSerializer extends LedgerSerializer {
     attrs = {
         items: { embedded: 'always' },
+        template: { embedded: 'always' },
+        customer: { embedded: 'always' },
     };
 }

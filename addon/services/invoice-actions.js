@@ -73,7 +73,7 @@ export default class InvoiceActionsService extends ResourceActionService {
         });
 
         try {
-            const { html } = await this.fetch.post(`invoices/${invoice.id}/preview`);
+            const { html } = await this.fetch.post(`invoices/${invoice.id}/preview`, {}, { namespace: 'ledger/int/v1'});
             this.modalsManager.setOptions({ isLoading: false, html });
         } catch (err) {
             this.notifications.serverError(err);
