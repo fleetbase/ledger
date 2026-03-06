@@ -159,19 +159,9 @@ class InvoiceController extends LedgerResourceController
      * Render the invoice to a PDF and stream it as a download.
      *
      * POST /invoices/{id}/render-pdf
-     *
-     * We generate the PDF directly with dompdf/dompdf (a pure-PHP library)
-     * rather than delegating to TemplateRenderService::renderToPdf(), which
-     * depends on spatie/laravel-pdf and requires either Chromium (Browsershot)
-     * or dompdf to be configured as a named driver.  Using dompdf directly
-     * avoids that dependency chain and works out of the box.
      */
     public function renderPdf(string $id, Request $request): Response
     {
-        if (!class_exists('\Dompdf\Dompdf')) {
-            abort(501, 'PDF generation requires dompdf/dompdf. Run: composer require dompdf/dompdf');
-        }
-
         $invoice  = $this->resolveInvoice($id);
         $template = $invoice->template;
 
@@ -181,30 +171,10 @@ class InvoiceController extends LedgerResourceController
 
         $template = $this->normaliseTemplateContextType($template);
 
-        // Render the invoice HTML using the same pipeline as the preview endpoint.
-        $html = app(TemplateRenderService::class)->renderToHtml($template, $invoice);
-
-        // Generate PDF with dompdf.
-        $options = new \Dompdf\Options();
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('isRemoteEnabled', false);
-
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper(
-            [$template->width ?? 210, $template->height ?? 297],
-            $template->orientation ?? 'portrait'
-        );
-        $dompdf->render();
-
         $filename = $request->input('filename', 'invoice-' . ($invoice->number ?? $invoice->id));
-        $pdfContent = $dompdf->output();
+        $pdf      = app(TemplateRenderService::class)->renderToPdf($template, $invoice);
 
-        return response($pdfContent, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '.pdf"',
-            'Content-Length'      => strlen($pdfContent),
-        ]);
+        return $pdf->download($filename . '.pdf');
     }
 
     // -------------------------------------------------------------------------
