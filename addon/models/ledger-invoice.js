@@ -47,8 +47,12 @@ export default class LedgerInvoiceModel extends Model {
     // Relationships
     // -------------------------------------------------------------------------
     @hasMany('ledger-invoice-item', { async: false, inverse: 'invoice' }) items;
-    @belongsTo('customer', { async: false, polymorphic: true, inverse: null }) customer;
-    @belongsTo('template', { async: false, inverse: null }) template;
+    // async: true — the customer is a polymorphic morph-to (vendor/contact/etc.).
+    // Ember Data cannot resolve it synchronously from the store when the sideloaded
+    // record has a different model type than expected, so we let it be async and
+    // guard every accessor with optional-chaining (?.).
+    @belongsTo('customer', { async: true, polymorphic: true, inverse: null }) customer;
+    @belongsTo('template', { async: true, inverse: null }) template;
 
     // -------------------------------------------------------------------------
     // Monetary aliases
@@ -63,24 +67,27 @@ export default class LedgerInvoiceModel extends Model {
     // Customer convenience accessors
     // -------------------------------------------------------------------------
 
-    @computed('customer.name') get customerName() {
-        return this.customer?.name ?? null;
+    // NOTE: customer is async, so these getters read from the resolved content.
+    // Ember Data exposes the resolved record via .content on the proxy, and
+    // @computed on 'customer.name' etc. correctly tracks the async proxy.
+    @computed('customer.name', 'customer.isFulfilled') get customerName() {
+        return this.customer?.get('name') ?? null;
     }
 
-    @computed('customer.email') get customerEmail() {
-        return this.customer?.email ?? null;
+    @computed('customer.email', 'customer.isFulfilled') get customerEmail() {
+        return this.customer?.get('email') ?? null;
     }
 
-    @computed('customer.phone') get customerPhone() {
-        return this.customer?.phone ?? null;
+    @computed('customer.phone', 'customer.isFulfilled') get customerPhone() {
+        return this.customer?.get('phone') ?? null;
     }
 
     // -------------------------------------------------------------------------
     // Template convenience accessor
     // -------------------------------------------------------------------------
 
-    @computed('template.name') get templateName() {
-        return this.template?.name ?? null;
+    @computed('template.name', 'template.isFulfilled') get templateName() {
+        return this.template?.get('name') ?? null;
     }
 
     // -------------------------------------------------------------------------

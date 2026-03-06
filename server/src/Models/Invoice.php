@@ -129,6 +129,15 @@ class Invoice extends Model
     protected $appends = [];
 
     /**
+     * Relationships that should always be eager-loaded.
+     * This ensures customer, items and template are present on every
+     * response (index, findRecord, etc.) without needing explicit ->with() calls.
+     *
+     * @var array
+     */
+    protected $with = ['customer', 'items', 'template'];
+
+    /**
      * The attributes excluded from the model's JSON form.
      *
      * @var array
