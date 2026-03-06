@@ -143,6 +143,13 @@ class InvoiceController extends LedgerResourceController
             return response()->json(['error' => 'Invoice has no template assigned.'], 422);
         }
 
+        // Normalise the context_type to 'invoice' so that variable paths like
+        // {invoice.number} resolve correctly.  Templates created before this fix
+        // may have context_type = 'ledger-invoice' stored in the database, which
+        // would cause TemplateRenderService::buildContext() to key the context
+        // array as 'ledger-invoice' instead of 'invoice', breaking substitution.
+        $template = $this->normaliseTemplateContextType($template);
+
         $html = app(TemplateRenderService::class)->renderToHtml($template, $invoice);
 
         return response()->json(['html' => $html]);
@@ -162,6 +169,8 @@ class InvoiceController extends LedgerResourceController
             abort(422, 'Invoice has no template assigned.');
         }
 
+        $template = $this->normaliseTemplateContextType($template);
+
         $filename = $request->input('filename', 'invoice-' . $invoice->number);
         $pdf      = app(TemplateRenderService::class)->renderToPdf($template, $invoice);
 
@@ -171,6 +180,34 @@ class InvoiceController extends LedgerResourceController
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Return a template instance whose context_type is normalised to 'invoice'.
+     *
+     * TemplateRenderService::buildContext() uses $template->context_type as the
+     * top-level key in the variable context array.  Variable paths registered
+     * by the Ledger package all use the 'invoice' namespace (e.g. {invoice.number}).
+     * Templates stored in the DB before this normalisation may have
+     * context_type = 'ledger-invoice', which would prevent substitution.
+     *
+     * We clone the model in-memory (without persisting) so the DB record is
+     * not affected.
+     *
+     * @param  \Fleetbase\Models\Template  $template
+     * @return \Fleetbase\Models\Template
+     */
+    private function normaliseTemplateContextType(\Fleetbase\Models\Template $template): \Fleetbase\Models\Template
+    {
+        if ($template->context_type === 'invoice') {
+            return $template;
+        }
+
+        // Clone without touching the DB
+        $clone               = clone $template;
+        $clone->context_type = 'invoice';
+
+        return $clone;
+    }
 
     /**
      * Resolve an invoice by UUID or public_id, eager-loading all relations.

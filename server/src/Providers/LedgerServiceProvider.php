@@ -141,7 +141,12 @@ class LedgerServiceProvider extends CoreServiceProvider
             return;
         }
 
-        TemplateRenderService::registerContextType('ledger-invoice', [
+        // IMPORTANT: The slug here MUST match the variable namespace used in template
+        // variable paths (e.g. {invoice.number}).  The TemplateRenderService uses
+        // $template->context_type as the top-level key in the context array, so
+        // 'ledger-invoice' would require paths like {ledger-invoice.number} which
+        // is invalid.  Use 'invoice' so {invoice.number} resolves correctly.
+        TemplateRenderService::registerContextType('invoice', [
             'label'       => 'Invoice',
             'description' => 'Variables available when rendering a Ledger invoice template.',
             'model'       => \Fleetbase\Ledger\Models\Invoice::class,

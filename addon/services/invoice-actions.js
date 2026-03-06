@@ -55,8 +55,8 @@ export default class InvoiceActionsService extends ResourceActionService {
      */
     @action async previewInvoice(invoice, options = {}) {
         const title = invoice.number
-            ? this.intl.t('ledger.modals.invoice-preview.title', { number: invoice.number })
-            : this.intl.t('ledger.modals.invoice-preview.title-fallback');
+            ? this.intl.t('invoice.actions.preview-invoice', { number: invoice.number })
+            : this.intl.t('invoice.actions.preview-invoice-fallback');
 
         // Open immediately with a loading spinner for instant feedback.
         this.modalsManager.show('modals/invoice-preview', {
@@ -73,7 +73,7 @@ export default class InvoiceActionsService extends ResourceActionService {
         });
 
         try {
-            const { html } = await this.fetch.post(`invoices/${invoice.id}/preview`, {}, { namespace: 'ledger/int/v1'});
+            const { html } = await this.fetch.post(`invoices/${invoice.id}/preview`, {}, { namespace: 'ledger/int/v1' });
             this.modalsManager.setOptions({ isLoading: false, html });
         } catch (err) {
             this.notifications.serverError(err);
@@ -87,30 +87,39 @@ export default class InvoiceActionsService extends ResourceActionService {
 
     /**
      * Print the rendered invoice HTML via the iframe's contentWindow.
+     * The iframe is rendered inside the modal body by invoice-preview.hbs.
      */
     _printInvoicePreview() {
+        // Try the iframe first (rendered HTML preview).
         const iframe = document.querySelector('.modal-xl iframe');
         if (iframe?.contentWindow) {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
+            return;
         }
+        // Fallback: print the whole page if the iframe is not yet available.
+        window.print();
     }
 
     /**
-     * Trigger a PDF download by hitting the render-pdf endpoint and streaming
-     * the response as a file download.
+     * Trigger a PDF download by hitting the render-pdf endpoint.
+     * Uses this.fetch.download() which is the correct method on the fetch service
+     * (this.fetch.blob does not exist — the service exposes `download` instead).
      */
     async _downloadInvoicePdf(invoice) {
         this.modalsManager.setOptions({ isPdfLoading: true });
         try {
-            const filename = `invoice-${invoice.number ?? invoice.id}`;
-            const blob = await this.fetch.blob(`invoices/${invoice.id}/render-pdf`, { filename }, { method: 'POST' });
-            const url  = URL.createObjectURL(blob);
-            const a    = document.createElement('a');
-            a.href     = url;
-            a.download = `${filename}.pdf`;
-            a.click();
-            URL.revokeObjectURL(url);
+            const filename = `invoice-${invoice.number ?? invoice.id}.pdf`;
+            await this.fetch.download(
+                `invoices/${invoice.id}/render-pdf`,
+                {},
+                {
+                    method: 'POST',
+                    fileName: filename,
+                    mimeType: 'application/pdf',
+                    namespace: 'ledger/int/v1',
+                }
+            );
         } catch (err) {
             this.notifications.serverError(err);
         } finally {

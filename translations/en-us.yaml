@@ -51,6 +51,8 @@ column:
   failure-reason: Failure Reason
   due-date: Due Date
   issued-at: Issued At
+  invoice-date: Invoice Date
+  customer: Customer
   debit-account: Debit Account
   credit-account: Credit Account
   source: Source
@@ -82,3 +84,14 @@ menu:
   invoice-settings: Invoice Settings
   payment-settings: Payment Settings
   accounting-settings: Accounting Settings
+
+invoice:
+  actions:
+    preview-invoice: "Preview Invoice #{number}"
+    preview-invoice-fallback: Preview Invoice
+    download-pdf: Download PDF
+    record-payment: Record Payment
+    record-payment-title: "Record Payment — {number}"
+    send: Send Invoice
+    void: Void Invoice
+    edit: Edit Invoice

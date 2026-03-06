@@ -9,6 +9,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
     @service fetch;
     @service hostRouter;
     @service invoiceActions;
+    @service intl;
 
     @tracked overlay = null;
 
@@ -36,7 +37,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
                 label:    'Preview',
                 icon:     'eye',
                 type:     'default',
-                helpText: 'Preview this invoice rendered with its assigned template.',
+                helpText: this.intl.t('invoice.actions.preview-invoice', { number: invoice.number }),
                 onClick:  () => this.invoiceActions.previewInvoice(invoice),
             });
         }
@@ -47,7 +48,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
                 label:    'Edit',
                 icon:     'pencil',
                 type:     'default',
-                helpText: 'Edit this invoice.',
+                helpText: this.intl.t('invoice.actions.edit'),
                 onClick:  () => this.invoiceActions.panel.edit(invoice),
             });
         }
@@ -58,7 +59,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
                 label:    'Send',
                 icon:     'paper-plane',
                 type:     'primary',
-                helpText: 'Send this invoice to the customer via email.',
+                helpText: this.intl.t('invoice.actions.send'),
                 onClick:  this.sendInvoice,
             });
         }
@@ -69,7 +70,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
                 label:    'Record Payment',
                 icon:     'check-circle',
                 type:     'success',
-                helpText: 'Mark a manual payment received against this invoice.',
+                helpText: this.intl.t('invoice.actions.record-payment'),
                 onClick:  this.recordPayment,
             });
         }
@@ -80,7 +81,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
                 label:    'Void',
                 icon:     'ban',
                 type:     'danger',
-                helpText: 'Cancel this invoice and mark it as void. This cannot be undone.',
+                helpText: this.intl.t('invoice.actions.void'),
                 onClick:  this.voidInvoice,
             });
         }
@@ -101,7 +102,60 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
 
     @action async recordPayment() {
         const invoice = this.model;
-        this.modalsManager.show('modals/record-payment', { invoice });
+        const options = {
+            title:                this.intl.t('invoice.actions.record-payment-title', { number: invoice.number }),
+            acceptButtonText:     this.intl.t('invoice.actions.record-payment'),
+            acceptButtonIcon:     'check-circle',
+            invoice,
+            amount:               invoice.balance ?? 0,
+            paymentMethod:        'bank_transfer',
+            reference:            '',
+            paymentMethodOptions: [
+                { label: 'Bank Transfer',  value: 'bank_transfer' },
+                { label: 'Cash',           value: 'cash' },
+                { label: 'Cheque',         value: 'cheque' },
+                { label: 'Credit Card',    value: 'credit_card' },
+                { label: 'Debit Card',     value: 'debit_card' },
+                { label: 'PayPal',         value: 'paypal' },
+                { label: 'Stripe',         value: 'stripe' },
+                { label: 'Other',          value: 'other' },
+            ],
+            setAmount: (centsValue) => {
+                options.amount = centsValue;
+            },
+            setPaymentMethod: (value) => {
+                options.paymentMethod = value;
+            },
+            setReference: (event) => {
+                options.reference = event.target.value;
+            },
+            confirm: async (modal) => {
+                if (!options.amount || options.amount <= 0) {
+                    this.notifications.warning('Please enter a valid payment amount greater than zero.');
+                    return;
+                }
+                modal.startLoading();
+                try {
+                    await this.fetch.post(
+                        `invoices/${invoice.id}/record-payment`,
+                        {
+                            amount:         options.amount,
+                            payment_method: options.paymentMethod,
+                            reference:      options.reference || null,
+                        },
+                        { namespace: 'ledger/int/v1' }
+                    );
+                    this.notifications.success('Payment recorded successfully.');
+                    await invoice.reload();
+                    modal.done();
+                } catch (error) {
+                    this.notifications.serverError(error);
+                    modal.stopLoading();
+                }
+            },
+        };
+
+        this.modalsManager.show('modals/record-payment', options);
     }
 
     @action async voidInvoice() {
