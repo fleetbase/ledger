@@ -58,6 +58,9 @@ export default class InvoiceActionsService extends ResourceActionService {
             ? this.intl.t('invoice.actions.preview-invoice', { number: invoice.number })
             : this.intl.t('invoice.actions.preview-invoice-fallback');
 
+        // Reset cached HTML each time a new preview is opened.
+        this._previewHtml = null;
+
         // Open immediately with a loading spinner for instant feedback.
         this.modalsManager.show('modals/invoice-preview', {
             title,
@@ -74,6 +77,9 @@ export default class InvoiceActionsService extends ResourceActionService {
 
         try {
             const { html } = await this.fetch.post(`invoices/${invoice.id}/preview`, {}, { namespace: 'ledger/int/v1' });
+            // Cache the HTML so _printInvoicePreview can access it without
+            // querying the DOM (which is unreliable inside a sandboxed iframe).
+            this._previewHtml = html;
             this.modalsManager.setOptions({ isLoading: false, html });
         } catch (err) {
             this.notifications.serverError(err);
@@ -86,19 +92,42 @@ export default class InvoiceActionsService extends ResourceActionService {
     // -------------------------------------------------------------------------
 
     /**
-     * Print the rendered invoice HTML via the iframe's contentWindow.
-     * The iframe is rendered inside the modal body by invoice-preview.hbs.
+     * Print the rendered invoice HTML.
+     *
+     * Sandboxed iframes block print() and scripts, so we cannot call
+     * iframe.contentWindow.print() directly.  Instead we open the HTML in a
+     * new, unsandboxed popup window and trigger print() there.  The popup is
+     * closed automatically after the print dialog is dismissed.
      */
     _printInvoicePreview() {
-        // Try the iframe first (rendered HTML preview).
-        const iframe = document.querySelector('.modal-xl iframe');
-        if (iframe?.contentWindow) {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
+        // Use the HTML cached when the preview was loaded.
+        // We cannot read it from the sandboxed iframe's srcdoc attribute
+        // because cross-origin sandbox restrictions block DOM access.
+        const html = this._previewHtml;
+        if (!html) {
             return;
         }
-        // Fallback: print the whole page if the iframe is not yet available.
-        window.print();
+
+        // Open a blank popup window.
+        const printWindow = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+        if (!printWindow) {
+            // Popup was blocked — fall back to printing the current page.
+            window.print();
+            return;
+        }
+
+        // Write the full invoice HTML into the popup and trigger print.
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        // Wait for resources to load before printing.
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+            // Close the popup after the print dialog is dismissed.
+            printWindow.onafterprint = () => printWindow.close();
+        };
     }
 
     /**

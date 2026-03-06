@@ -27,6 +27,7 @@
         "php": "^8.0",
         "fleetbase/core-api": "*",
         "fleetbase/fleetops-api": "*",
+        "dompdf/dompdf": "^2.0|^3.0",
         "guzzlehttp/guzzle": "^7.0",
         "php-http/guzzle7-adapter": "^1.0",
         "psr/http-factory-implementation": "*",
