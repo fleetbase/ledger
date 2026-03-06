@@ -79,6 +79,8 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                         $router->post('{id}/record-payment', $controller('recordPayment'));
                                         $router->post('{id}/mark-as-sent', $controller('markAsSent'));
                                         $router->post('{id}/send', $controller('send'));
+                                        $router->post('{id}/preview', $controller('preview'));
+                                        $router->post('{id}/render-pdf', $controller('renderPdf'));
                                     }
                                 );
 
