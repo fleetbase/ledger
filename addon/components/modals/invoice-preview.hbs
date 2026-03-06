@@ -1,10 +1,12 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
         {{#if @options.isLoading}}
+            {{! Loading state }}
             <div class="flex items-center justify-center h-40rem">
                 <Spinner class="w-8 h-8 text-gray-400" />
             </div>
         {{else if @options.html}}
+            {{! Rendered invoice HTML in a sandboxed iframe }}
             <iframe
                 class="border-0 w-full shadow-sm h-40rem"
                 srcdoc={{@options.html}}
@@ -12,38 +14,10 @@
                 sandbox="allow-same-origin"
             ></iframe>
         {{else}}
+            {{! No content / error state }}
             <div class="flex items-center justify-center h-40rem text-gray-400 dark:text-gray-500 text-sm">
                 {{t "ledger.modals.invoice-preview.no-content"}}
             </div>
         {{/if}}
     </div>
-    <:footer>
-        <div class="flex items-center justify-between w-full">
-            <div class="flex items-center gap-2">
-                {{#if @options.html}}
-                    <Button
-                        @icon="print"
-                        @text={{t "common.print"}}
-                        @type="default"
-                        @size="sm"
-                        @onClick={{@options.onPrint}}
-                    />
-                    <Button
-                        @icon="file-pdf"
-                        @text={{t "common.download-pdf"}}
-                        @type="default"
-                        @size="sm"
-                        @isLoading={{@options.isPdfLoading}}
-                        @onClick={{@options.onDownloadPdf}}
-                    />
-                {{/if}}
-            </div>
-            <Button
-                @text={{t "common.done"}}
-                @type="primary"
-                @size="sm"
-                @onClick={{@onConfirm}}
-            />
-        </div>
-    </:footer>
 </Modal::Default>
