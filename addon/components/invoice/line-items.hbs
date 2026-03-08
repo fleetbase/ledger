@@ -15,7 +15,7 @@
                 </tr>
             </thead>
             <tbody>
-                {{#each this.items as |item|}}
+                {{#each this.items key="_tmpId" as |item|}}
                     <tr class="border-b border-gray-100 dark:border-gray-800">
                         {{! Description — uses `input` event to avoid focus loss }}
                         <td class="py-1 pr-2">

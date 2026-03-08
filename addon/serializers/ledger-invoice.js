@@ -10,8 +10,26 @@ import LedgerSerializer from './ledger';
  */
 export default class LedgerInvoiceSerializer extends LedgerSerializer {
     attrs = {
-        items: { embedded: 'always' },
+        items:    { embedded: 'always' },
         template: { embedded: 'always' },
         customer: { embedded: 'always' },
     };
+
+    serialize(snapshot) {
+        const json = super.serialize(...arguments);
+
+        // Derive customer_type from the embedded customer record.
+        // The customer endpoint returns each customer with a `customer_type`
+        // field that is either "contact" or "vendor".  We map that to the
+        // PolymorphicType string the backend PolymorphicType cast expects.
+        const customerSnapshot = snapshot.belongsTo('customer');
+        if (customerSnapshot) {
+            const rawType = customerSnapshot.attr('customer_type'); // "contact" | "vendor"
+            if (rawType) {
+                json['customer_type'] = `fleet-ops:${rawType}`;
+            }
+        }
+
+        return json;
+    }
 }
