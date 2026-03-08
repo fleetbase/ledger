@@ -24,14 +24,15 @@ export default class LedgerInvoiceSerializer extends LedgerSerializer {
         // PolymorphicType string the backend PolymorphicType cast expects.
         const customerSnapshot = snapshot.belongsTo('customer');
         if (customerSnapshot) {
-            // The API returns customer_type as either:
-            //   "contact" | "vendor"           (bare, from a freshly selected customer)
-            //   "customer-contact" | "customer-vendor"  (prefixed, as stored on the invoice)
-            // Normalise to the bare type before building the PolymorphicType string.
-            let rawType = customerSnapshot.attr('customer_type'); // e.g. "contact", "vendor", or "customer-vendor"
+            // The API returns customer_type on the embedded customer object as the
+            // full Ember resource type string, e.g. "fleet-ops:vendor" or
+            // "fleet-ops:contact" (after the backend fix that removed the erroneous
+            // "customer-" prefix).  We pass it through directly as the invoice's
+            // customer_type so the backend PolymorphicType cast can resolve the
+            // correct model class.
+            const rawType = customerSnapshot.attr('customer_type');
             if (rawType) {
-                const bareType = rawType.startsWith('customer-') ? rawType.slice('customer-'.length) : rawType;
-                json['customer_type'] = `fleet-ops:${bareType}`;
+                json['customer_type'] = rawType;
             }
         }
 

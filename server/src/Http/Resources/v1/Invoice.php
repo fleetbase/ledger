@@ -70,8 +70,13 @@ class Invoice extends FleetbaseResource
     }
 
     /**
-     * Stamp type='customer' and customer_type='customer-{ember-type}' onto the
-     * resolved customer data array, matching the FleetOps Order resource pattern.
+     * Stamp type='customer' and customer_type onto the resolved customer data array.
+     *
+     * customer_type is the full Ember resource type string, e.g. "fleet-ops:vendor"
+     * or "fleet-ops:contact".  We do NOT prefix with "customer-" because
+     * Utils::toEmberResourceType() already returns the full namespaced type and
+     * prepending "customer-" would produce the invalid string
+     * "customer-fleet-ops:vendor".
      *
      * @param array|null $resolved
      *
@@ -84,7 +89,7 @@ class Invoice extends FleetbaseResource
         }
 
         data_set($resolved, 'type', 'customer');
-        data_set($resolved, 'customer_type', 'customer-' . Utils::toEmberResourceType($this->customer_type));
+        data_set($resolved, 'customer_type', Utils::toEmberResourceType($this->customer_type));
 
         return $resolved;
     }
