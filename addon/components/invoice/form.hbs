@@ -98,11 +98,17 @@
         <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
 
             <InputGroup @name="Invoice Date">
+                {{!--
+                    Use @onChange (not @onDateChanged) so we receive a native Date
+                    object.  @onDateChanged receives a formatted string which the
+                    Ember Data `date` transform cannot serialise (it calls .toISOString()
+                    on the value and returns null for a plain string).
+                --}}
                 <DatePicker
                     @value={{@resource.date}}
                     @dateFormat="yyyy-MM-dd"
                     @placeholder="YYYY-MM-DD"
-                    @onDateChanged={{fn (mut @resource.date)}}
+                    @onChange={{fn (mut @resource.date)}}
                     class="w-full"
                     disabled={{cannot-write @resource}}
                 />
@@ -113,7 +119,7 @@
                     @value={{@resource.due_date}}
                     @dateFormat="yyyy-MM-dd"
                     @placeholder="YYYY-MM-DD"
-                    @onDateChanged={{fn (mut @resource.due_date)}}
+                    @onChange={{fn (mut @resource.due_date)}}
                     class="w-full"
                     disabled={{cannot-write @resource}}
                 />

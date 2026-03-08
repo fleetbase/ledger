@@ -17,11 +17,11 @@
             <tbody>
                 {{#each this.items key="_tmpId" as |item|}}
                     <tr class="border-b border-gray-100 dark:border-gray-800">
-                        {{! Description — uses `input` event to avoid focus loss }}
+                        {{! Description — plain input to avoid Ember two-way binding resetting on re-render }}
                         <td class="py-1 pr-2">
-                            <Input
-                                @value={{item.description}}
-                                @type="text"
+                            <input
+                                type="text"
+                                value={{item.description}}
                                 class="w-full form-input text-xs"
                                 placeholder="Item description"
                                 disabled={{@disabled}}
@@ -29,11 +29,11 @@
                             />
                         </td>
 
-                        {{! Quantity — wider column, change event is fine for a number spinner }}
+                        {{! Quantity — plain input to avoid two-way binding reset }}
                         <td class="py-1 px-2">
-                            <Input
-                                @value={{item.quantity}}
-                                @type="number"
+                            <input
+                                type="number"
+                                value={{item.quantity}}
                                 min="1"
                                 step="1"
                                 class="w-full form-input text-xs text-right"
@@ -53,11 +53,11 @@
                             />
                         </td>
 
-                        {{! Tax Rate — uses `input` event to avoid focus loss }}
+                        {{! Tax Rate — plain input to avoid Ember two-way binding resetting value on re-render }}
                         <td class="py-1 px-2">
-                            <Input
-                                @value={{item.tax_rate}}
-                                @type="number"
+                            <input
+                                type="number"
+                                value={{item.tax_rate}}
                                 min="0"
                                 max="100"
                                 step="0.01"
