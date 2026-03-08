@@ -24,9 +24,14 @@ export default class LedgerInvoiceSerializer extends LedgerSerializer {
         // PolymorphicType string the backend PolymorphicType cast expects.
         const customerSnapshot = snapshot.belongsTo('customer');
         if (customerSnapshot) {
-            const rawType = customerSnapshot.attr('customer_type'); // "contact" | "vendor"
+            // The API returns customer_type as either:
+            //   "contact" | "vendor"           (bare, from a freshly selected customer)
+            //   "customer-contact" | "customer-vendor"  (prefixed, as stored on the invoice)
+            // Normalise to the bare type before building the PolymorphicType string.
+            let rawType = customerSnapshot.attr('customer_type'); // e.g. "contact", "vendor", or "customer-vendor"
             if (rawType) {
-                json['customer_type'] = `fleet-ops:${rawType}`;
+                const bareType = rawType.startsWith('customer-') ? rawType.slice('customer-'.length) : rawType;
+                json['customer_type'] = `fleet-ops:${bareType}`;
             }
         }
 

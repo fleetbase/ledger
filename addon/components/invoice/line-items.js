@@ -3,22 +3,33 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 
 /**
- * A single line-item row backed by @tracked properties.
+ * A single line-item row.
  *
- * Using a class with individual @tracked fields instead of replacing the whole
- * items array on every keystroke.  This lets Glimmer do fine-grained DOM
- * updates — only the changed cell re-renders — so input elements are never
- * destroyed mid-edit and focus is never lost.
+ * IMPORTANT: `unit_price`, `quantity`, `tax_rate`, and `description` are
+ * intentionally NOT @tracked.  Making them @tracked would cause a feedback
+ * loop with MoneyInput:
+ *
+ *   updateUnitPrice → item.unit_price (tracked) → @value on <MoneyInput> updates
+ *   → Ember <Input> sets element.value = raw-cents integer
+ *   → AutoNumeric fires autoNumeric:rawValueModified with that integer
+ *   → onChange called again with integer * 100 (double-multiplied)
+ *   → _recalculate with corrupted value → totals go to 0
+ *
+ * Instead, only `amount` and `tax_amount` are @tracked.  They are the only
+ * values that need to drive reactive re-renders (the per-row Amount cell and
+ * the footer totals).  All input fields manage their own DOM state; we only
+ * read their values through event handlers.
  */
 class LineItem {
-    @tracked description = '';
-    @tracked quantity    = 1;
-    @tracked unit_price  = 0;
-    @tracked tax_rate    = 0;
-    // amount and tax_amount are @tracked so that component-level getters
-    // (subtotal / tax / total) re-render when any field changes.
-    @tracked amount      = 0;
-    @tracked tax_amount  = 0;
+    // Plain (non-reactive) input fields — managed by DOM inputs directly
+    description = '';
+    quantity    = 1;
+    unit_price  = 0;
+    tax_rate    = 0;
+
+    // Reactive computed fields — drive the Amount cell and footer totals
+    @tracked amount     = 0;
+    @tracked tax_amount = 0;
 
     constructor(attrs = {}) {
         this._tmpId      = attrs._tmpId      ?? `_tmp_${Date.now()}_${Math.random()}`;
@@ -62,9 +73,9 @@ export default class InvoiceLineItemsComponent extends Component {
     /**
      * @tracked array of LineItem instances.
      *
-     * We only replace this array when adding or removing rows.  For in-row
-     * edits we mutate the LineItem instance's @tracked properties directly,
-     * which triggers fine-grained re-renders without destroying input elements.
+     * Only replaced when adding or removing rows.  In-row edits mutate the
+     * LineItem instance directly (amount/tax_amount are @tracked on LineItem)
+     * so Glimmer only re-renders the cells that changed.
      */
     @tracked items = [];
 
@@ -108,20 +119,12 @@ export default class InvoiceLineItemsComponent extends Component {
         this._notifyChange();
     }
 
-    /**
-     * Description uses `input` event so the value updates on every keystroke
-     * without losing focus.  We mutate the LineItem directly — no array swap.
-     */
     @action
     updateDescription(item, event) {
         item.description = event.target.value;
         this._notifyChange();
     }
 
-    /**
-     * Quantity uses `change` event (fires on blur / Enter) which is fine for a
-     * number spinner.  We mutate the LineItem directly.
-     */
     @action
     updateQuantity(item, event) {
         item.quantity = Math.max(1, parseInt(event.target.value, 10) || 1);
@@ -131,6 +134,7 @@ export default class InvoiceLineItemsComponent extends Component {
 
     /**
      * MoneyInput calls onChange with the integer-cents value directly.
+     * We do NOT store this back into @value — MoneyInput owns its own display.
      */
     @action
     updateUnitPrice(item, value) {
@@ -139,10 +143,6 @@ export default class InvoiceLineItemsComponent extends Component {
         this._notifyChange();
     }
 
-    /**
-     * Tax rate uses `input` event so the value updates on every keystroke
-     * without losing focus.
-     */
     @action
     updateTaxRate(item, event) {
         item.tax_rate = Math.max(0, parseFloat(event.target.value) || 0);
@@ -158,7 +158,6 @@ export default class InvoiceLineItemsComponent extends Component {
         if (source instanceof LineItem) {
             return source;
         }
-        // Accept both Ember Data model instances and plain objects.
         if (typeof source.getProperties === 'function') {
             const { uuid, description, quantity, unit_price, tax_rate } = source;
             return new LineItem({ uuid, description, quantity, unit_price, tax_rate });
