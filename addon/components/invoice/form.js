@@ -96,10 +96,35 @@ export default class InvoiceFormComponent extends Component {
         if (customer) {
             this.args.resource.customer      = customer;
             this.args.resource.customer_uuid = customer?.id ?? null;
-            // Customers in FleetOps are Contact records with type='customer'.
-            // Utils::getMutationType('fleet-ops:contact') resolves correctly to
-            // Fleetbase\FleetOps\Models\Contact on the backend.
-            this.args.resource.customer_type = 'fleet-ops:contact';
+
+            // Derive the correct PolymorphicType value from the customer record.
+            //
+            // The API returns customer objects with a `customer_type` field in the
+            // format "customer-{ember-type}", e.g.:
+            //   "customer-vendor"  -> fleet-ops:vendor  (Fleetbase\FleetOps\Models\Vendor)
+            //   "customer-contact" -> fleet-ops:contact (Fleetbase\FleetOps\Models\Contact)
+            //
+            // We strip the "customer-" prefix and prepend "fleet-ops:" so that
+            // the backend PolymorphicType cast resolves the correct model class.
+            // If the field is absent we fall back to inspecting the public_id prefix.
+            const rawType = customer.customer_type ?? customer.get?.('customer_type');
+            let polymorphicType;
+
+            if (rawType && rawType.startsWith('customer-')) {
+                const emberType = rawType.slice('customer-'.length); // e.g. "vendor"
+                polymorphicType = `fleet-ops:${emberType}`;
+            } else {
+                // Fallback: inspect the public_id prefix
+                const publicId = customer.public_id ?? customer.get?.('public_id') ?? '';
+                polymorphicType = publicId.startsWith('vendor_') ? 'fleet-ops:vendor' : 'fleet-ops:contact';
+            }
+
+            this.args.resource.customer_type = polymorphicType;
+        } else {
+            // Customer cleared
+            this.args.resource.customer      = null;
+            this.args.resource.customer_uuid = null;
+            this.args.resource.customer_type = null;
         }
     }
 

@@ -15,16 +15,10 @@ class LineItem {
     @tracked quantity    = 1;
     @tracked unit_price  = 0;
     @tracked tax_rate    = 0;
-
-    // Derived (recomputed on read — no @tracked needed, getters are reactive
-    // because they depend on @tracked fields above)
-    get amount() {
-        return (this.quantity || 0) * (this.unit_price || 0);
-    }
-
-    get tax_amount() {
-        return Math.round(this.amount * ((this.tax_rate || 0) / 100));
-    }
+    // amount and tax_amount are @tracked so that component-level getters
+    // (subtotal / tax / total) re-render when any field changes.
+    @tracked amount      = 0;
+    @tracked tax_amount  = 0;
 
     constructor(attrs = {}) {
         this._tmpId      = attrs._tmpId      ?? `_tmp_${Date.now()}_${Math.random()}`;
@@ -33,6 +27,12 @@ class LineItem {
         this.quantity    = attrs.quantity    ?? 1;
         this.unit_price  = attrs.unit_price  ?? 0;
         this.tax_rate    = attrs.tax_rate    ?? 0;
+        this._recalculate();
+    }
+
+    _recalculate() {
+        this.amount     = (this.quantity || 0) * (this.unit_price || 0);
+        this.tax_amount = Math.round(this.amount * ((this.tax_rate || 0) / 100));
     }
 
     toPlain() {
@@ -125,6 +125,7 @@ export default class InvoiceLineItemsComponent extends Component {
     @action
     updateQuantity(item, event) {
         item.quantity = Math.max(1, parseInt(event.target.value, 10) || 1);
+        item._recalculate();
         this._notifyChange();
     }
 
@@ -134,6 +135,7 @@ export default class InvoiceLineItemsComponent extends Component {
     @action
     updateUnitPrice(item, value) {
         item.unit_price = value;
+        item._recalculate();
         this._notifyChange();
     }
 
@@ -144,6 +146,7 @@ export default class InvoiceLineItemsComponent extends Component {
     @action
     updateTaxRate(item, event) {
         item.tax_rate = Math.max(0, parseFloat(event.target.value) || 0);
+        item._recalculate();
         this._notifyChange();
     }
 
