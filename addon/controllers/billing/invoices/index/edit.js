@@ -15,10 +15,12 @@ export default class BillingInvoicesIndexEditController extends Controller {
 
     /**
      * Reference to the Invoice::Form component instance.
-     * Set via @registerRef={{fn (mut this.formRef)}} in the route template.
-     * Used to call formRef.syncItemsToInvoice(invoice) before saving.
+     * Set via @registerRef={{this.registerFormRef}} in the route template.
+     * Plain (non-tracked) property — must NOT be @tracked because Glimmer
+     * would throw "already consumed" if we write to it during the render pass
+     * that first reads it.
      */
-    @tracked formRef = null;
+    formRef = null;
 
     @tracked actionButtons = [
         {
@@ -26,6 +28,10 @@ export default class BillingInvoicesIndexEditController extends Controller {
             fn: this.view,
         },
     ];
+
+    @action registerFormRef(ref) {
+        this.formRef = ref;
+    }
 
     @task *save(invoice) {
         try {

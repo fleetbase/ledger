@@ -33,6 +33,18 @@ export default class InvoiceFormComponent extends Component {
     @tracked currency;
 
     /**
+     * Snapshot of the invoice's items taken ONCE in the constructor.
+     *
+     * This MUST be a plain property, NOT a getter.  If it were a getter it
+     * would re-evaluate on every render cycle (e.g. when tax_amount changes
+     * on a LineItem and triggers a re-render of the form).  A new array
+     * reference would be passed as @items to Invoice::LineItems, causing
+     * Glimmer to destroy/recreate the child component and reset all user
+     * edits to the original Ember Data values.
+     */
+    initialItems = [];
+
+    /**
      * Syncs the current line items from the child component into the Ember Data
      * store and updates the invoice's `items` hasMany.  Called by the
      * controller's save task just before `yield invoice.save()`.
@@ -75,19 +87,14 @@ export default class InvoiceFormComponent extends Component {
         return this.currentUser.getCompany()?.currency ?? 'USD';
     }
 
-    /**
-     * The initial items array passed to Invoice::LineItems.
-     * This is computed ONCE from the existing hasMany and never mutated
-     * during editing — that is the key to preventing component recreation.
-     */
-    get initialItems() {
-        return this.args.resource?.items?.toArray?.() ?? [];
-    }
-
     constructor() {
         super(...arguments);
         const invoice = this.args.resource;
         this.currency = invoice?.currency ?? this.companyCurrency;
+        // Snapshot items ONCE so @items on Invoice::LineItems never changes.
+        // If this were a getter it would return a new array on every render,
+        // causing Glimmer to recreate the child component and reset user edits.
+        this.initialItems = invoice?.items?.toArray?.() ?? [];
         // Register this form component instance with the controller so the
         // save task can call formRef.syncItemsToInvoice(invoice) before saving.
         if (typeof this.args.registerRef === 'function') {

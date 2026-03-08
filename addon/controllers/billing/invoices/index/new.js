@@ -20,15 +20,21 @@ export default class BillingInvoicesIndexNewController extends Controller {
 
     /**
      * Reference to the Invoice::Form component instance.
-     * Set via @registerRef={{fn (mut this.formRef)}} in the route template.
-     * Used to call formRef.syncItemsToInvoice(invoice) before saving.
+     * Set via @registerRef={{this.registerFormRef}} in the route template.
+     * Plain (non-tracked) property — must NOT be @tracked because Glimmer
+     * would throw "already consumed" if we write to it during the render pass
+     * that first reads it.
      */
-    @tracked formRef = null;
+    formRef = null;
 
     @tracked invoice = this.store.createRecord('ledger-invoice', DEFAULT_PROPERTIES);
 
     get actionButtons() {
         return [];
+    }
+
+    @action registerFormRef(ref) {
+        this.formRef = ref;
     }
 
     @task *save(invoice) {
