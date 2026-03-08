@@ -130,11 +130,20 @@
 
     {{! ── LINE ITEMS ──────────────────────────────────────────────────────── }}
     <ContentPanel @title="Line Items" @open={{true}} @wrapperClass="bordered-top">
+        {{!--
+            @items is set ONCE from the existing hasMany (edit case) or empty
+            array (new case) and is NEVER changed during editing.  This prevents
+            Glimmer from destroying/recreating the component on every keystroke,
+            which was causing MoneyInput values to reset to $0.
+
+            @registerRef receives the component instance so the controller's
+            save task can call lineItemsRef.getItems() just before saving.
+        --}}
         <Invoice::LineItems
-            @items={{this.items}}
+            @items={{this.initialItems}}
             @currency={{this.currency}}
             @disabled={{cannot-write @resource}}
-            @onChange={{this.onItemsChange}}
+            @registerRef={{this.registerLineItemsRef}}
         />
     </ContentPanel>
 

@@ -6,54 +6,42 @@ import { inject as service } from '@ember/service';
 /**
  * Invoice form component.
  *
- * Receives @resource (a ledger-invoice Ember Data record) and manages
- * the line-items array by creating / updating ledger-invoice-item records
- * in the Ember Data store and setting them on the invoice's `items` hasMany.
+ * Receives @resource (a ledger-invoice Ember Data record) and @saveTask.
  *
- * The saveTask in invoice-actions.js reads `record.items` directly — no
- * side-channel properties needed.
+ * Line-items architecture
+ * -----------------------
+ * The Invoice::LineItems child component registers itself via @registerRef so
+ * we can call lineItemsRef.getItems() just before saving.  This avoids the
+ * previous per-keystroke @onChange pattern that caused:
+ *
+ *   1. store.createRecord on every keystroke → duplicate items with uuid:null
+ *   2. this.items update → @items arg change → component destroyed/recreated
+ *   3. All MoneyInput values reset to $0 because the component was recreated
+ *
+ * The @items arg passed to Invoice::LineItems is set ONCE from the existing
+ * hasMany relationship (edit case) and never changed again during editing.
+ * Glimmer will therefore never destroy/recreate the child component while the
+ * user is typing.
  */
 export default class InvoiceFormComponent extends Component {
     @service store;
     @service currentUser;
 
-    @tracked items = [];
+    /** Holds the Invoice::LineItems component instance after it registers. */
+    lineItemsRef = null;
+
     @tracked currency;
 
-    get companyCurrency() {
-        return this.currentUser.getCompany()?.currency ?? 'USD';
-    }
-
-    constructor() {
-        super(...arguments);
-        const invoice = this.args.resource;
-        this.currency = invoice?.currency ?? this.companyCurrency;
-
-        // Seed local items from the existing hasMany relationship (edit case)
-        if (invoice?.items?.length) {
-            this.items = invoice.items.map((item) => this._toPlain(item));
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Actions
-    // -------------------------------------------------------------------------
-
     /**
-     * Called by Invoice::LineItems @onChange whenever the user adds, removes,
-     * or edits a line item. Receives a plain-object array from the child
-     * component. We upsert each item as a ledger-invoice-item store record and
-     * update the invoice's `items` hasMany so the saveTask can serialise them.
+     * Syncs the current line items from the child component into the Ember Data
+     * store and updates the invoice's `items` hasMany.  Called by the
+     * controller's save task just before `yield invoice.save()`.
      */
-    @action
-    onItemsChange(updatedItems) {
-        this.items = updatedItems;
+    syncItemsToInvoice(invoice) {
+        if (!this.lineItemsRef || !invoice) return;
 
-        const invoice = this.args.resource;
-        if (!invoice) return;
-
-        // Build or update ledger-invoice-item records in the store
-        const itemRecords = updatedItems.map((plain) => {
+        const plainItems = this.lineItemsRef.getItems();
+        const itemRecords = plainItems.map((plain) => {
             const existing = plain.uuid
                 ? this.store.peekRecord('ledger-invoice-item', plain.uuid)
                 : null;
@@ -79,8 +67,45 @@ export default class InvoiceFormComponent extends Component {
             });
         });
 
-        // Replace the hasMany content so saveTask reads the latest set
+        // Replace the hasMany content so the serializer picks up the latest set
         invoice.items = itemRecords;
+    }
+
+    get companyCurrency() {
+        return this.currentUser.getCompany()?.currency ?? 'USD';
+    }
+
+    /**
+     * The initial items array passed to Invoice::LineItems.
+     * This is computed ONCE from the existing hasMany and never mutated
+     * during editing — that is the key to preventing component recreation.
+     */
+    get initialItems() {
+        return this.args.resource?.items?.toArray?.() ?? [];
+    }
+
+    constructor() {
+        super(...arguments);
+        const invoice = this.args.resource;
+        this.currency = invoice?.currency ?? this.companyCurrency;
+        // Register this form component instance with the controller so the
+        // save task can call formRef.syncItemsToInvoice(invoice) before saving.
+        if (typeof this.args.registerRef === 'function') {
+            this.args.registerRef(this);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Actions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Called by Invoice::LineItems with its own component instance.
+     * Stored so syncItemsToInvoice() can call lineItemsRef.getItems().
+     */
+    @action
+    registerLineItemsRef(ref) {
+        this.lineItemsRef = ref;
     }
 
     @action
@@ -102,17 +127,5 @@ export default class InvoiceFormComponent extends Component {
             this.args.resource.template      = template;
             this.args.resource.template_uuid = template?.id ?? null;
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
-
-    _toPlain(item) {
-        if (typeof item.getProperties === 'function') {
-            const { uuid, description, quantity, unit_price, amount, tax_rate, tax_amount } = item;
-            return { uuid, description, quantity, unit_price, amount, tax_rate, tax_amount };
-        }
-        return { ...item };
     }
 }

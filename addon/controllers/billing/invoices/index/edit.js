@@ -12,6 +12,14 @@ export default class BillingInvoicesIndexEditController extends Controller {
     @service events;
 
     @tracked overlay;
+
+    /**
+     * Reference to the Invoice::Form component instance.
+     * Set via @registerRef={{fn (mut this.formRef)}} in the route template.
+     * Used to call formRef.syncItemsToInvoice(invoice) before saving.
+     */
+    @tracked formRef = null;
+
     @tracked actionButtons = [
         {
             icon: 'eye',
@@ -21,6 +29,13 @@ export default class BillingInvoicesIndexEditController extends Controller {
 
     @task *save(invoice) {
         try {
+            // Sync line items from the form component into the invoice record
+            // before persisting.  This must happen here (not in the form) because
+            // Layout::Resource::Panel calls saveTask.perform(@resource) directly.
+            if (this.formRef) {
+                this.formRef.syncItemsToInvoice(invoice);
+            }
+
             yield invoice.save();
             this.events.trackResourceUpdated(invoice);
             this.overlay?.close();

@@ -64,10 +64,18 @@ class LineItem {
  * Invoice line-items editor.
  *
  * Args:
- *   @items    {Array}    - initial array of item plain objects or Ember Data records
- *   @currency {String}   - ISO 4217 currency code, e.g. "USD"
- *   @disabled {Boolean}  - when true all inputs are read-only
- *   @onChange {Function} - called with the updated plain-object array on every change
+ *   @items       {Array}    - initial array of item plain objects or Ember Data records
+ *   @currency    {String}   - ISO 4217 currency code, e.g. "USD"
+ *   @disabled    {Boolean}  - when true all inputs are read-only
+ *   @registerRef {Function} - called once with this component instance so the
+ *                             parent form can call getItems() before saving.
+ *
+ * The component does NOT call @onChange on every keystroke.  Instead, the
+ * parent form calls getItems() on this component (via the registered ref) just
+ * before calling invoice.save().  This eliminates the feedback loop where:
+ *
+ *   @onChange → parent updates @items → @items arg changes → component is
+ *   destroyed/recreated → all user input (MoneyInput values) is lost.
  */
 export default class InvoiceLineItemsComponent extends Component {
     /**
@@ -82,6 +90,22 @@ export default class InvoiceLineItemsComponent extends Component {
     constructor() {
         super(...arguments);
         this.items = (this.args.items ?? []).map((item) => this._toLineItem(item));
+        // Register this component instance with the parent so it can call getItems()
+        if (typeof this.args.registerRef === 'function') {
+            this.args.registerRef(this);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Public API (called by parent before save)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the current items as plain objects, ready to be pushed onto the
+     * invoice record before save.
+     */
+    getItems() {
+        return this.items.map((item) => item.toPlain());
     }
 
     // -------------------------------------------------------------------------
@@ -101,7 +125,7 @@ export default class InvoiceLineItemsComponent extends Component {
     }
 
     // -------------------------------------------------------------------------
-    // Actions
+    // Actions — NO _notifyChange calls on per-field edits
     // -------------------------------------------------------------------------
 
     @action
@@ -110,6 +134,8 @@ export default class InvoiceLineItemsComponent extends Component {
             ...this.items,
             new LineItem({ _tmpId: `_tmp_${Date.now()}` }),
         ];
+        // Notify parent only on structural changes (row added/removed) so it can
+        // update any item-count display, but NOT on every keystroke.
         this._notifyChange();
     }
 
@@ -122,14 +148,14 @@ export default class InvoiceLineItemsComponent extends Component {
     @action
     updateDescription(item, event) {
         item.description = event.target.value;
-        this._notifyChange();
+        // No _notifyChange — parent reads via getItems() on save
     }
 
     @action
     updateQuantity(item, event) {
         item.quantity = Math.max(1, parseInt(event.target.value, 10) || 1);
         item._recalculate();
-        this._notifyChange();
+        // No _notifyChange — parent reads via getItems() on save
     }
 
     /**
@@ -140,14 +166,14 @@ export default class InvoiceLineItemsComponent extends Component {
     updateUnitPrice(item, value) {
         item.unit_price = value;
         item._recalculate();
-        this._notifyChange();
+        // No _notifyChange — parent reads via getItems() on save
     }
 
     @action
     updateTaxRate(item, event) {
         item.tax_rate = Math.max(0, parseFloat(event.target.value) || 0);
         item._recalculate();
-        this._notifyChange();
+        // No _notifyChange — parent reads via getItems() on save
     }
 
     // -------------------------------------------------------------------------
