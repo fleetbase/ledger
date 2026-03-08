@@ -11,6 +11,8 @@ resource:
   accounts: Accounts
   invoice: Invoice
   invoices: Invoices
+  invoice-template: Invoice Template
+  invoice-templates: Invoice Templates
   journal: Journal Entry
   journal-entries: Journal Entries
   transaction: Transaction
@@ -61,6 +63,7 @@ column:
   default: Default
   owner: Owner
   frozen: Frozen
+  orientation: Orientation
 
 menu:
   dashboard: Dashboard
