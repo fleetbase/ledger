@@ -101,6 +101,7 @@
                 <DatePicker
                     @value={{@resource.date}}
                     @dateFormat="yyyy-MM-dd"
+                    @placeholder="YYYY-MM-DD"
                     @onDateChanged={{fn (mut @resource.date)}}
                     class="w-full"
                     disabled={{cannot-write @resource}}
@@ -111,6 +112,7 @@
                 <DatePicker
                     @value={{@resource.due_date}}
                     @dateFormat="yyyy-MM-dd"
+                    @placeholder="YYYY-MM-DD"
                     @onDateChanged={{fn (mut @resource.due_date)}}
                     class="w-full"
                     disabled={{cannot-write @resource}}
