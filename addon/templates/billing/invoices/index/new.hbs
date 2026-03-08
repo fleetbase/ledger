@@ -6,6 +6,7 @@
     @saveTask={{this.save}}
     @onPressCancel={{transition-to "billing.invoices.index"}}
     @onOverlayReady={{fn (mut this.overlay)}}
+    @width="900px"
 >
     <Invoice::Form @resource={{this.invoice}} @controller={{this}} />
     <Spacer @height="200px" />

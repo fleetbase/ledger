@@ -49,7 +49,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
                 icon:     'pencil',
                 type:     'default',
                 helpText: this.intl.t('invoice.actions.edit'),
-                onClick:  () => this.invoiceActions.panel.edit(invoice),
+                onClick:  () => this.hostRouter.transitionTo('console.ledger.billing.invoices.index.edit', invoice.id),
             });
         }
 

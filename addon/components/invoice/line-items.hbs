@@ -4,10 +4,10 @@
         <table class="w-full text-xs">
             <thead>
                 <tr class="border-b border-gray-200 dark:border-gray-700 text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
-                    <th class="py-2 pr-2 text-left w-1/2">Description</th>
-                    <th class="py-2 px-2 text-right w-16">Qty</th>
-                    <th class="py-2 px-2 text-right w-36">Unit Price</th>
-                    <th class="py-2 px-2 text-right w-20">Tax %</th>
+                    <th class="py-2 pr-2 text-left">Description</th>
+                    <th class="py-2 px-2 text-right w-24">Qty</th>
+                    <th class="py-2 px-2 text-right w-44">Unit Price</th>
+                    <th class="py-2 px-2 text-right w-28">Tax %</th>
                     <th class="py-2 pl-2 text-right w-36">Amount</th>
                     {{#unless @disabled}}
                         <th class="py-2 pl-2 w-8"></th>
@@ -15,9 +15,9 @@
                 </tr>
             </thead>
             <tbody>
-                {{#each this.items as |item index|}}
+                {{#each this.items as |item|}}
                     <tr class="border-b border-gray-100 dark:border-gray-800">
-                        {{! Description }}
+                        {{! Description — uses `input` event to avoid focus loss }}
                         <td class="py-1 pr-2">
                             <Input
                                 @value={{item.description}}
@@ -25,11 +25,11 @@
                                 class="w-full form-input text-xs"
                                 placeholder="Item description"
                                 disabled={{@disabled}}
-                                {{on "change" (fn this.updateDescription index)}}
+                                {{on "input" (fn this.updateDescription item)}}
                             />
                         </td>
 
-                        {{! Quantity }}
+                        {{! Quantity — wider column, change event is fine for a number spinner }}
                         <td class="py-1 px-2">
                             <Input
                                 @value={{item.quantity}}
@@ -38,22 +38,22 @@
                                 step="1"
                                 class="w-full form-input text-xs text-right"
                                 disabled={{@disabled}}
-                                {{on "change" (fn this.updateQuantity index)}}
+                                {{on "change" (fn this.updateQuantity item)}}
                             />
                         </td>
 
-                        {{! Unit Price — MoneyInput }}
+                        {{! Unit Price — MoneyInput, wider column }}
                         <td class="py-1 px-2">
                             <MoneyInput
                                 @value={{item.unit_price}}
                                 @currency={{@currency}}
-                                @onChange={{fn this.updateUnitPrice index}}
+                                @onChange={{fn this.updateUnitPrice item}}
                                 @disabled={{@disabled}}
                                 class="w-full"
                             />
                         </td>
 
-                        {{! Tax Rate }}
+                        {{! Tax Rate — uses `input` event to avoid focus loss }}
                         <td class="py-1 px-2">
                             <Input
                                 @value={{item.tax_rate}}
@@ -64,7 +64,7 @@
                                 class="w-full form-input text-xs text-right"
                                 placeholder="0"
                                 disabled={{@disabled}}
-                                {{on "change" (fn this.updateTaxRate index)}}
+                                {{on "input" (fn this.updateTaxRate item)}}
                             />
                         </td>
 
@@ -79,7 +79,7 @@
                                 <button
                                     type="button"
                                     class="text-red-400 hover:text-red-600 transition-colors"
-                                    {{on "click" (fn this.removeItem index)}}
+                                    {{on "click" (fn this.removeItem item)}}
                                 >
                                     <FaIcon @icon="times" @size="xs" />
                                 </button>
