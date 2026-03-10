@@ -21,9 +21,19 @@ export default class ReportsArAgingController extends Controller {
         return Object.values(this.data.buckets);
     }
 
+    get bucketSummary() {
+        if (!this.data?.buckets) return [];
+        return Object.values(this.data.buckets).map((b) => ({
+            label: b.label,
+            total: b.total ?? 0,
+        }));
+    }
+
     get allInvoices() {
         if (!this.data?.buckets) return [];
-        return Object.values(this.data.buckets).flatMap((b) => b.invoices ?? []);
+        return Object.values(this.data.buckets).flatMap((b) =>
+            (b.invoices ?? []).map((inv) => ({ ...inv, bucketLabel: b.label, daysRange: b.days_range }))
+        );
     }
 
     @task *loadReport() {

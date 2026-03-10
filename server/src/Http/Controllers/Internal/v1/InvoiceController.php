@@ -34,12 +34,11 @@ class InvoiceController extends LedgerResourceController
      */
     public function onAfterCreate(Request $request, Invoice $record, array $input): void
     {
-        // Use $input (the extracted payload from the 'invoice' key) rather than
-        // $request->input('items') which looks at the top-level request body and
-        // returns null because items are nested under invoice.items.
         $this->_syncItems($record, data_get($input, 'items', []));
         $record->calculateTotals();
         $record->save();
+        // Recognise revenue now that totals are finalised (Debit AR, Credit Revenue)
+        app(InvoiceService::class)->recogniseRevenue($record);
         $record->load(['customer', 'items', 'template']);
     }
 

@@ -6,6 +6,7 @@ use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Ledger\Models\Account;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Models\InvoiceItem;
+use Fleetbase\Ledger\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceService
@@ -193,18 +194,37 @@ class InvoiceService
             $cashAccount = $this->getCashAccount($invoice->company_uuid);
             $arAccount   = $this->getAccountsReceivableAccount($invoice->company_uuid);
 
+            // Create the authoritative Transaction record first so it appears in the Transactions list.
+            $transaction = Transaction::create([
+                'company_uuid'  => $invoice->company_uuid,
+                'owner_uuid'    => $invoice->customer_uuid,
+                'owner_type'    => $invoice->customer_type,
+                'customer_uuid' => $invoice->customer_uuid,
+                'customer_type' => $invoice->customer_type,
+                'amount'        => $amount,
+                'currency'      => $invoice->currency ?? 'USD',
+                'description'   => "Payment for invoice {$invoice->number}",
+                'type'          => 'invoice_payment',
+                'status'        => 'completed',
+                'subject_uuid'  => $invoice->uuid,
+                'subject_type'  => Invoice::class,
+                'context_uuid'  => $invoice->uuid,
+                'context_type'  => Invoice::class,
+            ]);
+
             // DEBIT Cash (asset increases — money received), CREDIT Accounts Receivable (asset decreases — AR settled)
-            $journal = $this->ledgerService->createJournalEntry(
+            $this->ledgerService->createJournalEntry(
                 $cashAccount,
                 $arAccount,
                 $amount,
                 "Payment for invoice {$invoice->number}",
                 array_merge($options, [
-                    'company_uuid' => $invoice->company_uuid,
-                    'currency'     => $invoice->currency,
-                    'type'         => 'invoice_payment',
-                    'subject_uuid' => $invoice->uuid,
-                    'subject_type' => Invoice::class,
+                    'company_uuid'     => $invoice->company_uuid,
+                    'currency'         => $invoice->currency,
+                    'type'             => 'invoice_payment',
+                    'transaction_uuid' => $transaction->uuid,
+                    'subject_uuid'     => $invoice->uuid,
+                    'subject_type'     => Invoice::class,
                 ])
             );
 
@@ -218,9 +238,9 @@ class InvoiceService
                 $invoice->status = 'partial';
             }
 
-            // Link the core Transaction to the invoice on first payment
+            // Link the transaction to the invoice on first payment
             if (!$invoice->transaction_uuid) {
-                $invoice->transaction_uuid = $journal->transaction_uuid;
+                $invoice->transaction_uuid = $transaction->uuid;
             }
 
             $invoice->save();
@@ -263,6 +283,60 @@ class InvoiceService
                 'type'              => 'asset',
                 'description'       => 'Default accounts receivable account',
                 'is_system_account' => true,
+            ]
+        );
+    }
+
+    /**
+     * Get or create the default revenue account for a company.
+     */
+    protected function getRevenueAccount(string $companyUuid): Account
+    {
+        return Account::firstOrCreate(
+            [
+                'company_uuid' => $companyUuid,
+                'code'         => 'REV-DEFAULT',
+            ],
+            [
+                'name'              => 'Sales Revenue',
+                'type'              => Account::TYPE_REVENUE,
+                'description'       => 'Default sales revenue account',
+                'is_system_account' => true,
+                'status'            => 'active',
+            ]
+        );
+    }
+
+    /**
+     * Recognise revenue for an invoice.
+     *
+     * Creates a double-entry journal entry:
+     *   DEBIT  Accounts Receivable  (asset increases — customer owes us)
+     *   CREDIT Sales Revenue        (revenue increases — we earned it)
+     *
+     * This is the standard accrual-basis revenue recognition entry and is what
+     * makes revenue appear in the Income Statement.
+     */
+    public function recogniseRevenue(Invoice $invoice): void
+    {
+        if ($invoice->total_amount <= 0) {
+            return;
+        }
+
+        $arAccount      = $this->getAccountsReceivableAccount($invoice->company_uuid);
+        $revenueAccount = $this->getRevenueAccount($invoice->company_uuid);
+
+        $this->ledgerService->createJournalEntry(
+            $arAccount,
+            $revenueAccount,
+            (int) $invoice->total_amount,
+            "Revenue recognition for invoice {$invoice->number}",
+            [
+                'company_uuid' => $invoice->company_uuid,
+                'currency'     => $invoice->currency,
+                'type'         => 'revenue_recognition',
+                'subject_uuid' => $invoice->uuid,
+                'subject_type' => Invoice::class,
             ]
         );
     }

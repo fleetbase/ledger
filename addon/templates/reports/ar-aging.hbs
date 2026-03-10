@@ -23,27 +23,23 @@
                         <p class="text-sm text-gray-500 mt-0.5">As of {{format-date-fns this.data.as_of_date "MMMM d, yyyy"}}</p>
                     {{/if}}
                 </div>
-                {{#if this.data.total_outstanding}}
+                {{#if this.data.grand_total}}
                     <div class="text-right">
                         <p class="text-xs text-gray-500 uppercase tracking-wide">Total Outstanding</p>
-                        <p class="text-lg font-bold text-gray-900 dark:text-white">{{format-currency this.data.total_outstanding this.companyCurrency}}</p>
+                        <p class="text-lg font-bold text-gray-900 dark:text-white">{{format-currency this.data.grand_total this.companyCurrency}}</p>
                     </div>
                 {{/if}}
             </div>
 
-            {{! Bucket summary cards }}
-            {{#if this.data.summary}}
-                <div class="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-4">
-                    {{#each-in this.data.summary as |bucket amount|}}
-                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-900">
-                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{bucket}}</p>
-                            <p class="text-base font-bold text-gray-900 dark:text-white">{{format-currency amount this.companyCurrency}}</p>
-                        </div>
-                    {{/each-in}}
-                </div>
-            {{/if}}
+            <div class="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-5">
+                {{#each this.bucketSummary as |bucket|}}
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-900">
+                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{bucket.label}}</p>
+                        <p class="text-base font-bold {{if (gt bucket.total 0) "text-red-600 dark:text-red-400" "text-gray-900 dark:text-white"}}">{{format-currency bucket.total this.companyCurrency}}</p>
+                    </div>
+                {{/each}}
+            </div>
 
-            {{! Invoice table }}
             <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                 <div class="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                     <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Outstanding Invoices</h3>
@@ -61,13 +57,13 @@
                     <tbody>
                         {{#each this.allInvoices as |invoice|}}
                             <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <td class="px-4 py-2 font-mono text-xs text-gray-600 dark:text-gray-400">{{invoice.public_id}}</td>
-                                <td class="px-4 py-2 text-gray-700 dark:text-gray-300">{{or invoice.customer_name "—"}}</td>
+                                <td class="px-4 py-2 font-mono text-xs text-gray-600 dark:text-gray-400">{{invoice.number}}</td>
+                                <td class="px-4 py-2 text-gray-700 dark:text-gray-300">{{or invoice.customer.name "—"}}</td>
                                 <td class="px-4 py-2 text-gray-500">{{format-date-fns invoice.due_date "MMM d, yyyy"}}</td>
                                 <td class="px-4 py-2 text-right font-medium text-gray-900 dark:text-white">{{format-currency invoice.balance (or invoice.currency this.companyCurrency)}}</td>
                                 <td class="px-4 py-2 text-center">
-                                    <Badge @color={{if (eq invoice.bucket "current") "green" (if (eq invoice.bucket "1-30") "yellow" "red")}}>
-                                        {{invoice.bucket}}
+                                    <Badge @color={{if (eq invoice.daysRange "0") "green" (if (eq invoice.daysRange "1-30") "yellow" "red")}}>
+                                        {{invoice.bucketLabel}}
                                     </Badge>
                                 </td>
                             </tr>

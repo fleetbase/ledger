@@ -1,23 +1,20 @@
 <div class="space-y-4">
     <div class="flex items-center justify-between">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Accounts Receivable Aging</h2>
-        {{#if @data.as_of}}
-            <span class="text-sm text-gray-500">As of {{format-date-fns @data.as_of "MMMM d, yyyy"}}</span>
+        {{#if @data.as_of_date}}
+            <span class="text-sm text-gray-500">As of {{format-date-fns @data.as_of_date "MMMM d, yyyy"}}</span>
         {{/if}}
     </div>
 
-    {{! Summary buckets }}
     <div class="grid grid-cols-5 gap-3">
-        {{#each @data.buckets as |bucket|}}
+        {{#each @bucketSummary as |bucket|}}
             <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
                 <p class="text-xs text-gray-500 mb-1">{{bucket.label}}</p>
-                <p class="text-sm font-bold {{if (gt bucket.total 0) "text-red-600" "text-gray-400"}}">{{format-currency bucket.total @data.currency}}</p>
-                <p class="text-xs text-gray-400">{{bucket.count}} invoice(s)</p>
+                <p class="text-sm font-bold {{if (gt bucket.total 0) "text-red-600" "text-gray-400"}}">{{format-currency bucket.total @companyCurrency}}</p>
             </div>
         {{/each}}
     </div>
 
-    {{! Detail rows }}
     <table class="w-full text-sm">
         <thead>
             <tr class="border-b border-gray-200 dark:border-gray-700">
@@ -30,15 +27,15 @@
             </tr>
         </thead>
         <tbody>
-            {{#each @data.invoices as |row|}}
+            {{#each @allInvoices as |row|}}
                 <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0">
                     <td class="py-2 text-blue-600 text-xs font-mono">{{row.number}}</td>
-                    <td class="py-2 text-gray-700 dark:text-gray-300 text-xs">{{row.customer_name}}</td>
+                    <td class="py-2 text-gray-700 dark:text-gray-300 text-xs">{{or row.customer.name "—"}}</td>
                     <td class="py-2 text-gray-600 text-xs">{{format-date-fns row.due_date "MMM d, yyyy"}}</td>
-                    <td class="py-2 text-right font-medium text-xs text-red-600">{{format-currency row.balance @data.currency}}</td>
+                    <td class="py-2 text-right font-medium text-xs text-red-600">{{format-currency row.balance (or row.currency @companyCurrency)}}</td>
                     <td class="py-2 text-right text-xs {{if (gt row.days_overdue 60) "text-red-600 font-semibold" "text-gray-600"}}">{{row.days_overdue}}</td>
                     <td class="py-2 text-xs">
-                        <Badge @color={{if (gt row.days_overdue 60) "red" (if (gt row.days_overdue 30) "yellow" "gray")}}>{{row.bucket_label}}</Badge>
+                        <Badge @color={{if (gt row.days_overdue 60) "red" (if (gt row.days_overdue 30) "yellow" "gray")}}>{{row.bucketLabel}}</Badge>
                     </td>
                 </tr>
             {{else}}
@@ -47,11 +44,11 @@
                 </tr>
             {{/each}}
         </tbody>
-        {{#if @data.total_outstanding}}
+        {{#if @data.grand_total}}
             <tfoot>
                 <tr class="border-t-2 border-gray-300">
                     <td colspan="3" class="py-2 font-semibold text-gray-900 dark:text-white">Total Outstanding</td>
-                    <td class="py-2 text-right font-bold text-red-600">{{format-currency @data.total_outstanding @data.currency}}</td>
+                    <td class="py-2 text-right font-bold text-red-600">{{format-currency @data.grand_total @companyCurrency}}</td>
                     <td colspan="2"></td>
                 </tr>
             </tfoot>
