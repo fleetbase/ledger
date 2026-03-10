@@ -6,6 +6,7 @@ export default class LedgerInvoiceModel extends Model {
     // -------------------------------------------------------------------------
     // Identifiers
     // -------------------------------------------------------------------------
+    @attr('string') uuid;
     @attr('string') public_id;
     @attr('string') number;
 

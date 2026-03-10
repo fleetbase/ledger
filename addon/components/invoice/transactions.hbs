@@ -1,32 +1,14 @@
-<div>
+<div ...attributes>
     {{#if this.loadTransactions.isRunning}}
-        <div class="flex items-center justify-center py-10"><Spinner /></div>
+        <div class="flex items-center justify-center py-8">
+            <Spinner />
+        </div>
+    {{else if (eq this.transactions.length 0)}}
+        <div class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
+            <FaIcon @icon="receipt" @size="2x" class="mb-3 opacity-40" />
+            <p class="text-sm">{{t "invoice.no-transactions"}}</p>
+        </div>
     {{else}}
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-gray-200 dark:border-gray-700">
-                    <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Gateway</th>
-                    <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#each this.transactions as |txn|}}
-                    <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0">
-                        <td class="py-2 text-gray-600">{{txn.createdAt}}</td>
-                        <td class="py-2 text-gray-600">{{txn.gateway_code}}</td>
-                        <td class="py-2 text-right font-medium text-gray-900 dark:text-white">{{format-currency txn.amount txn.currency}}</td>
-                        <td class="py-2">
-                            <Badge @status={{txn.status}} @color={{txn.status_badge_color}}>{{txn.status}}</Badge>
-                        </td>
-                    </tr>
-                {{else}}
-                    <tr>
-                        <td colspan="4" class="py-4 text-center text-gray-400 text-xs">No transactions recorded</td>
-                    </tr>
-                {{/each}}
-            </tbody>
-        </table>
+        <Table @rows={{this.transactions}} @columns={{this.columns}} />
     {{/if}}
 </div>
