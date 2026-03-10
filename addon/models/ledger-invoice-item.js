@@ -1,4 +1,5 @@
 import Model, { attr, belongsTo } from '@ember-data/model';
+import numbersOnly from '@fleetbase/ember-core/utils/numbers-only';
 
 /**
  * LedgerInvoiceItem model.
@@ -37,8 +38,8 @@ export default class LedgerInvoiceItemModel extends Model {
      * Reads from the tracked @attr fields so it updates reactively.
      */
     get computedAmount() {
-        const qty   = Number(this.quantity)   || 0;
-        const price = Number(this.unit_price) || 0;
+        const qty   = parseInt(numbersOnly(this.quantity))   || 0;
+        const price = parseInt(numbersOnly(this.unit_price)) || 0;
         return qty * price;
     }
 
