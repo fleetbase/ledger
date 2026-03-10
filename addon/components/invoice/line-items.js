@@ -5,43 +5,51 @@ import { action } from '@ember/object';
 /**
  * A single editable line-item row.
  *
- * All user-editable fields are @tracked so Glimmer re-renders the row when
- * they change.  `amount` and `tax_amount` are getters that derive from the
- * tracked fields — no manual _recalculate() call needed anywhere.
+ * Tracking strategy
+ * -----------------
+ * Only `amount` and `tax_amount` are @tracked — these are the computed display
+ * values that Glimmer needs to re-render when inputs change.
  *
- * Unit price is stored in integer cents (same as the backend Money cast).
- * The unit_price input shows a decimal dollar value (cents / 100) and
- * converts back to cents on change.  This avoids the MoneyInput / AutoNumeric
- * feedback loop where setting @value on re-render fires rawValueModified again.
+ * The user-editable fields (description, quantity, unit_price, tax_rate) are
+ * plain properties.  This is intentional:
+ *
+ *   - MoneyInput manages its own display via AutoNumeric (did-insert, once).
+ *     If `unit_price` were @tracked, setting it in @onChange would re-render
+ *     the row, which would update <Input @value={{@value}}>, which AutoNumeric
+ *     would intercept and fire rawValueModified again — an infinite loop.
+ *
+ *   - Plain <input> elements with {{on "change"}} handlers read their value
+ *     from the DOM on change; they do not need @tracked to show the current
+ *     value because the browser keeps the DOM state between re-renders.
+ *
+ * When any input changes, the handler updates the plain property and then
+ * calls _recalculate() which sets the @tracked `amount` and `tax_amount`.
+ * Only those two cells (and the footer totals) re-render — nothing else.
  */
 class LineItem {
-    @tracked description = '';
-    @tracked quantity    = 1;
-    @tracked unit_price  = 0;   // integer cents
-    @tracked tax_rate    = 0;   // percentage, e.g. 10 = 10%
+    // Plain (non-tracked) — mutated by input handlers, not read by Glimmer
+    description = '';
+    quantity    = 1;
+    unit_price  = 0;  // stored in the currency's smallest unit (e.g. cents)
+    tax_rate    = 0;  // percentage, e.g. 10 = 10%
 
-    /** Display value for the unit price input: converts cents to dollars. */
-    get unitPriceDollars() {
-        return (this.unit_price || 0) / 100;
-    }
-
-    /** Computed in cents: quantity × unit_price */
-    get amount() {
-        return (this.quantity || 0) * (this.unit_price || 0);
-    }
-
-    /** Computed in cents: amount × tax_rate / 100 */
-    get tax_amount() {
-        return Math.round(this.amount * ((this.tax_rate || 0) / 100));
-    }
+    // @tracked — Glimmer re-renders only these cells when they change
+    @tracked amount     = 0;
+    @tracked tax_amount = 0;
 
     constructor(attrs = {}) {
         this._tmpId      = attrs._tmpId ?? `_tmp_${Date.now()}_${Math.random()}`;
-        this.uuid        = attrs.uuid   ?? null;
+        this.uuid        = attrs.uuid        ?? null;
         this.description = attrs.description ?? '';
         this.quantity    = Number(attrs.quantity)   || 1;
         this.unit_price  = Number(attrs.unit_price) || 0;
         this.tax_rate    = Number(attrs.tax_rate)   || 0;
+        this._recalculate();
+    }
+
+    _recalculate() {
+        this.amount     = (this.quantity || 0) * (this.unit_price || 0);
+        this.tax_amount = Math.round(this.amount * ((this.tax_rate || 0) / 100));
     }
 
     toPlain() {
@@ -62,64 +70,36 @@ class LineItem {
  * Invoice line-items editor.
  *
  * Args:
- *   @items       {Array}    – initial array of Ember Data records or plain objects
+ *   @items       {Array}    – initial Ember Data records or plain objects
  *   @currency    {String}   – ISO 4217 currency code, e.g. "USD"
  *   @disabled    {Boolean}  – when true all inputs are read-only
  *   @registerRef {Function} – called once with this component instance so the
  *                             parent form can call getItems() before saving
  *
- * Design
- * ------
- * Each row is a LineItem instance with @tracked fields.  The per-row Amount
- * cell and the footer totals are getters — they update automatically whenever
- * any tracked field changes.  No _notifyChange, no @onChange, no store
- * interaction during editing.
- *
- * Unit price input
- * ----------------
- * We use a plain <input type="number"> instead of MoneyInput.  MoneyInput
- * uses AutoNumeric which fires rawValueModified on every programmatic value
- * update (including Ember's <Input @value=…> re-render), creating a feedback
- * loop: onChange → unit_price (tracked) → re-render → @value update →
- * rawValueModified → onChange again with a double-multiplied value.
- *
- * The plain input shows unit_price / 100 (dollar amount) and converts back
- * to cents on change.  The Amount column uses the format-currency helper for
- * display.
+ * Footer totals (subtotal / tax / total) are @tracked on the component and
+ * updated by _updateTotals() after every input change.
  */
 export default class InvoiceLineItemsComponent extends Component {
-    @tracked items = [];
+    @tracked items    = [];
+    @tracked subtotal = 0;
+    @tracked tax      = 0;
+    @tracked total    = 0;
 
     constructor() {
         super(...arguments);
-        this.items = (this.args.items ?? []).map((item) => this._toLineItem(item));
+        this.items = (this.args.items ?? []).map((i) => this._toLineItem(i));
+        this._updateTotals();
         if (typeof this.args.registerRef === 'function') {
             this.args.registerRef(this);
         }
     }
 
     // -------------------------------------------------------------------------
-    // Public API — called by the parent form before save
+    // Public API — called by the parent form's save task
     // -------------------------------------------------------------------------
 
     getItems() {
         return this.items.map((item) => item.toPlain());
-    }
-
-    // -------------------------------------------------------------------------
-    // Footer totals — derived from tracked LineItem fields
-    // -------------------------------------------------------------------------
-
-    get subtotal() {
-        return this.items.reduce((sum, item) => sum + item.amount, 0);
-    }
-
-    get tax() {
-        return this.items.reduce((sum, item) => sum + item.tax_amount, 0);
-    }
-
-    get total() {
-        return this.subtotal + this.tax;
     }
 
     // -------------------------------------------------------------------------
@@ -129,41 +109,58 @@ export default class InvoiceLineItemsComponent extends Component {
     @action
     addItem() {
         this.items = [...this.items, new LineItem()];
+        this._updateTotals();
     }
 
     @action
     removeItem(item) {
         this.items = this.items.filter((i) => i !== item);
+        this._updateTotals();
     }
 
     @action
     updateDescription(item, event) {
         item.description = event.target.value;
+        // No recalculate needed — description does not affect amounts
     }
 
     @action
     updateQuantity(item, event) {
         item.quantity = Math.max(1, parseInt(event.target.value, 10) || 1);
+        item._recalculate();
+        this._updateTotals();
     }
 
     /**
-     * Unit price input shows dollars (cents / 100).
-     * On change we convert back to integer cents.
+     * Called by MoneyInput @onChange.
+     * storedValue is already in the currency's smallest unit (cents for USD),
+     * exactly matching what the backend Money cast stores and returns.
+     * unit_price is a plain (non-tracked) property so setting it here does NOT
+     * trigger a re-render of the MoneyInput — no feedback loop.
      */
     @action
-    updateUnitPrice(item, event) {
-        const dollars = parseFloat(event.target.value) || 0;
-        item.unit_price = Math.round(dollars * 100);
+    updateUnitPrice(item, storedValue) {
+        item.unit_price = storedValue;
+        item._recalculate();
+        this._updateTotals();
     }
 
     @action
     updateTaxRate(item, event) {
         item.tax_rate = Math.max(0, parseFloat(event.target.value) || 0);
+        item._recalculate();
+        this._updateTotals();
     }
 
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    _updateTotals() {
+        this.subtotal = this.items.reduce((s, i) => s + i.amount,     0);
+        this.tax      = this.items.reduce((s, i) => s + i.tax_amount, 0);
+        this.total    = this.subtotal + this.tax;
+    }
 
     _toLineItem(source) {
         if (source instanceof LineItem) return source;
