@@ -1,13 +1,12 @@
 <div class="invoice-line-items" ...attributes>
-    {{! Line items table }}
     <div class="overflow-x-auto">
         <table class="w-full text-xs">
             <thead>
                 <tr class="border-b border-gray-200 dark:border-gray-700 text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
                     <th class="py-2 pr-2 text-left">Description</th>
-                    <th class="py-2 px-2 text-right w-24">Qty</th>
-                    <th class="py-2 px-2 text-right w-44">Unit Price</th>
-                    <th class="py-2 px-2 text-right w-28">Tax %</th>
+                    <th class="py-2 px-2 text-right w-20">Qty</th>
+                    <th class="py-2 px-2 text-right w-36">Unit Price</th>
+                    <th class="py-2 px-2 text-right w-24">Tax %</th>
                     <th class="py-2 pl-2 text-right w-36">Amount</th>
                     {{#unless @disabled}}
                         <th class="py-2 pl-2 w-8"></th>
@@ -17,7 +16,8 @@
             <tbody>
                 {{#each this.items key="_tmpId" as |item|}}
                     <tr class="border-b border-gray-100 dark:border-gray-800">
-                        {{! Description — plain input to avoid Ember two-way binding resetting on re-render }}
+
+                        {{! Description }}
                         <td class="py-1 pr-2">
                             <input
                                 type="text"
@@ -29,7 +29,7 @@
                             />
                         </td>
 
-                        {{! Quantity — plain input to avoid two-way binding reset }}
+                        {{! Quantity }}
                         <td class="py-1 px-2">
                             <input
                                 type="number"
@@ -42,18 +42,26 @@
                             />
                         </td>
 
-                        {{! Unit Price — MoneyInput, wider column }}
+                        {{!
+                            Unit Price — plain <input type="number"> showing dollar value (cents / 100).
+                            We intentionally avoid MoneyInput here because its AutoNumeric integration
+                            fires rawValueModified on every programmatic @value update, creating a
+                            feedback loop when unit_price is @tracked.
+                        }}
                         <td class="py-1 px-2">
-                            <MoneyInput
-                                @value={{item.unit_price}}
-                                @currency={{@currency}}
-                                @onChange={{fn this.updateUnitPrice item}}
-                                @disabled={{@disabled}}
-                                class="w-full"
+                            <input
+                                type="number"
+                                value={{item.unitPriceDollars}}
+                                min="0"
+                                step="0.01"
+                                class="w-full form-input text-xs text-right"
+                                placeholder="0.00"
+                                disabled={{@disabled}}
+                                {{on "change" (fn this.updateUnitPrice item)}}
                             />
                         </td>
 
-                        {{! Tax Rate — plain input to avoid Ember two-way binding resetting value on re-render }}
+                        {{! Tax Rate % }}
                         <td class="py-1 px-2">
                             <input
                                 type="number"
@@ -64,11 +72,11 @@
                                 class="w-full form-input text-xs text-right"
                                 placeholder="0"
                                 disabled={{@disabled}}
-                                {{on "input" (fn this.updateTaxRate item)}}
+                                {{on "change" (fn this.updateTaxRate item)}}
                             />
                         </td>
 
-                        {{! Amount (read-only, computed) }}
+                        {{! Amount — read-only getter, updates automatically }}
                         <td class="py-1 pl-2 text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                             {{format-currency item.amount @currency}}
                         </td>
@@ -88,7 +96,6 @@
                     </tr>
                 {{/each}}
 
-                {{! Empty state }}
                 {{#if (eq this.items.length 0)}}
                     <tr>
                         <td colspan={{if @disabled 5 6}} class="py-4 text-center text-gray-400 text-xs italic">
@@ -103,7 +110,7 @@
                 {{/if}}
             </tbody>
 
-            {{! Totals footer }}
+            {{! Totals footer — all three are getters that update automatically }}
             <tfoot class="border-t border-gray-200 dark:border-gray-700">
                 <tr class="text-xs text-gray-600 dark:text-gray-400">
                     <td colspan={{if @disabled 3 4}} class="pt-2 text-right pr-2 text-[11px] uppercase tracking-wide font-semibold">Subtotal</td>
@@ -130,7 +137,6 @@
         </table>
     </div>
 
-    {{! Add item button }}
     {{#unless @disabled}}
         <div class="mt-2">
             <button
