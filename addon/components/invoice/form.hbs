@@ -99,10 +99,9 @@
 
             <InputGroup @name="Invoice Date">
                 <DatePicker
-                    @value={{@resource.date}}
-                    @dateFormat="yyyy-MM-dd"
-                    @placeholder="YYYY-MM-DD"
+                    @value={{or (format-date-fns @resource.date "dd/MM/yyyy") null}}
                     @onChange={{fn (mut @resource.date)}}
+                    @placeholder="dd/mm/yyyy"
                     class="w-full"
                     disabled={{cannot-write @resource}}
                 />
@@ -110,10 +109,9 @@
 
             <InputGroup @name="Due Date">
                 <DatePicker
-                    @value={{@resource.due_date}}
-                    @dateFormat="yyyy-MM-dd"
-                    @placeholder="YYYY-MM-DD"
+                    @value={{or (format-date-fns @resource.due_date "dd/MM/yyyy") null}}
                     @onChange={{fn (mut @resource.due_date)}}
+                    @placeholder="dd/mm/yyyy"
                     class="w-full"
                     disabled={{cannot-write @resource}}
                 />

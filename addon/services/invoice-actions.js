@@ -11,7 +11,7 @@ export default class InvoiceActionsService extends ResourceActionService {
     }
 
     transition = {
-        view: (invoice) => this.transitionTo('billing.invoices.index.details', invoice),
+        view: (invoice) => this.panel.view(invoice),
         create: () => this.transitionTo('billing.invoices.index.new'),
     };
 
@@ -53,6 +53,63 @@ export default class InvoiceActionsService extends ResourceActionService {
      * @param {Model} invoice - A persisted ledger-invoice Ember Data record.
      * @param {Object} [options={}] - Optional overrides forwarded to modalsManager.show.
      */
+    @action async recordPayment(invoice, options = {}) {
+        const modalOptions = {
+            title:                `Record Payment — ${invoice.number}`,
+            acceptButtonText:     'Record Payment',
+            acceptButtonIcon:     'check-circle',
+            invoice,
+            amount:               invoice.balance ?? 0,
+            paymentMethod:        'bank_transfer',
+            reference:            '',
+            paymentMethodOptions: [
+                { label: 'Bank Transfer', value: 'bank_transfer' },
+                { label: 'Cash',          value: 'cash' },
+                { label: 'Cheque',        value: 'cheque' },
+                { label: 'Credit Card',   value: 'credit_card' },
+                { label: 'Debit Card',    value: 'debit_card' },
+                { label: 'PayPal',        value: 'paypal' },
+                { label: 'Stripe',        value: 'stripe' },
+                { label: 'Other',         value: 'other' },
+            ],
+            setAmount: (centsValue) => {
+                modalOptions.amount = centsValue;
+            },
+            setPaymentMethod: (value) => {
+                modalOptions.paymentMethod = value;
+            },
+            setReference: (event) => {
+                modalOptions.reference = event.target.value;
+            },
+            confirm: async (modal) => {
+                if (!modalOptions.amount || modalOptions.amount <= 0) {
+                    this.notifications.warning('Please enter a valid payment amount greater than zero.');
+                    return;
+                }
+                modal.startLoading();
+                try {
+                    await this.fetch.post(
+                        `invoices/${invoice.id}/record-payment`,
+                        {
+                            amount:         modalOptions.amount,
+                            payment_method: modalOptions.paymentMethod,
+                            reference:      modalOptions.reference || null,
+                        },
+                        { namespace: 'ledger/int/v1' }
+                    );
+                    this.notifications.success('Payment recorded successfully.');
+                    await invoice.reload();
+                    modal.done();
+                } catch (error) {
+                    this.notifications.serverError(error);
+                    modal.stopLoading();
+                }
+            },
+            ...options,
+        };
+        this.modalsManager.show('modals/record-payment', modalOptions);
+    }
+
     @action async previewInvoice(invoice, options = {}) {
         const title = invoice.number
             ? this.intl.t('invoice.actions.preview-invoice', { number: invoice.number })

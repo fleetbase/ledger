@@ -46,7 +46,6 @@ export default class BillingInvoicesIndexController extends Controller {
     get columns() {
         return [
             {
-                // Invoice number — clickable anchor that opens the details panel.
                 sticky:          true,
                 label:           this.intl.t('column.number'),
                 valuePath:       'number',
@@ -59,14 +58,12 @@ export default class BillingInvoicesIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
-                // Customer name — resolved from the belongsTo relationship.
                 label:     this.intl.t('column.customer'),
                 valuePath: 'customerName',
                 resizable: true,
                 sortable:  false,
             },
             {
-                // Status badge.
                 label:           this.intl.t('column.status'),
                 valuePath:       'status',
                 cellComponent:   'table/cell/status',
@@ -87,7 +84,6 @@ export default class BillingInvoicesIndexController extends Controller {
                 ],
             },
             {
-                // Total — uses the `total` computed alias (maps to total_amount).
                 label:         this.intl.t('column.total'),
                 valuePath:     'total',
                 cellComponent: 'table/cell/currency',
@@ -96,7 +92,6 @@ export default class BillingInvoicesIndexController extends Controller {
                 sortable:      true,
             },
             {
-                // Balance due.
                 label:         this.intl.t('column.balance'),
                 valuePath:     'balance',
                 cellComponent: 'table/cell/currency',
@@ -105,25 +100,71 @@ export default class BillingInvoicesIndexController extends Controller {
                 sortable:      true,
             },
             {
-                // Due date.
                 label:     this.intl.t('column.due-date'),
                 valuePath: 'dueDate',
                 resizable: true,
                 sortable:  true,
             },
             {
-                // Invoice date (issued date).
                 label:     this.intl.t('column.invoice-date'),
                 valuePath: 'invoiceDate',
                 resizable: true,
                 sortable:  true,
             },
             {
-                // Record creation timestamp.
                 label:     this.intl.t('column.created-at'),
                 valuePath: 'createdAt',
                 resizable: true,
                 sortable:  true,
+            },
+            {
+                label:              this.intl.t('common.actions'),
+                cellComponent:      'table/cell/dropdown',
+                ddButtonText:       false,
+                ddButtonIcon:       'ellipsis-h',
+                ddButtonIconPrefix: 'fas',
+                ddMenuLabel:        this.intl.t('common.resource-actions', { resource: this.intl.t('resource.invoice') }),
+                cellClassNames:     'overflow-visible',
+                wrapperClass:       'flex items-center justify-end mx-2',
+                sticky:             'right',
+                width:              60,
+                sortable:           false,
+                filterable:         false,
+                resizable:          false,
+                searchable:         false,
+                actions: [
+                    {
+                        label:      this.intl.t('common.view-resource', { resource: this.intl.t('resource.invoice') }),
+                        icon:       'eye',
+                        fn:         this.invoiceActions.panel.view,
+                        permission: 'ledger view invoice',
+                    },
+                    {
+                        label:      this.intl.t('common.edit-resource', { resource: this.intl.t('resource.invoice') }),
+                        icon:       'pencil',
+                        fn:         this.invoiceActions.panel.edit,
+                        permission: 'ledger update invoice',
+                    },
+                    {
+                        label:      'Record Payment',
+                        icon:       'check-circle',
+                        fn:         this.invoiceActions.recordPayment,
+                        permission: 'ledger update invoice',
+                    },
+                    {
+                        label:      'Preview Invoice',
+                        icon:       'file-invoice',
+                        fn:         this.invoiceActions.previewInvoice,
+                        permission: 'ledger view invoice',
+                    },
+                    {
+                        label:      this.intl.t('common.delete-resource', { resource: this.intl.t('resource.invoice') }),
+                        icon:       'trash',
+                        fn:         this.invoiceActions.delete,
+                        className:  'text-red-500 hover:text-red-700',
+                        permission: 'ledger delete invoice',
+                    },
+                ],
             },
         ];
     }

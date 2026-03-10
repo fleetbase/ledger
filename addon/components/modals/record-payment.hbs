@@ -33,6 +33,8 @@
                     class="w-full"
                     @value={{@options.paymentMethod}}
                     @options={{@options.paymentMethodOptions}}
+                    @optionLabel="label"
+                    @optionValue="value"
                     @onChange={{@options.setPaymentMethod}}
                     @placeholder="Select payment method..."
                 />
