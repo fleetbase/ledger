@@ -141,6 +141,7 @@
         --}}
         <Invoice::LineItems
             @items={{this.initialItems}}
+            @invoice={{@resource}}
             @currency={{this.currency}}
             @disabled={{cannot-write @resource}}
             @registerRef={{this.registerLineItemsRef}}

@@ -6,25 +6,20 @@ import { inject as service } from '@ember/service';
 /**
  * Invoice form component.
  *
- * Receives @resource (a ledger-invoice Ember Data record) and @saveTask.
+ * Receives @resource (a ledger-invoice Ember Data record) and @registerRef.
  *
  * Line-items architecture
  * -----------------------
- * The Invoice::LineItems child component registers itself via @registerRef so
- * we can call lineItemsRef.getItems() just before saving.  This avoids the
- * previous per-keystroke @onChange pattern that caused:
+ * Invoice::LineItems works directly with `ledger-invoice-item` Ember Data
+ * records — no intermediate POJO/LineItem class.  Existing items are passed
+ * in via @items (snapshotted once in the constructor).  New items are created
+ * via store.createRecord inside the child component.
  *
- *   1. store.createRecord on every keystroke → duplicate items with uuid:null
- *   2. this.items update → @items arg change → component destroyed/recreated
- *   3. All MoneyInput values reset to $0 because the component was recreated
- *
- * The @items arg passed to Invoice::LineItems is set ONCE from the existing
- * hasMany relationship (edit case) and never changed again during editing.
- * Glimmer will therefore never destroy/recreate the child component while the
- * user is typing.
+ * Before saving, the controller calls formRef.syncItemsToInvoice(invoice).
+ * This sets invoice.items to the current array from the child component so
+ * the EmbeddedRecordsMixin serializer includes them in the request payload.
  */
 export default class InvoiceFormComponent extends Component {
-    @service store;
     @service currentUser;
 
     /** Holds the Invoice::LineItems component instance after it registers. */
@@ -34,53 +29,23 @@ export default class InvoiceFormComponent extends Component {
 
     /**
      * Snapshot of the invoice's items taken ONCE in the constructor.
-     *
-     * This MUST be a plain property, NOT a getter.  If it were a getter it
-     * would re-evaluate on every render cycle (e.g. when tax_amount changes
-     * on a LineItem and triggers a re-render of the form).  A new array
-     * reference would be passed as @items to Invoice::LineItems, causing
-     * Glimmer to destroy/recreate the child component and reset all user
-     * edits to the original Ember Data values.
+     * Must be a plain property (not a getter) so @items on Invoice::LineItems
+     * never changes reference after mount.
      */
     initialItems = [];
 
     /**
-     * Syncs the current line items from the child component into the Ember Data
-     * store and updates the invoice's `items` hasMany.  Called by the
-     * controller's save task just before `yield invoice.save()`.
+     * Syncs the current line items from the child component into the invoice's
+     * hasMany so the EmbeddedRecordsMixin serializer picks them up on save.
+     * Called by the controller's save task just before `yield invoice.save()`.
+     *
+     * The child component holds real ledger-invoice-item Ember Data records
+     * (both existing and newly created via store.createRecord), so we simply
+     * assign the array directly — no POJO-to-record conversion needed.
      */
     syncItemsToInvoice(invoice) {
         if (!this.lineItemsRef || !invoice) return;
-
-        const plainItems = this.lineItemsRef.getItems();
-        const itemRecords = plainItems.map((plain) => {
-            const existing = plain.uuid
-                ? this.store.peekRecord('ledger-invoice-item', plain.uuid)
-                : null;
-
-            if (existing) {
-                existing.description = plain.description;
-                existing.quantity    = plain.quantity;
-                existing.unit_price  = plain.unit_price;
-                existing.tax_rate    = plain.tax_rate;
-                existing.amount      = plain.amount;
-                existing.tax_amount  = plain.tax_amount;
-                return existing;
-            }
-
-            return this.store.createRecord('ledger-invoice-item', {
-                description: plain.description,
-                quantity:    plain.quantity,
-                unit_price:  plain.unit_price,
-                tax_rate:    plain.tax_rate,
-                amount:      plain.amount,
-                tax_amount:  plain.tax_amount,
-                invoice,
-            });
-        });
-
-        // Replace the hasMany content so the serializer picks up the latest set
-        invoice.items = itemRecords;
+        invoice.items = this.lineItemsRef.getItems();
     }
 
     get companyCurrency() {
