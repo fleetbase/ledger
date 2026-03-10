@@ -38,6 +38,15 @@ export default class InvoiceLineItemsComponent extends Component {
      * by the server response.  Prevents duplicate rows after save.
      */
     resetItems(invoice) {
+        // Unload any store.createRecord stubs before reading the server response.
+        // After save(), Ember Data pushes the real persisted records into the store
+        // but does NOT automatically unload the isNew stubs, so invoice.items
+        // would contain both — causing duplicate rows.
+        for (const item of this.items) {
+            if (item.isNew) {
+                item.unloadRecord();
+            }
+        }
         this.items = invoice?.items?.toArray?.() ?? [];
     }
 
