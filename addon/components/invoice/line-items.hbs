@@ -17,7 +17,7 @@
                 {{#each this.items key="_tmpId" as |item|}}
                     <tr class="border-b border-gray-100 dark:border-gray-800">
 
-                        {{! Description }}
+                        {{! Description — plain input, no tracked deps in this row }}
                         <td class="py-1 pr-2">
                             <input
                                 type="text"
@@ -43,18 +43,19 @@
                         </td>
 
                         {{!
-                            Unit Price — MoneyInput.
-                            @value is a plain (non-tracked) property on LineItem, so setting it
-                            in @onChange does NOT trigger a Glimmer re-render of this row.
-                            AutoNumeric therefore never receives a programmatic @value update
-                            after mount, eliminating the rawValueModified feedback loop.
+                            Unit Price — MoneyInput with @onChange.
+                            item.unit_price is a PLAIN (non-tracked) property.
+                            Setting it in updateUnitPrice does NOT dirty Glimmer's
+                            tracking graph, so this row is NEVER re-rendered after
+                            mount.  AutoNumeric therefore never receives a
+                            programmatic @value update — no feedback loop.
                         }}
                         <td class="py-1 px-2">
                             <MoneyInput
                                 @value={{item.unit_price}}
                                 @currency={{@currency}}
                                 @onChange={{fn this.updateUnitPrice item}}
-                                @disabled={{@disabled}}
+                                disabled={{@disabled}}
                                 class="w-full"
                             />
                         </td>
@@ -74,9 +75,15 @@
                             />
                         </td>
 
-                        {{! Amount — @tracked, re-renders only this cell }}
+                        {{!
+                            Amount — rendered by a SEPARATE sub-component.
+                            Invoice::LineItems::Amount reads item.amount (@tracked).
+                            When _recalculate() updates item.amount, only this
+                            sub-component re-renders.  The MoneyInput row above
+                            is completely isolated and untouched.
+                        }}
                         <td class="py-1 pl-2 text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                            {{format-currency item.amount @currency}}
+                            <Invoice::LineItems::Amount @item={{item}} @currency={{@currency}} />
                         </td>
 
                         {{! Remove button }}

@@ -5,35 +5,35 @@ import { action } from '@ember/object';
 /**
  * A single editable line-item row.
  *
- * Tracking strategy
- * -----------------
- * Only `amount` and `tax_amount` are @tracked — these are the computed display
- * values that Glimmer needs to re-render when inputs change.
+ * Design
+ * ------
+ * The user-editable input fields (description, quantity, unit_price, tax_rate)
+ * are PLAIN properties — not @tracked.  This is critical for MoneyInput:
  *
- * The user-editable fields (description, quantity, unit_price, tax_rate) are
- * plain properties.  This is intentional:
+ *   MoneyInput uses AutoNumeric (initialised once via did-insert).  The inner
+ *   <Input @value={{@value}}> sets element.value whenever @value changes on
+ *   re-render.  AutoNumeric intercepts every programmatic element.value change
+ *   and fires rawValueModified, which calls @onChange again.  If unit_price
+ *   were @tracked, setting it in @onChange would re-render the row, update
+ *   @value, AutoNumeric would fire again — an infinite loop.
  *
- *   - MoneyInput manages its own display via AutoNumeric (did-insert, once).
- *     If `unit_price` were @tracked, setting it in @onChange would re-render
- *     the row, which would update <Input @value={{@value}}>, which AutoNumeric
- *     would intercept and fire rawValueModified again — an infinite loop.
+ *   With unit_price as a plain property, setting it in @onChange does NOT
+ *   dirty the Glimmer tracking graph.  The MoneyInput row is never re-rendered
+ *   after mount.  AutoNumeric never receives a programmatic @value update.
  *
- *   - Plain <input> elements with {{on "change"}} handlers read their value
- *     from the DOM on change; they do not need @tracked to show the current
- *     value because the browser keeps the DOM state between re-renders.
- *
- * When any input changes, the handler updates the plain property and then
- * calls _recalculate() which sets the @tracked `amount` and `tax_amount`.
- * Only those two cells (and the footer totals) re-render — nothing else.
+ * Only `amount` and `tax_amount` are @tracked.  They are rendered in a
+ * SEPARATE sub-component (Invoice::LineItems::Amount) that has no connection
+ * to the MoneyInput row.  When _recalculate() sets them, only that sub-
+ * component re-renders — the MoneyInput row is untouched.
  */
 class LineItem {
-    // Plain (non-tracked) — mutated by input handlers, not read by Glimmer
+    // Plain — mutated by handlers, never read by Glimmer's tracking system
     description = '';
     quantity    = 1;
-    unit_price  = 0;  // stored in the currency's smallest unit (e.g. cents)
-    tax_rate    = 0;  // percentage, e.g. 10 = 10%
+    unit_price  = 0;   // integer cents (or smallest currency unit)
+    tax_rate    = 0;   // percentage, e.g. 10 = 10%
 
-    // @tracked — Glimmer re-renders only these cells when they change
+    // @tracked — only these cause re-renders (in the Amount sub-component)
     @tracked amount     = 0;
     @tracked tax_amount = 0;
 
@@ -75,9 +75,6 @@ class LineItem {
  *   @disabled    {Boolean}  – when true all inputs are read-only
  *   @registerRef {Function} – called once with this component instance so the
  *                             parent form can call getItems() before saving
- *
- * Footer totals (subtotal / tax / total) are @tracked on the component and
- * updated by _updateTotals() after every input change.
  */
 export default class InvoiceLineItemsComponent extends Component {
     @tracked items    = [];
@@ -106,47 +103,40 @@ export default class InvoiceLineItemsComponent extends Component {
     // Actions
     // -------------------------------------------------------------------------
 
-    @action
-    addItem() {
+    @action addItem() {
         this.items = [...this.items, new LineItem()];
         this._updateTotals();
     }
 
-    @action
-    removeItem(item) {
+    @action removeItem(item) {
         this.items = this.items.filter((i) => i !== item);
         this._updateTotals();
     }
 
-    @action
-    updateDescription(item, event) {
+    @action updateDescription(item, event) {
         item.description = event.target.value;
-        // No recalculate needed — description does not affect amounts
     }
 
-    @action
-    updateQuantity(item, event) {
+    @action updateQuantity(item, event) {
         item.quantity = Math.max(1, parseInt(event.target.value, 10) || 1);
         item._recalculate();
         this._updateTotals();
     }
 
     /**
-     * Called by MoneyInput @onChange.
-     * storedValue is already in the currency's smallest unit (cents for USD),
-     * exactly matching what the backend Money cast stores and returns.
-     * unit_price is a plain (non-tracked) property so setting it here does NOT
-     * trigger a re-render of the MoneyInput — no feedback loop.
+     * Called by MoneyInput @onChange with the already-converted storage value
+     * (integer cents for currencies with decimals, raw value otherwise).
+     * unit_price is a plain property — setting it here does NOT trigger a
+     * Glimmer re-render, so MoneyInput never receives a programmatic @value
+     * update and AutoNumeric never fires rawValueModified spuriously.
      */
-    @action
-    updateUnitPrice(item, storedValue) {
+    @action updateUnitPrice(item, storedValue) {
         item.unit_price = storedValue;
         item._recalculate();
         this._updateTotals();
     }
 
-    @action
-    updateTaxRate(item, event) {
+    @action updateTaxRate(item, event) {
         item.tax_rate = Math.max(0, parseFloat(event.target.value) || 0);
         item._recalculate();
         this._updateTotals();
@@ -164,8 +154,8 @@ export default class InvoiceLineItemsComponent extends Component {
 
     _toLineItem(source) {
         if (source instanceof LineItem) return source;
-        // Ember Data record
         if (typeof source.getProperties === 'function') {
+            // Ember Data record
             const { uuid, description, quantity, unit_price, tax_rate } = source;
             return new LineItem({ uuid, description, quantity, unit_price, tax_rate });
         }
