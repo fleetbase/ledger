@@ -11,8 +11,9 @@ export default class InvoiceActionsService extends ResourceActionService {
     }
 
     transition = {
-        view: (invoice) => this.panel.view(invoice),
-        create: () => this.transitionTo('billing.invoices.index.new'),
+        view:   (invoice) => this.transitionTo('billing.invoices.index.details', invoice),
+        edit:   (invoice) => this.transitionTo('billing.invoices.index.edit', invoice.id),
+        create: ()        => this.transitionTo('billing.invoices.index.new'),
     };
 
     panel = {

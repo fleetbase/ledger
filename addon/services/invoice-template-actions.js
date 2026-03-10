@@ -11,8 +11,9 @@ export default class InvoiceTemplateActionsService extends ResourceActionService
     }
 
     transition = {
-        create: () => this.transitionTo('billing.invoice-templates.index.new'),
-        edit: (template) => this.transitionTo('billing.invoice-templates.index.edit', template.id),
+        view:   (template) => this.transitionTo('billing.invoice-templates.index.edit', template.id),
+        edit:   (template) => this.transitionTo('billing.invoice-templates.index.edit', template.id),
+        create: ()         => this.transitionTo('billing.invoice-templates.index.new'),
     };
 
     /**

@@ -136,13 +136,13 @@ export default class BillingInvoicesIndexController extends Controller {
                     {
                         label:      this.intl.t('common.view-resource', { resource: this.intl.t('resource.invoice') }),
                         icon:       'eye',
-                        fn:         this.invoiceActions.panel.view,
+                        fn:         this.invoiceActions.transition.view,
                         permission: 'ledger view invoice',
                     },
                     {
                         label:      this.intl.t('common.edit-resource', { resource: this.intl.t('resource.invoice') }),
                         icon:       'pencil',
-                        fn:         this.invoiceActions.panel.edit,
+                        fn:         this.invoiceActions.transition.edit,
                         permission: 'ledger update invoice',
                     },
                     {
