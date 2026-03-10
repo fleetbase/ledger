@@ -43,9 +43,26 @@ export default class InvoiceFormComponent extends Component {
      * (both existing and newly created via store.createRecord), so we simply
      * assign the array directly — no POJO-to-record conversion needed.
      */
+    resetItems(invoice) {
+        if (this.lineItemsRef) {
+            this.lineItemsRef.resetItems(invoice);
+        }
+    }
+
     syncItemsToInvoice(invoice) {
         if (!this.lineItemsRef || !invoice) return;
-        invoice.items = this.lineItemsRef.getItems();
+        const items = this.lineItemsRef.getItems();
+        const invalid = items.filter((item) => !item.description?.trim());
+        if (invalid.length) {
+            const err = new Error(
+                invalid.length === 1
+                    ? 'One line item is missing a description.'
+                    : `${invalid.length} line items are missing a description.`
+            );
+            err.errors = [err.message];
+            throw err;
+        }
+        invoice.items = items;
     }
 
     get companyCurrency() {

@@ -16,8 +16,6 @@
             <tbody>
                 {{#each this.items as |item|}}
                     <tr class="border-b border-gray-100 dark:border-gray-800">
-
-                        {{! Description }}
                         <td class="py-1 pr-2">
                             <Input
                                 @type="text"
@@ -27,8 +25,6 @@
                                 class="w-full form-input text-xs"
                             />
                         </td>
-
-                        {{! Quantity }}
                         <td class="py-1 px-2">
                             <input
                                 type="number"
@@ -40,26 +36,15 @@
                                 {{on "change" (fn this.updateQuantity item)}}
                             />
                         </td>
-
-                        {{!
-                            Unit Price — MoneyInput with NO @onChange.
-                            AutoNumeric formats the display on did-insert.
-                            Ember's <Input @value={{@value}}> two-way binding
-                            writes the formatted string (e.g. "$200.00") back to
-                            item.unit_price when the user types.  The backend
-                            Money cast strips symbols via numbersOnly() on save.
-                            No @onChange means no rawValueModified feedback loop.
-                        }}
                         <td class="py-1 px-2">
                             <MoneyInput
                                 @value={{item.unit_price}}
                                 @currency={{@currency}}
+                                @onChange={{fn this.updateUnitPrice item}}
                                 disabled={{@disabled}}
                                 class="w-full"
                             />
                         </td>
-
-                        {{! Per-item Tax Rate % }}
                         <td class="py-1 px-2">
                             <input
                                 type="number"
@@ -73,18 +58,9 @@
                                 {{on "change" (fn this.updateTaxRate item)}}
                             />
                         </td>
-
-                        {{!
-                            Amount — reads item.computedAmount which is a reactive
-                            getter on the model.  Because unit_price and quantity
-                            are @attr fields (tracked by Ember Data), this cell
-                            updates automatically when the user types.
-                        }}
                         <td class="py-1 pl-2 text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                             {{format-currency item.computedAmount @currency}}
                         </td>
-
-                        {{! Remove button }}
                         {{#unless @disabled}}
                             <td class="py-1 pl-2 text-center">
                                 <button
@@ -113,7 +89,6 @@
                 {{/if}}
             </tbody>
 
-            {{! Footer totals — reactive getters on the component }}
             <tfoot class="border-t border-gray-200 dark:border-gray-700">
                 <tr class="text-xs text-gray-500">
                     <td colspan={{if @disabled 4 5}} class="pt-2 text-right pr-2 text-[11px] uppercase tracking-wide font-semibold">Subtotal</td>

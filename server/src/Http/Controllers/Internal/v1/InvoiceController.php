@@ -248,6 +248,15 @@ class InvoiceController extends LedgerResourceController
             return;
         }
 
+        // Validate that every item has a description
+        foreach ($items as $index => $itemData) {
+            $description = trim((string) data_get($itemData, 'description', ''));
+            if ($description === '') {
+                $line = $index + 1;
+                abort(422, "Line item {$line} is missing a description.");
+            }
+        }
+
         $incomingUuids = [];
 
         foreach ($items as $itemData) {

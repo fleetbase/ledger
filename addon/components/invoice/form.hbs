@@ -98,12 +98,6 @@
         <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
 
             <InputGroup @name="Invoice Date">
-                {{!--
-                    Use @onChange (not @onDateChanged) so we receive a native Date
-                    object.  @onDateChanged receives a formatted string which the
-                    Ember Data `date` transform cannot serialise (it calls .toISOString()
-                    on the value and returns null for a plain string).
-                --}}
                 <DatePicker
                     @value={{@resource.date}}
                     @dateFormat="yyyy-MM-dd"
@@ -128,17 +122,8 @@
         </div>
     </ContentPanel>
 
-    {{! ── LINE ITEMS ──────────────────────────────────────────────────────── }}
+     {{! ── LINE ITEMS ──────────────────────────────────────────────────────── }}
     <ContentPanel @title="Line Items" @open={{true}} @wrapperClass="bordered-top">
-        {{!--
-            @items is set ONCE from the existing hasMany (edit case) or empty
-            array (new case) and is NEVER changed during editing.  This prevents
-            Glimmer from destroying/recreating the component on every keystroke,
-            which was causing MoneyInput values to reset to $0.
-
-            @registerRef receives the component instance so the controller's
-            save task can call lineItemsRef.getItems() just before saving.
-        --}}
         <Invoice::LineItems
             @items={{this.initialItems}}
             @invoice={{@resource}}

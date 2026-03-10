@@ -13,13 +13,6 @@ export default class BillingInvoicesIndexEditController extends Controller {
 
     @tracked overlay;
 
-    /**
-     * Reference to the Invoice::Form component instance.
-     * Set via @registerRef={{this.registerFormRef}} in the route template.
-     * Plain (non-tracked) property — must NOT be @tracked because Glimmer
-     * would throw "already consumed" if we write to it during the render pass
-     * that first reads it.
-     */
     formRef = null;
 
     @tracked actionButtons = [
@@ -35,17 +28,15 @@ export default class BillingInvoicesIndexEditController extends Controller {
 
     @task *save(invoice) {
         try {
-            // Sync line items from the form component into the invoice record
-            // before persisting.  This must happen here (not in the form) because
-            // Layout::Resource::Panel calls saveTask.perform(@resource) directly.
             if (this.formRef) {
                 this.formRef.syncItemsToInvoice(invoice);
             }
-
             yield invoice.save();
+            if (this.formRef) {
+                this.formRef.resetItems(invoice);
+            }
             this.events.trackResourceUpdated(invoice);
             this.overlay?.close();
-
             yield this.hostRouter.transitionTo('console.ledger.billing.invoices.index.details', invoice);
             this.notifications.success(
                 this.intl.t('common.resource-updated-success', {
