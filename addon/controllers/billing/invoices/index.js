@@ -118,7 +118,7 @@ export default class BillingInvoicesIndexController extends Controller {
                 sortable:  true,
             },
             {
-                label:              this.intl.t('common.actions'),
+                label:              '',
                 cellComponent:      'table/cell/dropdown',
                 ddButtonText:       false,
                 ddButtonIcon:       'ellipsis-h',

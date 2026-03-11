@@ -87,14 +87,19 @@ class InvoiceController extends LedgerResourceController
     public function recordPayment(string $id, Request $request): InvoiceResource
     {
         $request->validate([
-            'amount' => 'required|integer|min:1',
+            'amount'         => 'required|integer|min:1',
+            'payment_method' => 'nullable|string',
+            'reference'      => 'nullable|string',
         ]);
 
         $invoice = Invoice::where('company_uuid', session('company'))
             ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
             ->firstOrFail();
 
-        $invoice = app(InvoiceService::class)->recordPayment($invoice, $request->input('amount'));
+        $invoice = app(InvoiceService::class)->recordPayment($invoice, $request->input('amount'), [
+            'payment_method' => $request->input('payment_method', 'manual'),
+            'reference'      => $request->input('reference'),
+        ]);
 
         return new InvoiceResource($invoice->load(['customer', 'items', 'template']));
     }

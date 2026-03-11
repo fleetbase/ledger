@@ -62,6 +62,8 @@ column:
   environment: Environment
   default: Default
   owner: Owner
+  payer: Payer
+  payee: Payee
   frozen: Frozen
   orientation: Orientation
 
@@ -89,6 +91,7 @@ menu:
   accounting-settings: Accounting Settings
 
 invoice:
+  no-transactions: No transactions recorded for this invoice.
   actions:
     preview-invoice: "Preview Invoice #{number}"
     preview-invoice-fallback: Preview Invoice

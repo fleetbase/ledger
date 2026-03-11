@@ -195,21 +195,36 @@ class InvoiceService
             $arAccount   = $this->getAccountsReceivableAccount($invoice->company_uuid);
 
             // Create the authoritative Transaction record first so it appears in the Transactions list.
+            // direction = 'credit' — money flows IN to the company (a receipt, not a disbursement).
+            // payment_method and reference are forwarded from the controller options if provided.
+            $paymentMethod = data_get($options, 'payment_method', 'manual');
+            $reference     = data_get($options, 'reference');
             $transaction = Transaction::create([
-                'company_uuid'  => $invoice->company_uuid,
-                'owner_uuid'    => $invoice->customer_uuid,
-                'owner_type'    => $invoice->customer_type,
-                'customer_uuid' => $invoice->customer_uuid,
-                'customer_type' => $invoice->customer_type,
-                'amount'        => $amount,
-                'currency'      => $invoice->currency ?? 'USD',
-                'description'   => "Payment for invoice {$invoice->number}",
-                'type'          => 'invoice_payment',
-                'status'        => 'completed',
-                'subject_uuid'  => $invoice->uuid,
-                'subject_type'  => Invoice::class,
-                'context_uuid'  => $invoice->uuid,
-                'context_type'  => Invoice::class,
+                'company_uuid'   => $invoice->company_uuid,
+                'owner_uuid'     => $invoice->customer_uuid,
+                'owner_type'     => $invoice->customer_type,
+                'customer_uuid'  => $invoice->customer_uuid,
+                'customer_type'  => $invoice->customer_type,
+                // Payer = the customer settling the invoice
+                'payer_uuid'     => $invoice->customer_uuid,
+                'payer_type'     => $invoice->customer_type,
+                // Payee = the company receiving the funds
+                'payee_uuid'     => $invoice->company_uuid,
+                'payee_type'     => \Fleetbase\Models\Company::class,
+                'amount'         => $amount,
+                'net_amount'     => $amount,
+                'currency'       => $invoice->currency ?? 'USD',
+                'description'    => "Payment for invoice {$invoice->number}",
+                'type'           => 'invoice_payment',
+                // credit = inbound money (company receives funds from the customer)
+                'direction'      => 'credit',
+                'status'         => 'completed',
+                'payment_method' => $paymentMethod,
+                'reference'      => $reference,
+                'subject_uuid'   => $invoice->uuid,
+                'subject_type'   => Invoice::class,
+                'context_uuid'   => $invoice->uuid,
+                'context_type'   => Invoice::class,
             ]);
 
             // DEBIT Cash (asset increases — money received), CREDIT Accounts Receivable (asset decreases — AR settled)
