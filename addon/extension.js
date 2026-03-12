@@ -70,12 +70,11 @@ export default {
         // wrapperClass: 'hidden' keeps this item invisible in all navigation
         // menus while still making it resolvable via the virtual route.
         menuService.registerMenuItem(
-            'engine:ledger',
+            'auth:login',
             new MenuItem({
                 title: 'Invoice',
                 slug: 'invoice',
-                section: 'invoice',
-                route: 'console.ledger.virtual',
+                route: 'virtual',
                 type: 'link',
                 wrapperClass: 'hidden',
                 component: new ExtensionComponent('@fleetbase/ledger-engine', 'customer-invoice'),
