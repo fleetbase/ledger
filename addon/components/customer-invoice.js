@@ -23,7 +23,7 @@ import { getOwner } from '@ember/application';
  *   POST {API.host}/ledger/public/invoices/<public_id>/pay
  *
  * All requests use `this.fetch` (the @fleetbase/ember-core FetchService) with
- * `namespace: 'ledger'` so the URL is built correctly from `config.API.host`
+ * `namespace: 'ledger/public'` so the URL is built correctly from `config.API.host`
  * without any manual string concatenation.
  */
 export default class CustomerInvoiceComponent extends Component {
@@ -131,11 +131,11 @@ export default class CustomerInvoiceComponent extends Component {
      * Uses `this.fetch.get(path, query, { namespace })` which builds the URL as:
      *   {config.API.host}/{namespace}/{path}
      *
-     * For the public ledger routes the namespace is 'ledger' (no version prefix),
-     * which matches the backend route group:
+     * For the public ledger routes the namespace is 'ledger/public', which
+     * matches the backend route group:
      *   Route::prefix('ledger')->group(fn() => Route::prefix('public')->group(...))
      *
-     * So `this.fetch.get('public/invoices/INV-0001', {}, { namespace: 'ledger' })`
+     * So `this.fetch.get('invoices/INV-0001', {}, { namespace: 'ledger/public' })`
      * resolves to `{API.host}/ledger/public/invoices/INV-0001`.
      */
     @task({ restartable: true })
@@ -150,12 +150,12 @@ export default class CustomerInvoiceComponent extends Component {
 
         try {
             // Fetch invoice — the backend marks it as 'viewed' on GET
-            const invoiceData = yield this.fetch.get(`public/invoices/${id}`, {}, { namespace: 'ledger' });
+            const invoiceData = yield this.fetch.get(`invoices/${id}`, {}, { namespace: 'ledger/public' });
             this.invoice = invoiceData?.invoice ?? invoiceData;
 
             // Fetch available payment gateways for this company
             try {
-                const gatewaysData = yield this.fetch.get(`public/invoices/${id}/gateways`, {}, { namespace: 'ledger' });
+                const gatewaysData = yield this.fetch.get(`invoices/${id}/gateways`, {}, { namespace: 'ledger/public' });
                 this.gateways = gatewaysData?.gateways ?? [];
                 if (this.gateways.length > 0) {
                     this.selectedGatewayId = this.gateways[0].id;
@@ -206,12 +206,12 @@ export default class CustomerInvoiceComponent extends Component {
 
         try {
             const data = yield this.fetch.post(
-                `public/invoices/${this.invoiceId}/pay`,
+                `invoices/${this.invoiceId}/pay`,
                 {
                     payment_method: 'bank_transfer',
                     reference: this.paymentReference || null,
                 },
-                { namespace: 'ledger' }
+                { namespace: 'ledger/public' }
             );
 
             this.invoice = data?.invoice ?? data;
