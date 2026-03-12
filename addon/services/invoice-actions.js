@@ -148,13 +148,16 @@ export default class InvoiceActionsService extends ResourceActionService {
     /**
      * Copy the public customer payment link for this invoice to the clipboard.
      *
-     * The URL pattern is:  <origin>/ledger/invoice/<invoice.public_id>
-     * This resolves via the ledger engine's top-level virtual route and renders
-     * the customer-invoice component — no authentication required.
+     * The URL pattern is:  <origin>/invoice?id=<invoice.public_id>
+     *
+     * This resolves via the host console's top-level `virtual` route (/:slug)
+     * with slug='invoice', which looks up the 'invoice' item registered in the
+     * 'auth:login' registry and renders the customer-invoice component.
+     * No authentication is required — the customer can open this link directly.
      */
     @action copyPaymentLink(invoice) {
         const origin = window.location.origin;
-        const url    = `${origin}/ledger/invoice/${invoice.public_id}`;
+        const url    = `${origin}/invoice?id=${invoice.public_id}`;
         if (navigator.clipboard) {
             navigator.clipboard.writeText(url).then(() => {
                 this.notifications.success(this.intl.t('invoice.actions.payment-link-copied'));

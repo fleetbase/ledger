@@ -1,7 +1,16 @@
-{{! Public customer invoice view — rendered at /ledger/invoice/<public_id>
-    No authentication required. Fetches data from the public API. }}
-<div class="customer-invoice-page min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
-    <div class="max-w-3xl mx-auto">
+{{! Public customer invoice view
+    URL: {console_url}/invoice?id=<invoice-public_id>
+    Registered to auth:login registry with slug='invoice'.
+    Rendered by the host console's top-level virtual route. }}
+
+<div class="customer-invoice-page min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4 relative">
+
+    {{! Back to console button (top-left, matching fleet-ops order-tracking pattern) }}
+    <div class="absolute left-0 top-0 p-4">
+        <Button @text="Back to Console" @icon="arrow-left" @onClick={{this.transitionToConsole}} @size="xs" />
+    </div>
+
+    <div class="max-w-3xl mx-auto pt-10">
 
         {{! ── Loading state ─────────────────────────────────────────────────── }}
         {{#if this.isLoading}}
@@ -29,9 +38,7 @@
                         <p class="text-indigo-200 text-xs uppercase tracking-widest font-semibold mb-1">Invoice</p>
                         <h1 class="text-white text-2xl font-bold">{{this.invoice.number}}</h1>
                     </div>
-                    <span class="badge {{this.statusBadgeClass}} text-sm capitalize px-3 py-1 rounded-full font-semibold">
-                        {{this.invoice.status}}
-                    </span>
+                    <StatusBadge @status={{this.invoice.status}} class="capitalize" />
                 </div>
 
                 {{! Invoice meta }}
@@ -49,7 +56,9 @@
                         <p class="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wide mb-1">Invoice Date</p>
                         <p class="text-gray-700 dark:text-gray-300">{{format-date-fns this.invoice.date "yyyy-MM-dd"}}</p>
                         {{#if this.invoice.due_date}}
-                            <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">Due: {{format-date-fns this.invoice.due_date "yyyy-MM-dd"}}</p>
+                            <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">
+                                Due: {{format-date-fns this.invoice.due_date "yyyy-MM-dd"}}
+                            </p>
                         {{/if}}
                     </div>
                 </div>
@@ -69,7 +78,9 @@
                             <tbody>
                                 {{#each this.invoice.items as |item|}}
                                     <tr class="border-b border-gray-50 dark:border-gray-700/50">
-                                        <td class="py-2 text-gray-700 dark:text-gray-300">{{or item.description item.name "—"}}</td>
+                                        <td class="py-2 text-gray-700 dark:text-gray-300">
+                                            {{or item.description item.name "—"}}
+                                        </td>
                                         <td class="py-2 text-right text-gray-600 dark:text-gray-400">{{item.quantity}}</td>
                                         <td class="py-2 text-right text-gray-600 dark:text-gray-400">
                                             {{format-currency item.unit_price this.invoice.currency}}
@@ -178,22 +189,17 @@
                             {{! Submit }}
                             <div class="flex items-center justify-between pt-2">
                                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    Amount due: <span class="font-semibold text-gray-800 dark:text-gray-100">{{this.formattedBalance}}</span>
+                                    Amount due:
+                                    <span class="font-semibold text-gray-800 dark:text-gray-100">{{this.formattedBalance}}</span>
                                 </p>
-                                <button
-                                    type="button"
-                                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={{this.isSubmitting}}
-                                    {{on "click" this.submitManualPayment}}
-                                >
-                                    {{#if this.isSubmitting}}
-                                        <FaIcon @icon="spinner" @spin={{true}} />
-                                        Processing…
-                                    {{else}}
-                                        <FaIcon @icon="lock" />
-                                        Confirm Payment
-                                    {{/if}}
-                                </button>
+                                <Button
+                                    @type="primary"
+                                    @icon={{if this.isSubmitting "spinner" "lock"}}
+                                    @iconSpin={{this.isSubmitting}}
+                                    @text={{if this.isSubmitting "Processing…" "Confirm Payment"}}
+                                    @disabled={{this.isSubmitting}}
+                                    @onClick={{this.submitManualPayment}}
+                                />
                             </div>
                         </div>
                     {{/if}}
@@ -216,7 +222,9 @@
                 <div class="rounded-2xl bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-8 flex items-center gap-5">
                     <FaIcon @icon="ban" @size="2x" class="text-gray-400 shrink-0" />
                     <div>
-                        <p class="font-semibold text-gray-700 dark:text-gray-200 text-lg capitalize">Invoice {{this.invoice.status}}</p>
+                        <p class="font-semibold text-gray-700 dark:text-gray-200 text-lg capitalize">
+                            Invoice {{this.invoice.status}}
+                        </p>
                         <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
                             This invoice is no longer active and cannot accept payments.
                         </p>

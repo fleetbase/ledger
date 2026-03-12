@@ -1,7 +1,0 @@
-{{! Top-level virtual route template for the Ledger engine.
-    Renders the component associated with the resolved menu item.
-    The component receives the full model (menu item) as @params so it can
-    extract the slug / section to load the correct resource. }}
-<div id="ledger-virtual-container" class="min-h-screen bg-gray-50 dark:bg-gray-900" ...attributes>
-    {{component (lazy-engine-component @model.component) params=@model.componentParams slug=@model.slug section=@model.section}}
-</div>
