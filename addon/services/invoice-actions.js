@@ -145,6 +145,27 @@ export default class InvoiceActionsService extends ResourceActionService {
         }
     }
 
+    /**
+     * Copy the public customer payment link for this invoice to the clipboard.
+     *
+     * The URL pattern is:  <origin>/ledger/invoice/<invoice.public_id>
+     * This resolves via the ledger engine's top-level virtual route and renders
+     * the customer-invoice component — no authentication required.
+     */
+    @action copyPaymentLink(invoice) {
+        const origin = window.location.origin;
+        const url    = `${origin}/ledger/invoice/${invoice.public_id}`;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => {
+                this.notifications.success(this.intl.t('invoice.actions.payment-link-copied'));
+            }).catch(() => {
+                this._fallbackCopy(url);
+            });
+        } else {
+            this._fallbackCopy(url);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
@@ -212,5 +233,22 @@ export default class InvoiceActionsService extends ResourceActionService {
         } finally {
             this.modalsManager.setOptions({ isPdfLoading: false });
         }
+    }
+
+    _fallbackCopy(text) {
+        const el = document.createElement('textarea');
+        el.value = text;
+        el.style.position = 'fixed';
+        el.style.opacity  = '0';
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        try {
+            document.execCommand('copy');
+            this.notifications.success(this.intl.t('invoice.actions.payment-link-copied'));
+        } catch {
+            this.notifications.error(this.intl.t('invoice.actions.payment-link-copy-failed'));
+        }
+        document.body.removeChild(el);
     }
 }

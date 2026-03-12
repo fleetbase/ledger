@@ -269,7 +269,7 @@ class InvoiceService
      */
     protected function getCashAccount(string $companyUuid): Account
     {
-        return Account::firstOrCreate(
+        return Account::updateOrCreate(
             [
                 'company_uuid' => $companyUuid,
                 'code'         => 'CASH-DEFAULT',
@@ -279,6 +279,7 @@ class InvoiceService
                 'type'              => 'asset',
                 'description'       => 'Default cash account',
                 'is_system_account' => true,
+                'status'            => 'active',
             ]
         );
     }
@@ -288,7 +289,7 @@ class InvoiceService
      */
     protected function getAccountsReceivableAccount(string $companyUuid): Account
     {
-        return Account::firstOrCreate(
+        return Account::updateOrCreate(
             [
                 'company_uuid' => $companyUuid,
                 'code'         => 'AR-DEFAULT',
@@ -298,6 +299,7 @@ class InvoiceService
                 'type'              => 'asset',
                 'description'       => 'Default accounts receivable account',
                 'is_system_account' => true,
+                'status'            => 'active',
             ]
         );
     }
@@ -307,7 +309,7 @@ class InvoiceService
      */
     protected function getRevenueAccount(string $companyUuid): Account
     {
-        return Account::firstOrCreate(
+        return Account::updateOrCreate(
             [
                 'company_uuid' => $companyUuid,
                 'code'         => 'REV-DEFAULT',

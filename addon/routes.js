@@ -3,6 +3,10 @@ export default buildRoutes(function () {
     // Dashboard
     this.route('home', { path: '/' });
 
+    // Top-level virtual route — renders components registered to 'engine:ledger'
+    // Accessible at /ledger/:section/:slug (e.g. /ledger/invoice/INV-XXXX)
+    this.route('virtual', { path: '/:section/:slug' });
+
     // Receivables
     this.route('billing', function () {
         this.route('invoice-templates', function () {

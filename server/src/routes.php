@@ -29,6 +29,24 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
 
         /*
         |--------------------------------------------------------------------------
+        | Public Customer Invoice Routes (No Auth Required)
+        |--------------------------------------------------------------------------
+        |
+        | These routes allow customers to view and pay invoices without logging in.
+        | They are scoped by the globally-unique invoice public_id / uuid.
+        |
+        | GET  /ledger/public/invoices/{public_id}
+        | GET  /ledger/public/invoices/{public_id}/gateways
+        | POST /ledger/public/invoices/{public_id}/pay
+        */
+        $router->prefix('public')->namespace('Public')->group(function ($router) {
+            $router->get('invoices/{public_id}', 'PublicInvoiceController@show');
+            $router->get('invoices/{public_id}/gateways', 'PublicInvoiceController@gateways');
+            $router->post('invoices/{public_id}/pay', 'PublicInvoiceController@pay');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | Public API Routes (Authenticated via API Key — Customer / Driver facing)
         |--------------------------------------------------------------------------
         */

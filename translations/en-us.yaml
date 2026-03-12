@@ -98,6 +98,9 @@ invoice:
     download-pdf: Download PDF
     record-payment: Record Payment
     record-payment-title: "Record Payment — {number}"
+    copy-payment-link: Copy Payment Link
+    payment-link-copied: Payment link copied to clipboard.
+    payment-link-copy-failed: Failed to copy payment link. Please copy it manually.
     send: Send Invoice
     void: Void Invoice
     edit: Edit Invoice

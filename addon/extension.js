@@ -1,4 +1,4 @@
-import { Widget, ExtensionComponent } from '@fleetbase/ember-core/contracts';
+import { MenuItem, Widget, ExtensionComponent } from '@fleetbase/ember-core/contracts';
 
 export default {
     setupExtension(app, universe) {
@@ -55,6 +55,35 @@ export default {
                 },
             ],
         });
+
+        // ── Public customer invoice view ───────────────────────────────────────
+        // Registers the customer-facing invoice view to the 'engine:ledger'
+        // registry so it is accessible at /ledger/invoice/<public_id> without
+        // requiring the customer to be authenticated in the console.
+        //
+        // URL pattern: /ledger/invoice/<invoice-public_id-or-uuid>
+        //
+        // The customer-invoice component reads @slug from the route model and
+        // fetches the invoice from the public API endpoint:
+        //   GET /ledger/public/invoices/<public_id>
+        //
+        // wrapperClass: 'hidden' keeps this item invisible in all navigation
+        // menus while still making it resolvable via the virtual route.
+        menuService.registerMenuItem(
+            'engine:ledger',
+            new MenuItem({
+                title: 'Invoice',
+                slug: 'invoice',
+                section: 'invoice',
+                route: 'console.ledger.virtual',
+                type: 'link',
+                wrapperClass: 'hidden',
+                component: new ExtensionComponent('@fleetbase/ledger-engine', 'customer-invoice'),
+                onClick: (menuItem) => {
+                    universe.transitionMenuItem('virtual', menuItem);
+                },
+            })
+        );
 
         // Register dashboard and widgets
         this.registerWidgets(widgetService);

@@ -158,6 +158,12 @@ export default class BillingInvoicesIndexController extends Controller {
                         permission: 'ledger view invoice',
                     },
                     {
+                        label:      this.intl.t('invoice.actions.copy-payment-link'),
+                        icon:       'link',
+                        fn:         this.invoiceActions.copyPaymentLink,
+                        permission: 'ledger view invoice',
+                    },
+                    {
                         label:      this.intl.t('common.delete-resource', { resource: this.intl.t('resource.invoice') }),
                         icon:       'trash',
                         fn:         this.invoiceActions.delete,
