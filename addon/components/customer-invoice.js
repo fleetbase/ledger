@@ -18,10 +18,13 @@ import { getOwner } from '@ember/application';
  * URL:  {console_url}/invoice?id=INV-0001
  *
  * It fetches the invoice from the public API endpoint (no auth required):
- *   GET /ledger/public/invoices/<public_id>
+ *   GET  {API.host}/ledger/public/invoices/<public_id>
+ *   GET  {API.host}/ledger/public/invoices/<public_id>/gateways
+ *   POST {API.host}/ledger/public/invoices/<public_id>/pay
  *
- * And lists available payment gateways from:
- *   GET /ledger/public/invoices/<public_id>/gateways
+ * All requests use `this.fetch` (the @fleetbase/ember-core FetchService) with
+ * `namespace: 'ledger'` so the URL is built correctly from `config.API.host`
+ * without any manual string concatenation.
  */
 export default class CustomerInvoiceComponent extends Component {
     @service urlSearchParams;
@@ -122,6 +125,19 @@ export default class CustomerInvoiceComponent extends Component {
 
     // ── Tasks ─────────────────────────────────────────────────────────────────
 
+    /**
+     * Load the invoice and its available payment gateways from the public API.
+     *
+     * Uses `this.fetch.get(path, query, { namespace })` which builds the URL as:
+     *   {config.API.host}/{namespace}/{path}
+     *
+     * For the public ledger routes the namespace is 'ledger' (no version prefix),
+     * which matches the backend route group:
+     *   Route::prefix('ledger')->group(fn() => Route::prefix('public')->group(...))
+     *
+     * So `this.fetch.get('public/invoices/INV-0001', {}, { namespace: 'ledger' })`
+     * resolves to `{API.host}/ledger/public/invoices/INV-0001`.
+     */
     @task({ restartable: true })
     *loadInvoice() {
         this.error = null;
@@ -133,32 +149,28 @@ export default class CustomerInvoiceComponent extends Component {
         }
 
         try {
-            const baseUrl = this._publicBaseUrl();
-
-            // Fetch invoice — marks it as 'viewed' on the backend
-            const invoiceResponse = yield fetch(`${baseUrl}/invoices/${id}`);
-            if (!invoiceResponse.ok) {
-                if (invoiceResponse.status === 404) {
-                    this.error = 'Invoice not found. Please check the link and try again.';
-                } else {
-                    this.error = 'Failed to load invoice. Please try again later.';
-                }
-                return;
-            }
-            const { invoice } = yield invoiceResponse.json();
-            this.invoice = invoice;
+            // Fetch invoice — the backend marks it as 'viewed' on GET
+            const invoiceData = yield this.fetch.get(`public/invoices/${id}`, {}, { namespace: 'ledger' });
+            this.invoice = invoiceData?.invoice ?? invoiceData;
 
             // Fetch available payment gateways for this company
-            const gatewaysResponse = yield fetch(`${baseUrl}/invoices/${id}/gateways`);
-            if (gatewaysResponse.ok) {
-                const { gateways } = yield gatewaysResponse.json();
-                this.gateways = gateways ?? [];
+            try {
+                const gatewaysData = yield this.fetch.get(`public/invoices/${id}/gateways`, {}, { namespace: 'ledger' });
+                this.gateways = gatewaysData?.gateways ?? [];
                 if (this.gateways.length > 0) {
                     this.selectedGatewayId = this.gateways[0].id;
                 }
+            } catch {
+                // Gateways are optional — a missing gateway list should not block the invoice view
+                this.gateways = [];
             }
         } catch (err) {
-            this.error = 'An unexpected error occurred. Please try again later.';
+            const status = err?.status ?? err?.response?.status;
+            if (status === 404) {
+                this.error = 'Invoice not found. Please check the link and try again.';
+            } else {
+                this.error = err?.message ?? 'Failed to load invoice. Please try again later.';
+            }
         }
     }
 
@@ -180,8 +192,11 @@ export default class CustomerInvoiceComponent extends Component {
 
     /**
      * Submit a manual / bank-transfer payment confirmation.
-     * For gateway-based payments (Stripe, PayPal, etc.) the gateway widget
-     * handles tokenisation and posts directly to the gateway charge endpoint.
+     *
+     * Uses `this.fetch.post(path, data, { namespace })` which builds the URL as:
+     *   {config.API.host}/{namespace}/{path}
+     *
+     * POST {API.host}/ledger/public/invoices/{id}/pay
      */
     @action async submitManualPayment() {
         if (!this.invoice || this.isSubmitting) return;
@@ -190,28 +205,20 @@ export default class CustomerInvoiceComponent extends Component {
         this.error = null;
 
         try {
-            const baseUrl = this._publicBaseUrl();
-            const response = await fetch(`${baseUrl}/invoices/${this.invoiceId}/pay`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify({
+            const data = yield this.fetch.post(
+                `public/invoices/${this.invoiceId}/pay`,
+                {
                     payment_method: 'bank_transfer',
                     reference: this.paymentReference || null,
-                }),
-            });
+                },
+                { namespace: 'ledger' }
+            );
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                this.error = data?.error ?? data?.message ?? 'Payment failed. Please try again.';
-                return;
-            }
-
-            this.invoice = data.invoice;
+            this.invoice = data?.invoice ?? data;
             this.successMessage = 'Your payment has been recorded successfully. Thank you!';
             this.showPaymentForm = false;
         } catch (err) {
-            this.error = 'An unexpected error occurred. Please try again later.';
+            this.error = err?.message ?? 'Payment failed. Please try again.';
         } finally {
             this.isSubmitting = false;
         }
@@ -227,15 +234,6 @@ export default class CustomerInvoiceComponent extends Component {
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
-
-    /**
-     * Build the base URL for the public Ledger API.
-     * Resolves relative to the current origin so it works in all environments.
-     */
-    _publicBaseUrl() {
-        const origin = window.location.origin;
-        return `${origin}/ledger/public`;
-    }
 
     /**
      * Format a cents integer as a human-readable currency string.
