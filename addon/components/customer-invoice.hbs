@@ -5,7 +5,7 @@
 
 <div class="customer-invoice-page min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4 relative">
 
-    {{! Back to console button (top-left, matching fleet-ops order-tracking pattern) }}
+    {{! Back to console }}
     <div class="absolute left-0 top-0 p-4">
         <Button @text="Back to Console" @icon="arrow-left" @onClick={{this.transitionToConsole}} @size="xs" />
     </div>
@@ -13,7 +13,7 @@
     <div class="max-w-3xl mx-auto pt-10">
 
         {{! ── Loading state ─────────────────────────────────────────────────── }}
-        {{#if this.isLoading}}
+        {{#if this.loadInvoice.isRunning}}
             <div class="flex flex-col items-center justify-center py-24 text-gray-500 dark:text-gray-400">
                 <FaIcon @icon="spinner" @spin={{true}} @size="2x" class="mb-4" />
                 <p class="text-sm">Loading invoice…</p>
@@ -38,7 +38,7 @@
                         <p class="text-indigo-200 text-xs uppercase tracking-widest font-semibold mb-1">Invoice</p>
                         <h1 class="text-white text-2xl font-bold">{{this.invoice.number}}</h1>
                     </div>
-                    <StatusBadge @status={{this.invoice.status}} class="capitalize" />
+                    <Badge @status={{this.invoice.status}} />
                 </div>
 
                 {{! Invoice meta }}
@@ -99,18 +99,18 @@
                 <div class="border-t border-gray-100 dark:border-gray-700 px-8 py-5 space-y-2 text-sm">
                     <div class="flex justify-between text-gray-500 dark:text-gray-400">
                         <span>Subtotal</span>
-                        <span>{{this.formattedTotal}}</span>
+                        <span>{{format-currency this.invoice.total_amount this.invoice.currency}}</span>
                     </div>
                     {{#if this.invoice.amount_paid}}
                         <div class="flex justify-between text-green-600 dark:text-green-400">
                             <span>Amount Paid</span>
-                            <span>−{{this.formattedAmountPaid}}</span>
+                            <span>−{{format-currency this.invoice.amount_paid this.invoice.currency}}</span>
                         </div>
                     {{/if}}
                     <div class="flex justify-between font-bold text-base text-gray-900 dark:text-white border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
                         <span>Balance Due</span>
                         <span class="{{if this.isPaid "text-green-600 dark:text-green-400"}}">
-                            {{this.formattedBalance}}
+                            {{format-currency this.invoice.balance this.invoice.currency}}
                         </span>
                     </div>
                 </div>
@@ -190,15 +190,17 @@
                             <div class="flex items-center justify-between pt-2">
                                 <p class="text-sm text-gray-500 dark:text-gray-400">
                                     Amount due:
-                                    <span class="font-semibold text-gray-800 dark:text-gray-100">{{this.formattedBalance}}</span>
+                                    <span class="font-semibold text-gray-800 dark:text-gray-100">
+                                        {{format-currency this.invoice.balance this.invoice.currency}}
+                                    </span>
                                 </p>
                                 <Button
                                     @type="primary"
-                                    @icon={{if this.isSubmitting "spinner" "lock"}}
-                                    @iconSpin={{this.isSubmitting}}
-                                    @text={{if this.isSubmitting "Processing…" "Confirm Payment"}}
-                                    @disabled={{this.isSubmitting}}
-                                    @onClick={{this.submitManualPayment}}
+                                    @icon={{if this.submitPayment.isRunning "spinner" "lock"}}
+                                    @iconSpin={{this.submitPayment.isRunning}}
+                                    @text={{if this.submitPayment.isRunning "Processing…" "Confirm Payment"}}
+                                    @disabled={{this.submitPayment.isRunning}}
+                                    @onClick={{perform this.submitPayment}}
                                 />
                             </div>
                         </div>
@@ -238,5 +240,6 @@
             </p>
 
         {{/if}}
+
     </div>
 </div>
