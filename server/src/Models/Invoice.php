@@ -170,7 +170,13 @@ class Invoice extends Model
             }
 
             $prefix        = data_get($settings, 'invoice_prefix', 'INV');
-            $dueDateOffset = (int) data_get($settings, 'due_date_offset_days', 30);
+            // Use null (not 30) as the fallback so we only apply an offset when
+            // the user has explicitly saved one in Invoice Settings. A missing or
+            // null value means "no default due date" — we never want to silently
+            // pre-fill a date the user never asked for.
+            $dueDateOffset = isset($settings['due_date_offset_days'])
+                ? (int) $settings['due_date_offset_days']
+                : null;
             $defCurrency   = data_get($settings, 'default_currency');
             $defNotes      = data_get($settings, 'default_notes');
             $defTerms      = data_get($settings, 'default_terms');
@@ -190,8 +196,10 @@ class Invoice extends Model
             }
 
             // ── Due date ───────────────────────────────────────────────────────
-            // Derive from the invoice date + offset when not explicitly provided.
-            if (empty($invoice->due_date) && $dueDateOffset > 0) {
+            // Only derive a due date when the user has explicitly configured a
+            // non-zero offset in Invoice Settings. When the setting is absent or
+            // zero we leave due_date null so the form stays empty.
+            if (empty($invoice->due_date) && $dueDateOffset !== null && $dueDateOffset > 0) {
                 $baseDate          = $invoice->date ?? now();
                 $invoice->due_date = Carbon::parse($baseDate)->addDays($dueDateOffset);
             }
