@@ -20,11 +20,6 @@ export default class SettingsAccountingController extends Controller {
     @tracked default_ar_account_uuid = null;
     @tracked default_ap_account_uuid = null;
 
-    // Read once in the constructor (before any render) so getters never call
-    // getCompany() during a Glimmer render computation, which would violate
-    // Glimmer's no-mutation-during-render rule (getCompany sets this.company).
-    @tracked companyCurrency = 'USD';
-
     // ── Account lists for selectors ───────────────────────────────────────────
     @tracked revenueAccounts = [];
     @tracked expenseAccounts = [];
@@ -51,17 +46,25 @@ export default class SettingsAccountingController extends Controller {
 
     constructor() {
         super(...arguments);
-        // Use currentUser.currency (reads from whoisData/cache, never calls
-        // store.peekRecord) so this is safe to call in the constructor before
-        // the user session has fully loaded. getCompany() is NOT safe here
-        // because it calls store.peekRecord with an undefined id when the
-        // controller is instantiated during early route setup.
-        this.companyCurrency = this.currentUser.currency ?? 'USD';
         this.loadAccounts.perform();
         this.getSettings.perform();
     }
 
     // ── Computed helpers ──────────────────────────────────────────────────────
+
+    /**
+     * The organisation's currency from the organisations list.
+     * currentUser.organizations is @tracked and populated by loadOrganizations()
+     * during promiseUser() — it is always available by the time any console
+     * route is activated. Reading it in a getter is safe (no store.peekRecord,
+     * no mutation). Falls back to 'USD' if the org record is not yet loaded.
+     */
+    get companyCurrency() {
+        const companyId = this.currentUser.companyId;
+        if (!companyId) return 'USD';
+        const org = this.currentUser.organizations.find((o) => o.uuid === companyId || o.id === companyId);
+        return org?.currency ?? 'USD';
+    }
 
     /**
      * The effective base currency: the explicitly saved setting if present,
