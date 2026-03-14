@@ -12,6 +12,8 @@ export default class LedgerGatewayModel extends Model {
     @attr('string') status;
     @attr('string') environment;
     @attr('boolean') is_default;
+    @attr('boolean') is_sandbox;
+    @attr('raw') capabilities;
     @attr('string') return_url;
     @attr('string') webhook_url;
     @attr('string') system_webhook_url;
@@ -22,6 +24,16 @@ export default class LedgerGatewayModel extends Model {
 
     @computed('is_default') get is_default_label() {
         return this.is_default ? 'Yes' : 'No';
+    }
+
+    @computed('status') get status_label() {
+        const labels = { active: 'Active', inactive: 'Inactive' };
+        return labels[this.status] ?? this.status ?? 'Unknown';
+    }
+
+    @computed('driver') get driver_label() {
+        if (!this.driver) return 'N/A';
+        return this.driver.charAt(0).toUpperCase() + this.driver.slice(1);
     }
 
     @computed('created_at') get createdAtAgo() {

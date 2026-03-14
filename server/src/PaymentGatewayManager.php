@@ -109,6 +109,7 @@ class PaymentGatewayManager extends Manager
                     'name'          => $driver->getName(),
                     'capabilities'  => $driver->getCapabilities(),
                     'config_schema' => $driver->getConfigSchema(),
+                    'webhook_url'   => url('/ledger/webhooks/' . $driver->getCode()),
                 ];
             } catch (\Exception $e) {
                 // Skip drivers that fail to instantiate

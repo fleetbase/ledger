@@ -44,20 +44,31 @@ export default class GatewayFormComponent extends Component {
         });
         this.configValues = values;
 
-        // Default webhook_url to the system-computed handler URL when not already set
+        // Default webhook_url to the system-computed handler URL when not already set.
+        // driver.webhook_url is the full URL returned by the backend (e.g. https://api.example.com/ledger/webhooks/stripe).
+        // We never fall back to a relative path here — if the manifest does not include a full URL yet,
+        // the user can copy it from the "System webhook URL" hint shown below the field.
         const resource = this.args.resource;
-        if (resource && !resource.webhook_url && driverCode) {
-            resource.webhook_url = driver?.webhook_url ?? `/ledger/webhooks/${driverCode}`;
+        if (resource && !resource.webhook_url && driver?.webhook_url) {
+            resource.webhook_url = driver.webhook_url;
         }
     }
 
     @action selectDriver(driver) {
         this.args.resource.driver = driver.code;
+        // Sync the driver's capabilities to the resource so they are persisted
+        if (driver.capabilities) {
+            this.args.resource.capabilities = driver.capabilities;
+        }
         this.loadSchema.perform(driver.code);
     }
 
     @action updateConfigField(key, value) {
-        this.configValues = { ...this.configValues, [key]: value };
+        // When bound via {{on "input" (fn this.updateConfigField field.key)}} the second
+        // argument is a DOM InputEvent, not the raw string value.  Extract the actual
+        // value from event.target.value in that case so credentials are stored correctly.
+        const resolvedValue = value instanceof Event ? value.target?.value ?? value : value;
+        this.configValues = { ...this.configValues, [key]: resolvedValue };
         // Persist config back to the resource
         this.args.resource.config = { ...this.configValues };
     }

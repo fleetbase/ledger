@@ -99,9 +99,27 @@ class StripeDriver extends AbstractGatewayDriver
         $secretKey = $this->config('secret_key');
         if ($secretKey) {
             $this->client = new StripeClient($secretKey);
+        } else {
+            $this->logError('Stripe driver initialized without a secret_key. Ensure the gateway config is saved correctly.');
         }
 
         return $this;
+    }
+
+    /**
+     * Assert that the Stripe client has been initialized.
+     * Throws a RuntimeException with a helpful message if the client is null.
+     *
+     * @throws \RuntimeException
+     */
+    private function assertClientInitialized(): void
+    {
+        if ($this->client === null) {
+            throw new \RuntimeException(
+                'Stripe client is not initialized. The gateway configuration is missing a valid secret_key. '
+                . 'Please update the gateway in Ledger → Settings → Gateways and save your Stripe credentials.'
+            );
+        }
     }
 
     /**
@@ -118,6 +136,8 @@ class StripeDriver extends AbstractGatewayDriver
      */
     public function purchase(PurchaseRequest $request): GatewayResponse
     {
+        $this->assertClientInitialized();
+
         try {
             $params = [
                 'amount'      => $request->amount,
@@ -198,6 +218,8 @@ class StripeDriver extends AbstractGatewayDriver
      */
     public function refund(RefundRequest $request): GatewayResponse
     {
+        $this->assertClientInitialized();
+
         try {
             $params = [
                 'amount' => $request->amount,
@@ -326,6 +348,8 @@ class StripeDriver extends AbstractGatewayDriver
      */
     public function createPaymentMethod(array $data): GatewayResponse
     {
+        $this->assertClientInitialized();
+
         try {
             $params = array_filter([
                 'customer'             => $data['customer_id'] ?? null,
@@ -373,6 +397,8 @@ class StripeDriver extends AbstractGatewayDriver
      */
     public function createCheckoutSession(PurchaseRequest $request, string $successUrl, string $cancelUrl): GatewayResponse
     {
+        $this->assertClientInitialized();
+
         try {
             $params = [
                 'mode'        => 'payment',

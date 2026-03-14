@@ -185,7 +185,14 @@ class PublicInvoiceController extends Controller
             ],
         );
 
-        $response = $driver->createCheckoutSession($purchaseRequest, $successUrl, $cancelUrl);
+        try {
+            $response = $driver->createCheckoutSession($purchaseRequest, $successUrl, $cancelUrl);
+        } catch (\RuntimeException $e) {
+            // Thrown by assertClientInitialized() when the gateway is missing credentials
+            return response()->json([
+                'error' => 'Payment gateway is not configured correctly. Please contact support.',
+            ], 422);
+        }
 
         if ($response->isFailed()) {
             return response()->json([

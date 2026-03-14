@@ -60,10 +60,25 @@
     <ContentPanel @title="Integration" @open={{true}} @wrapperClass="bordered-top">
         <div class="grid grid-cols-1 gap-2 text-xs dark:text-gray-100">
 
-            <div class="field-info-container">
-                <div class="field-name">Webhook URL</div>
-                <div class="field-value font-mono break-all">{{n-a @resource.webhook_url}}</div>
-            </div>
+            {{! System-generated webhook URL — always shown, full absolute URL from backend }}
+            {{#if @resource.system_webhook_url}}
+                <div class="field-info-container">
+                    <div class="field-name">Webhook URL</div>
+                    <div class="field-value font-mono break-all flex items-center gap-2">
+                        <span class="flex-1 select-all">{{@resource.system_webhook_url}}</span>
+                        <ClickToCopy @value={{@resource.system_webhook_url}} @buttonText="Copy" />
+                    </div>
+                    <div class="text-[11px] text-gray-500 mt-1">
+                        Register this URL in your payment gateway dashboard to receive webhook events.
+                    </div>
+                </div>
+            {{else if @resource.webhook_url}}
+                {{! Fallback: show the stored webhook_url if no system URL is available }}
+                <div class="field-info-container">
+                    <div class="field-name">Webhook URL</div>
+                    <div class="field-value font-mono break-all">{{@resource.webhook_url}}</div>
+                </div>
+            {{/if}}
 
             {{#if @resource.capabilities}}
                 <div class="field-info-container">
