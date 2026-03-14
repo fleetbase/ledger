@@ -109,6 +109,7 @@ class LedgerServiceProvider extends CoreServiceProvider
             $this->commands([
                 \Fleetbase\Ledger\Console\Commands\ProvisionLedgerDefaults::class,
                 \Fleetbase\Ledger\Console\Commands\BackfillTransactionDirection::class,
+                \Fleetbase\Ledger\Console\Commands\UpdateOverdueInvoices::class,
             ]);
         }
     }

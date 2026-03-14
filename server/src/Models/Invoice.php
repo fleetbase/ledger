@@ -290,11 +290,22 @@ class Invoice extends Model
 
     /**
      * Mark the invoice as viewed.
+     *
+     * Sets viewed_at timestamp on first access and auto-transitions status
+     * from 'sent' → 'viewed' so the sender can see the invoice has been opened.
+     * Already-viewed, overdue, partial, or paid invoices are not downgraded.
      */
     public function markAsViewed(): void
     {
         if (!$this->viewed_at) {
             $this->viewed_at = now();
+
+            // Only advance the status if the invoice is still in 'sent' state.
+            // We never downgrade from overdue/partial/paid back to 'viewed'.
+            if ($this->status === 'sent') {
+                $this->status = 'viewed';
+            }
+
             $this->save();
         }
     }

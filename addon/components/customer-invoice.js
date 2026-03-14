@@ -113,6 +113,13 @@ export default class CustomerInvoiceComponent extends Component {
             const status = err?.status ?? err?.response?.status;
             if (status === 404) {
                 this.error = 'Invoice not found. Please check the link and try again.';
+            } else if (status === 403) {
+                // The invoice exists but is in draft status and not yet available
+                // to the customer. Show the server-provided message if present.
+                this.error =
+                    err?.payload?.error ??
+                    err?.message ??
+                    'This invoice is not yet available. Please contact the sender.';
             } else {
                 this.error = err?.message ?? 'Failed to load invoice. Please try again later.';
             }

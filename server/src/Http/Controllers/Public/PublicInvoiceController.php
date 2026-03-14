@@ -52,7 +52,17 @@ class PublicInvoiceController extends Controller
     {
         $invoice = $this->resolvePublicInvoice($publicId);
 
-        // Mark the invoice as viewed on first customer access
+        // Draft invoices are internal-only and must not be accessible on the
+        // public URL. Return 403 so the frontend can show a "not available" page.
+        if ($invoice->status === 'draft') {
+            return response()->json([
+                'error' => 'This invoice is not yet available. Please contact the sender.',
+            ], 403);
+        }
+
+        // Mark the invoice as viewed on first customer access.
+        // Also auto-transitions status from 'sent' → 'viewed' so the sender
+        // can see their customer has opened the invoice.
         if (!$invoice->viewed_at) {
             $invoice->markAsViewed();
         }
