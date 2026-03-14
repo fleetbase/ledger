@@ -7,6 +7,7 @@ use Fleetbase\Casts\Money;
 use Fleetbase\Casts\PolymorphicType;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Models\Model;
+use Fleetbase\Models\Setting;
 use Fleetbase\Models\Template;
 use Fleetbase\Models\Transaction;
 use Fleetbase\Traits\HasApiModelBehavior;
@@ -16,6 +17,7 @@ use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
 use Fleetbase\Traits\SendsWebhooks;
 use Fleetbase\Traits\TracksApiCredential;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -145,6 +147,67 @@ class Invoice extends Model
     protected $hidden = [];
 
     /**
+     * Bootstrap the model and its traits.
+     *
+     * Automatically fills defaults from the company's Invoice Settings when a
+     * new invoice is being created, so callers never need to worry about:
+     *   - generating a unique invoice number (using the configured prefix)
+     *   - picking the right currency
+     *   - calculating the due date from the configured payment-terms offset
+     *   - pre-filling default notes / terms text
+     */
+    public static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Invoice $invoice): void {
+            // ── Load company invoice settings ──────────────────────────────────
+            // Setting::lookupCompany uses session('company') which is always set
+            // for authenticated internal requests. Returns [] when not yet saved.
+            $settings = Setting::lookupCompany('ledger.invoice-settings', []);
+            if (!is_array($settings)) {
+                $settings = [];
+            }
+
+            $prefix        = data_get($settings, 'invoice_prefix', 'INV');
+            $dueDateOffset = (int) data_get($settings, 'due_date_offset_days', 30);
+            $defCurrency   = data_get($settings, 'default_currency');
+            $defNotes      = data_get($settings, 'default_notes');
+            $defTerms      = data_get($settings, 'default_terms');
+
+            // ── Invoice number ─────────────────────────────────────────────────
+            // Always auto-generate when the caller has not explicitly provided one.
+            // This is the primary fix for the SQLSTATE[23000] null-number error.
+            if (empty($invoice->number)) {
+                $invoice->number = static::generateNumber($prefix);
+            }
+
+            // ── Currency ───────────────────────────────────────────────────────
+            // Apply the settings default only when the caller has not already set
+            // a currency on this invoice (e.g. createFromOrder sets it explicitly).
+            if (empty($invoice->currency) && !empty($defCurrency)) {
+                $invoice->currency = $defCurrency;
+            }
+
+            // ── Due date ───────────────────────────────────────────────────────
+            // Derive from the invoice date + offset when not explicitly provided.
+            if (empty($invoice->due_date) && $dueDateOffset > 0) {
+                $baseDate          = $invoice->date ?? now();
+                $invoice->due_date = Carbon::parse($baseDate)->addDays($dueDateOffset);
+            }
+
+            // ── Notes / Terms ──────────────────────────────────────────────────
+            // Pre-fill with the saved defaults only when the caller left them blank.
+            if (empty($invoice->notes) && !empty($defNotes)) {
+                $invoice->notes = $defNotes;
+            }
+            if (empty($invoice->terms) && !empty($defTerms)) {
+                $invoice->terms = $defTerms;
+            }
+        });
+    }
+
+    /**
      * The customer for this invoice.
      */
     public function customer(): MorphTo
@@ -186,6 +249,10 @@ class Invoice extends Model
 
     /**
      * Generate a unique invoice number.
+     *
+     * Uses a zero-padded random integer so numbers look like INV-004821.
+     * Retries until a number that does not already exist (including soft-deleted
+     * records) is found, guaranteeing uniqueness across the entire table.
      */
     public static function generateNumber(string $prefix = 'INV', int $length = 6): string
     {
