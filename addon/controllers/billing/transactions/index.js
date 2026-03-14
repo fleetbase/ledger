@@ -30,6 +30,7 @@ export default class BillingTransactionsIndexController extends Controller {
     }
 
     @task({ restartable: true }) *search(query) {
+        yield Promise.resolve();
         this.query = query;
     }
 

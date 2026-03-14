@@ -33,6 +33,7 @@ export default class GatewayFormComponent extends Component {
     }
 
     @task *loadSchema(driverCode) {
+        yield Promise.resolve();
         const driver = this.availableDrivers.find((d) => d.code === driverCode);
         this.configSchema = driver?.config_schema ?? [];
 

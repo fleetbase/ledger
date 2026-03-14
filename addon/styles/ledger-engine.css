@@ -31,6 +31,7 @@
 .general-ledger-filters button.btn {
     height: 30px !important;
 }
+
 /* --- Invoice Template Builder overlay ---
    Positioned absolute so it is bounded by .next-view-section-container
    (which already has position:relative), covering only the content area
@@ -41,6 +42,7 @@
     z-index: 100;
     background: var(--fleetbase-view-bg, #fff);
 }
+
 .ledger-template-builder-outlet:empty {
     display: none;
 }

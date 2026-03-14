@@ -12,7 +12,7 @@ export default class SettingsInvoiceController extends Controller {
 
     // ── Tracked settings fields ───────────────────────────────────────────────
     @tracked invoice_prefix = 'INV';
-    @tracked default_currency = null;       // null = "use company default"
+    @tracked default_currency = null; // null = "use company default"
     @tracked payment_terms_days = 30;
     @tracked due_date_offset_days = 30;
     @tracked default_notes = '';

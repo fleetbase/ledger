@@ -42,19 +42,19 @@ export default class LedgerJournalModel extends Model {
         return labels[this.type] ?? this.type ?? null;
     }
 
-    @computed('debit_account') get debit_account_name() {
+    @computed('debit_account.name') get debit_account_name() {
         return this.debit_account?.name ?? null;
     }
 
-    @computed('debit_account') get debit_account_code() {
+    @computed('debit_account.code') get debit_account_code() {
         return this.debit_account?.code ?? null;
     }
 
-    @computed('credit_account') get credit_account_name() {
+    @computed('credit_account.name') get credit_account_name() {
         return this.credit_account?.name ?? null;
     }
 
-    @computed('credit_account') get credit_account_code() {
+    @computed('credit_account.code') get credit_account_code() {
         return this.credit_account?.code ?? null;
     }
 

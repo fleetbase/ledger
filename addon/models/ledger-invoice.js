@@ -71,15 +71,15 @@ export default class LedgerInvoiceModel extends Model {
     // NOTE: customer is async, so these getters read from the resolved content.
     // Ember Data exposes the resolved record via .content on the proxy, and
     // @computed on 'customer.name' etc. correctly tracks the async proxy.
-    @computed('customer.name', 'customer.isFulfilled') get customerName() {
+    @computed('customer.{name,isFulfilled}') get customerName() {
         return this.customer?.get('name') ?? null;
     }
 
-    @computed('customer.email', 'customer.isFulfilled') get customerEmail() {
+    @computed('customer.{email,isFulfilled}') get customerEmail() {
         return this.customer?.get('email') ?? null;
     }
 
-    @computed('customer.phone', 'customer.isFulfilled') get customerPhone() {
+    @computed('customer.{phone,isFulfilled}') get customerPhone() {
         return this.customer?.get('phone') ?? null;
     }
 
@@ -87,7 +87,7 @@ export default class LedgerInvoiceModel extends Model {
     // Template convenience accessor
     // -------------------------------------------------------------------------
 
-    @computed('template.name', 'template.isFulfilled') get templateName() {
+    @computed('template.{name,isFulfilled}') get templateName() {
         return this.template?.get('name') ?? null;
     }
 
@@ -109,7 +109,7 @@ export default class LedgerInvoiceModel extends Model {
     }
 
     /** Alias so templates can use @resource.issuedAt consistently. */
-    @computed('date') get issuedAt() {
+    @computed('date', 'invoiceDate') get issuedAt() {
         return this.invoiceDate;
     }
 

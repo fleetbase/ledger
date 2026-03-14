@@ -3,7 +3,6 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
-import { getOwner } from '@ember/application';
 
 /**
  * CustomerInvoiceComponent
@@ -23,6 +22,7 @@ export default class CustomerInvoiceComponent extends Component {
     @service urlSearchParams;
     @service notifications;
     @service fetch;
+    @service router;
 
     @tracked invoice = null;
     @tracked gateways = [];
@@ -116,10 +116,7 @@ export default class CustomerInvoiceComponent extends Component {
             } else if (status === 403) {
                 // The invoice exists but is in draft status and not yet available
                 // to the customer. Show the server-provided message if present.
-                this.error =
-                    err?.payload?.error ??
-                    err?.message ??
-                    'This invoice is not yet available. Please contact the sender.';
+                this.error = err?.payload?.error ?? err?.message ?? 'This invoice is not yet available. Please contact the sender.';
             } else {
                 this.error = err?.message ?? 'Failed to load invoice. Please try again later.';
             }
@@ -183,8 +180,6 @@ export default class CustomerInvoiceComponent extends Component {
     }
 
     @action transitionToConsole() {
-        const owner = getOwner(this);
-        const router = owner.lookup('router:main');
-        return router.transitionTo('console');
+        return this.router.transitionTo('console');
     }
 }

@@ -111,9 +111,7 @@ export default class BillingInvoicesIndexNewController extends Controller {
     _companyCurrency() {
         const companyId = this.currentUser.companyId;
         if (!companyId) return 'USD';
-        const org = (this.currentUser.organizations || []).find(
-            (o) => o.uuid === companyId || o.id === companyId
-        );
+        const org = (this.currentUser.organizations || []).find((o) => o.uuid === companyId || o.id === companyId);
         return org?.currency ?? 'USD';
     }
 }

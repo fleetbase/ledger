@@ -26,6 +26,7 @@ export default class SettingsGatewaysIndexController extends Controller {
     }
 
     @task({ restartable: true }) *search(query) {
+        yield Promise.resolve();
         this.query = query;
     }
 

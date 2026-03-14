@@ -36,6 +36,7 @@ export default class WalletsIndexController extends Controller {
     }
 
     @task({ restartable: true }) *search(query) {
+        yield Promise.resolve();
         this.query = query;
     }
 

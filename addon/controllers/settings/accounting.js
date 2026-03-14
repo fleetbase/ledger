@@ -12,7 +12,7 @@ export default class SettingsAccountingController extends Controller {
     @service currentUser;
 
     // ── Tracked settings fields ───────────────────────────────────────────────
-    @tracked base_currency = null;          // null = "use company default"
+    @tracked base_currency = null; // null = "use company default"
     @tracked fiscal_year_start_month = 1;
     @tracked auto_post_journal_entries = false;
     @tracked default_revenue_account_uuid = null;
@@ -152,7 +152,7 @@ export default class SettingsAccountingController extends Controller {
     }
 
     _accountId(account) {
-        return account ? (account.uuid || account.public_id || account.id) : null;
+        return account ? account.uuid || account.public_id || account.id : null;
     }
 
     @action onSelectRevenueAccount(account) {
