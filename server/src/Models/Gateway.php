@@ -3,6 +3,7 @@
 namespace Fleetbase\Ledger\Models;
 
 use Fleetbase\Models\Model;
+use Fleetbase\Support\Utils;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicId;
 use Fleetbase\Traits\HasUuid;
@@ -195,10 +196,11 @@ class Gateway extends Model
 
     /**
      * Generate the webhook URL for this gateway.
+     * Uses Utils::apiUrl to ensure the correct API host is used in all environments.
      * This is the URL that should be registered in the gateway's dashboard.
      */
     public function getWebhookUrl(): string
     {
-        return url('/ledger/webhooks/' . $this->driver);
+        return Utils::apiUrl('/ledger/webhooks/' . $this->driver);
     }
 }

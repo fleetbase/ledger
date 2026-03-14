@@ -7,6 +7,7 @@ use Fleetbase\Ledger\Gateways\CashDriver;
 use Fleetbase\Ledger\Gateways\QPayDriver;
 use Fleetbase\Ledger\Gateways\StripeDriver;
 use Fleetbase\Ledger\Models\Gateway;
+use Fleetbase\Support\Utils;
 use Illuminate\Support\Manager;
 
 /**
@@ -109,7 +110,7 @@ class PaymentGatewayManager extends Manager
                     'name'          => $driver->getName(),
                     'capabilities'  => $driver->getCapabilities(),
                     'config_schema' => $driver->getConfigSchema(),
-                    'webhook_url'   => url('/ledger/webhooks/' . $driver->getCode()),
+                    'webhook_url'   => Utils::apiUrl('/ledger/webhooks/' . $driver->getCode()),
                 ];
             } catch (\Exception $e) {
                 // Skip drivers that fail to instantiate

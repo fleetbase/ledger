@@ -7,7 +7,7 @@ export default class PaymentsGatewaysIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'public_id', 'name', 'code', 'driver', 'environment', 'status', 'is_default', 'created_at', 'updated_at'];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'public_id', 'name', 'code', 'driver', 'environment', 'status', 'created_at', 'updated_at'];
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
@@ -18,7 +18,6 @@ export default class PaymentsGatewaysIndexController extends Controller {
     @tracked driver = null;
     @tracked environment = null;
     @tracked status = null;
-    @tracked is_default = null;
     @tracked created_at = null;
     @tracked updated_at = null;
     @tracked table = null;
@@ -95,23 +94,6 @@ export default class PaymentsGatewaysIndexController extends Controller {
                 filterOptions: [
                     { label: 'Live', value: 'live' },
                     { label: 'Sandbox', value: 'sandbox' },
-                ],
-            },
-            {
-                label: this.intl.t('column.default'),
-                valuePath: 'is_default_label',
-                cellComponent: 'table/cell/base',
-                width: 80,
-                resizable: true,
-                sortable: true,
-                filterable: true,
-                filterParam: 'is_default',
-                filterComponent: 'filter/select',
-                filterOptionLabel: 'label',
-                filterOptionValue: 'value',
-                filterOptions: [
-                    { label: 'Yes', value: 'true' },
-                    { label: 'No', value: 'false' },
                 ],
             },
             {

@@ -152,6 +152,23 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 );
 
                                 // ----------------------------------------------------------------
+                                // Settings (Invoice / Payment / Accounting)
+                                // ----------------------------------------------------------------
+                                $router->prefix('settings')->group(function ($router) {
+                                    // Invoice settings
+                                    $router->get('invoice-settings', 'SettingController@getInvoiceSettings');
+                                    $router->post('invoice-settings', 'SettingController@saveInvoiceSettings');
+
+                                    // Payment settings
+                                    $router->get('payment-settings', 'SettingController@getPaymentSettings');
+                                    $router->post('payment-settings', 'SettingController@savePaymentSettings');
+
+                                    // Accounting settings
+                                    $router->get('accounting-settings', 'SettingController@getAccountingSettings');
+                                    $router->post('accounting-settings', 'SettingController@saveAccountingSettings');
+                                });
+
+                                // ----------------------------------------------------------------
                                 // Reports & Financial Statements
                                 // ----------------------------------------------------------------
                                 $router->get('reports/general-ledger', 'ReportController@generalLedger');

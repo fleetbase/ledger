@@ -5,9 +5,6 @@
             <div class="flex flex-row items-center space-x-2 mt-0.5">
                 <Badge @status="info" @hideStatusDot={{true}}>{{titleize @resource.driver}}</Badge>
                 <Badge @color={{if (eq @resource.environment "live") "success" "warning"}}>{{titleize @resource.environment}}</Badge>
-                {{#if @resource.is_default}}
-                    <Badge @color="blue">Default</Badge>
-                {{/if}}
             </div>
         </div>
         <div class="next-view-header-right f-child-items-start">

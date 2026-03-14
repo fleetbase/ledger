@@ -1,4 +1,112 @@
-<Layout::Section::Header @title="Invoice Settings" />
-<Layout::Section::Body>
-    {{outlet}}
+<Layout::Section::Header @title="Invoice Settings">
+    <Button
+        @type="primary"
+        @size="sm"
+        @icon="save"
+        @text="Save Changes"
+        @onClick={{perform this.saveSettings}}
+        @disabled={{this.saveSettings.isRunning}}
+        @isLoading={{or this.saveSettings.isRunning this.getSettings.isRunning}}
+    />
+</Layout::Section::Header>
+
+<Layout::Section::Body class="overflow-y-scroll h-full">
+    <div class="container mx-auto h-screen">
+        <div class="max-w-3xl my-10 mx-auto space-y-6">
+
+            {{! ── Numbering ──────────────────────────────────────────────────── }}
+            <ContentPanel @title="Invoice Numbering" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup
+                    @name="Invoice Number Prefix"
+                    @helpText="This prefix is prepended to every new invoice number, e.g. 'INV-000001'."
+                >
+                    <Input
+                        @value={{this.invoice_prefix}}
+                        @type="text"
+                        class="w-full form-input"
+                        placeholder="INV"
+                    />
+                </InputGroup>
+            </ContentPanel>
+
+            {{! ── Currency & Payment Terms ────────────────────────────────────── }}
+            <ContentPanel @title="Currency & Payment Terms" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup
+                    @name="Default Currency"
+                    @helpText="The currency applied to new invoices unless overridden on the invoice itself."
+                >
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.currencyOptions}}
+                            @selected={{find-by "value" this.default_currency this.currencyOptions}}
+                            @onChange={{this.onSelectCurrency}}
+                            @placeholder="Select currency"
+                            @triggerClass="form-select form-input"
+                            as |opt|
+                        >
+                            <div class="text-sm">{{opt.label}}</div>
+                        </PowerSelect>
+                    </div>
+                </InputGroup>
+
+                <InputGroup
+                    @name="Default Payment Terms"
+                    @helpText="Number of days after the invoice date that payment is due."
+                >
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.paymentTermsOptions}}
+                            @selected={{find-by "value" this.payment_terms_days this.paymentTermsOptions}}
+                            @onChange={{this.onSelectPaymentTerms}}
+                            @placeholder="Select payment terms"
+                            @triggerClass="form-select form-input"
+                            as |opt|
+                        >
+                            <div class="text-sm">{{opt.label}}</div>
+                        </PowerSelect>
+                    </div>
+                </InputGroup>
+            </ContentPanel>
+
+            {{! ── Default Text ─────────────────────────────────────────────────── }}
+            <ContentPanel @title="Default Invoice Text" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup
+                    @name="Default Notes"
+                    @helpText="These notes appear at the bottom of every new invoice. You can override them per invoice."
+                >
+                    <Textarea
+                        @value={{this.default_notes}}
+                        class="w-full form-input"
+                        rows="3"
+                        placeholder="e.g. Thank you for your business!"
+                    />
+                </InputGroup>
+
+                <InputGroup
+                    @name="Default Terms & Conditions"
+                    @helpText="Standard terms pre-filled on every new invoice."
+                >
+                    <Textarea
+                        @value={{this.default_terms}}
+                        class="w-full form-input"
+                        rows="3"
+                        placeholder="e.g. Payment is due within 30 days of the invoice date."
+                    />
+                </InputGroup>
+            </ContentPanel>
+
+            {{! ── Automation ───────────────────────────────────────────────────── }}
+            <ContentPanel @title="Automation" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup @name="Auto-Send on Creation">
+                    <Toggle
+                        @isToggled={{this.auto_send_on_creation}}
+                        @label="Automatically email the invoice to the customer when it is created."
+                        @onToggle={{fn (mut this.auto_send_on_creation)}}
+                    />
+                </InputGroup>
+            </ContentPanel>
+
+        </div>
+    </div>
+    <Spacer @height="600px" />
 </Layout::Section::Body>

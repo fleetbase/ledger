@@ -11,7 +11,6 @@ export default class LedgerGatewayModel extends Model {
     @attr('string') description;
     @attr('string') status;
     @attr('string') environment;
-    @attr('boolean') is_default;
     @attr('boolean') is_sandbox;
     @attr('raw') capabilities;
     @attr('string') return_url;
@@ -21,10 +20,6 @@ export default class LedgerGatewayModel extends Model {
     @attr('raw') config_schema;
     @attr('date') created_at;
     @attr('date') updated_at;
-
-    @computed('is_default') get is_default_label() {
-        return this.is_default ? 'Yes' : 'No';
-    }
 
     @computed('status') get status_label() {
         const labels = { active: 'Active', inactive: 'Inactive' };

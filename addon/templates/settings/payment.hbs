@@ -1,4 +1,88 @@
-<Layout::Section::Header @title="Payment Settings" />
-<Layout::Section::Body>
-    {{outlet}}
+<Layout::Section::Header @title="Payment Settings">
+    <Button
+        @type="primary"
+        @size="sm"
+        @icon="save"
+        @text="Save Changes"
+        @onClick={{perform this.saveSettings}}
+        @disabled={{this.saveSettings.isRunning}}
+        @isLoading={{or this.saveSettings.isRunning this.getSettings.isRunning}}
+    />
+</Layout::Section::Header>
+
+<Layout::Section::Body class="overflow-y-scroll h-full">
+    <div class="container mx-auto h-screen">
+        <div class="max-w-3xl my-10 mx-auto space-y-6">
+
+            {{! ── Default Gateway ─────────────────────────────────────────────── }}
+            <ContentPanel @title="Default Payment Gateway" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup
+                    @name="Default Gateway"
+                    @helpText="The gateway used for all invoice payments unless overridden on the individual invoice. Only active gateways are listed."
+                >
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.availableGateways}}
+                            @selected={{this.selectedGateway}}
+                            @onChange={{this.onSelectDefaultGateway}}
+                            @placeholder="Select a payment gateway"
+                            @triggerClass="form-select form-input"
+                            @allowClear={{true}}
+                            as |gateway|
+                        >
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="font-medium">{{gateway.name}}</span>
+                                <span class="text-gray-400 text-xs capitalize ml-2">{{gateway.driver}} &middot; {{gateway.environment}}</span>
+                            </div>
+                        </PowerSelect>
+                    </div>
+                    {{#if this.selectedGateway}}
+                        <div class="mt-1 text-[11px] text-gray-500">
+                            Selected: <span class="font-medium">{{this.selectedGateway.name}}</span>
+                            &mdash; <span class="capitalize">{{this.selectedGateway.environment}}</span>
+                        </div>
+                    {{/if}}
+                    {{#unless this.availableGateways.length}}
+                        <div class="mt-1 text-[11px] text-amber-600">
+                            No active gateways found.
+                            <LinkTo @route="console.ledger.payments.gateways.index.new" class="underline">Add a gateway</LinkTo>
+                            to enable online payments.
+                        </div>
+                    {{/unless}}
+                </InputGroup>
+            </ContentPanel>
+
+            {{! ── Payment Behaviour ───────────────────────────────────────────── }}
+            <ContentPanel @title="Payment Behaviour" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup @name="Allow Partial Payments">
+                    <Toggle
+                        @isToggled={{this.allow_partial_payments}}
+                        @label="Allow customers to pay a portion of the invoice amount rather than the full balance."
+                        @onToggle={{fn (mut this.allow_partial_payments)}}
+                    />
+                </InputGroup>
+
+                <InputGroup @name="Auto-Apply Wallet Credit">
+                    <Toggle
+                        @isToggled={{this.auto_apply_wallet_credit}}
+                        @label="Automatically apply available wallet balance toward invoice payments before charging the gateway."
+                        @onToggle={{fn (mut this.auto_apply_wallet_credit)}}
+                    />
+                </InputGroup>
+            </ContentPanel>
+
+            {{! ── Notifications ───────────────────────────────────────────────── }}
+            <ContentPanel @title="Payment Notifications" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup @name="Send Payment Receipt">
+                    <Toggle
+                        @isToggled={{this.send_payment_receipt}}
+                        @label="Email a payment receipt to the customer automatically after a successful payment."
+                        @onToggle={{fn (mut this.send_payment_receipt)}}
+                    />
+                </InputGroup>
+            </ContentPanel>
+
+        </div>
+    </div>
+    <Spacer @height="600px" />
 </Layout::Section::Body>

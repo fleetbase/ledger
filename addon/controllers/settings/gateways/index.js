@@ -18,7 +18,6 @@ export default class SettingsGatewaysIndexController extends Controller {
         { label: 'Name', valuePath: 'name', width: '180px' },
         { label: 'Driver', valuePath: 'driver_label', width: '120px' },
         { label: 'Environment', valuePath: 'environment', width: '100px' },
-        { label: 'Default', valuePath: 'is_default_label', width: '80px', cellComponent: 'table/cell/base' },
         { label: 'Status', valuePath: 'status_label', width: '90px', cellComponent: 'table/cell/status' },
     ];
 

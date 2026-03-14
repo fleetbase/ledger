@@ -97,16 +97,6 @@
                 </div>
             </InputGroup>
 
-            <InputGroup @name="Default Gateway" @wrapperClass="col-span-2">
-                <Toggle
-                    @isToggled={{@resource.is_default}}
-                    @label="Set as default gateway"
-                    @helpText="The default gateway will be used for all transactions unless overridden."
-                    @onToggle={{fn (mut @resource.is_default)}}
-                    @disabled={{cannot-write @resource}}
-                />
-            </InputGroup>
-
             <InputGroup @name="Description" @wrapperClass="col-span-2">
                 <Textarea
                     @value={{@resource.description}}
