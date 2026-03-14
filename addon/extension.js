@@ -140,7 +140,7 @@ export default {
                 description: 'Live feed of the most recent double-entry journal entries in the ledger.',
                 icon: 'book',
                 component: new ExtensionComponent('@fleetbase/ledger-engine', 'widget/activity-feed'),
-                grid_options: { w: 8, h: 8, minW: 6, minH: 7 },
+                grid_options: { w: 8, h: 10, minW: 6, minH: 8 },
                 options: { title: 'Recent Journal Entries' },
                 default: true,
             }),
