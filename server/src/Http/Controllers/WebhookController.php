@@ -115,10 +115,10 @@ class WebhookController extends Controller
         // payment_intent.created and payment_intent.succeeded) each get their
         // own row without colliding.
         //
-        // firstOrCreate returns [$model, $wasRecentlyCreated]. If the record
-        // already existed we skip dispatching to prevent double-processing.
+        // firstOrCreate() returns the single Eloquent model. Use the model's
+        // $wasRecentlyCreated property to determine if it was just inserted.
         try {
-            [$gatewayTransaction, $wasCreated] = GatewayTransaction::firstOrCreate(
+            $gatewayTransaction = GatewayTransaction::firstOrCreate(
                 // Unique match columns
                 [
                     'gateway_reference_id' => $gatewayReferenceId,
@@ -147,7 +147,7 @@ class WebhookController extends Controller
             return response()->json(['message' => 'Already processed.'], 200);
         }
 
-        if (!$wasCreated) {
+        if (!$gatewayTransaction->wasRecentlyCreated) {
             // Record already existed — either a duplicate delivery or a retry.
             Log::channel('ledger')->info("Webhook already recorded, skipping dispatch. [{$driver}]", [
                 'gateway_reference_id' => $gatewayReferenceId,
