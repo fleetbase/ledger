@@ -35,7 +35,7 @@ export default class SettingsPaymentController extends Controller {
                 sort: 'name',
             });
             this.availableGateways = gateways.toArray();
-        } catch (error) {
+        } catch {
             // Non-fatal: gateway list just won't populate
             this.availableGateways = [];
         }
@@ -43,7 +43,7 @@ export default class SettingsPaymentController extends Controller {
 
     @task *getSettings() {
         try {
-            const { paymentSettings } = yield this.fetch.get('ledger/settings/payment-settings');
+            const { paymentSettings } = yield this.fetch.get('settings/payment-settings', {}, { namespace: 'ledger/int/v1' });
             if (paymentSettings) {
                 this.default_gateway_uuid = paymentSettings.default_gateway_uuid ?? null;
                 this.default_gateway = paymentSettings.default_gateway ?? null;
@@ -58,14 +58,18 @@ export default class SettingsPaymentController extends Controller {
 
     @task *saveSettings() {
         try {
-            yield this.fetch.post('ledger/settings/payment-settings', {
-                paymentSettings: {
-                    default_gateway_uuid: this.default_gateway_uuid,
-                    allow_partial_payments: this.allow_partial_payments,
-                    auto_apply_wallet_credit: this.auto_apply_wallet_credit,
-                    send_payment_receipt: this.send_payment_receipt,
+            yield this.fetch.post(
+                'settings/payment-settings',
+                {
+                    paymentSettings: {
+                        default_gateway_uuid: this.default_gateway_uuid,
+                        allow_partial_payments: this.allow_partial_payments,
+                        auto_apply_wallet_credit: this.auto_apply_wallet_credit,
+                        send_payment_receipt: this.send_payment_receipt,
+                    },
                 },
-            });
+                { namespace: 'ledger/int/v1' }
+            );
             this.notifications.success('Payment settings saved.');
         } catch (error) {
             this.notifications.serverError(error);
@@ -76,7 +80,7 @@ export default class SettingsPaymentController extends Controller {
 
     @action onSelectDefaultGateway(gateway) {
         if (gateway) {
-            // Prefer uuid (internal), fall back to public_id
+            // Prefer uuid (internal), fall back to public_id or Ember Data id
             this.default_gateway_uuid = gateway.uuid || gateway.public_id || gateway.id;
             this.default_gateway = gateway;
         } else {
@@ -89,8 +93,10 @@ export default class SettingsPaymentController extends Controller {
 
     get selectedGateway() {
         if (!this.default_gateway_uuid) return null;
-        return this.availableGateways.find(
-            (g) => g.uuid === this.default_gateway_uuid || g.public_id === this.default_gateway_uuid
-        ) ?? null;
+        return (
+            this.availableGateways.find(
+                (g) => g.uuid === this.default_gateway_uuid || g.public_id === this.default_gateway_uuid || g.id === this.default_gateway_uuid
+            ) ?? null
+        );
     }
 }

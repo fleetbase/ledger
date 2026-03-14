@@ -3,6 +3,7 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
 import { task } from 'ember-concurrency';
+import getCurrency from '@fleetbase/ember-ui/utils/get-currency';
 
 export default class SettingsAccountingController extends Controller {
     @service fetch;
@@ -24,47 +25,8 @@ export default class SettingsAccountingController extends Controller {
     @tracked arAccounts = [];
     @tracked apAccounts = [];
 
-    // ── Options ───────────────────────────────────────────────────────────────
-    currencyOptions = [
-        { label: 'USD – US Dollar', value: 'USD' },
-        { label: 'EUR – Euro', value: 'EUR' },
-        { label: 'GBP – British Pound', value: 'GBP' },
-        { label: 'AUD – Australian Dollar', value: 'AUD' },
-        { label: 'CAD – Canadian Dollar', value: 'CAD' },
-        { label: 'JPY – Japanese Yen', value: 'JPY' },
-        { label: 'CNY – Chinese Yuan', value: 'CNY' },
-        { label: 'INR – Indian Rupee', value: 'INR' },
-        { label: 'SGD – Singapore Dollar', value: 'SGD' },
-        { label: 'AED – UAE Dirham', value: 'AED' },
-        { label: 'SAR – Saudi Riyal', value: 'SAR' },
-        { label: 'MYR – Malaysian Ringgit', value: 'MYR' },
-        { label: 'IDR – Indonesian Rupiah', value: 'IDR' },
-        { label: 'THB – Thai Baht', value: 'THB' },
-        { label: 'PHP – Philippine Peso', value: 'PHP' },
-        { label: 'VND – Vietnamese Dong', value: 'VND' },
-        { label: 'KRW – South Korean Won', value: 'KRW' },
-        { label: 'BRL – Brazilian Real', value: 'BRL' },
-        { label: 'MXN – Mexican Peso', value: 'MXN' },
-        { label: 'ZAR – South African Rand', value: 'ZAR' },
-        { label: 'NGN – Nigerian Naira', value: 'NGN' },
-        { label: 'KES – Kenyan Shilling', value: 'KES' },
-        { label: 'GHS – Ghanaian Cedi', value: 'GHS' },
-        { label: 'EGP – Egyptian Pound', value: 'EGP' },
-        { label: 'PKR – Pakistani Rupee', value: 'PKR' },
-        { label: 'BDT – Bangladeshi Taka', value: 'BDT' },
-        { label: 'NZD – New Zealand Dollar', value: 'NZD' },
-        { label: 'CHF – Swiss Franc', value: 'CHF' },
-        { label: 'SEK – Swedish Krona', value: 'SEK' },
-        { label: 'NOK – Norwegian Krone', value: 'NOK' },
-        { label: 'DKK – Danish Krone', value: 'DKK' },
-        { label: 'HKD – Hong Kong Dollar', value: 'HKD' },
-        { label: 'TWD – Taiwan Dollar', value: 'TWD' },
-        { label: 'QAR – Qatari Riyal', value: 'QAR' },
-        { label: 'KWD – Kuwaiti Dinar', value: 'KWD' },
-        { label: 'BHD – Bahraini Dinar', value: 'BHD' },
-        { label: 'OMR – Omani Rial', value: 'OMR' },
-        { label: 'JOD – Jordanian Dinar', value: 'JOD' },
-    ];
+    // ── Static options ────────────────────────────────────────────────────────
+    currencies = getCurrency();
 
     fiscalYearMonthOptions = [
         { label: 'January', value: 1 },
@@ -107,7 +69,7 @@ export default class SettingsAccountingController extends Controller {
 
     @task *getSettings() {
         try {
-            const { accountingSettings } = yield this.fetch.get('ledger/settings/accounting-settings');
+            const { accountingSettings } = yield this.fetch.get('settings/accounting-settings', {}, { namespace: 'ledger/int/v1' });
             if (accountingSettings) {
                 this.base_currency = accountingSettings.base_currency ?? 'USD';
                 this.fiscal_year_start_month = accountingSettings.fiscal_year_start_month ?? 1;
@@ -124,17 +86,21 @@ export default class SettingsAccountingController extends Controller {
 
     @task *saveSettings() {
         try {
-            yield this.fetch.post('ledger/settings/accounting-settings', {
-                accountingSettings: {
-                    base_currency: this.base_currency,
-                    fiscal_year_start_month: this.fiscal_year_start_month,
-                    auto_post_journal_entries: this.auto_post_journal_entries,
-                    default_revenue_account_uuid: this.default_revenue_account_uuid,
-                    default_expense_account_uuid: this.default_expense_account_uuid,
-                    default_ar_account_uuid: this.default_ar_account_uuid,
-                    default_ap_account_uuid: this.default_ap_account_uuid,
+            yield this.fetch.post(
+                'settings/accounting-settings',
+                {
+                    accountingSettings: {
+                        base_currency: this.base_currency,
+                        fiscal_year_start_month: this.fiscal_year_start_month,
+                        auto_post_journal_entries: this.auto_post_journal_entries,
+                        default_revenue_account_uuid: this.default_revenue_account_uuid,
+                        default_expense_account_uuid: this.default_expense_account_uuid,
+                        default_ar_account_uuid: this.default_ar_account_uuid,
+                        default_ap_account_uuid: this.default_ap_account_uuid,
+                    },
                 },
-            });
+                { namespace: 'ledger/int/v1' }
+            );
             this.notifications.success('Accounting settings saved.');
         } catch (error) {
             this.notifications.serverError(error);
@@ -143,8 +109,9 @@ export default class SettingsAccountingController extends Controller {
 
     // ── Actions ───────────────────────────────────────────────────────────────
 
-    @action onSelectCurrency(option) {
-        this.base_currency = option.value;
+    @action onSelectCurrency(currency) {
+        // CurrencySelect passes the full currency object; we store the ISO code
+        this.base_currency = currency?.code ?? currency;
     }
 
     @action onSelectFiscalYearMonth(option) {
@@ -152,7 +119,7 @@ export default class SettingsAccountingController extends Controller {
     }
 
     _accountId(account) {
-        // Prefer uuid (internal), fall back to public_id or ember id
+        // Prefer uuid (internal), fall back to public_id or Ember Data id
         return account ? (account.uuid || account.public_id || account.id) : null;
     }
 
@@ -173,6 +140,10 @@ export default class SettingsAccountingController extends Controller {
     }
 
     // ── Computed helpers ──────────────────────────────────────────────────────
+
+    get selectedCurrency() {
+        return getCurrency(this.base_currency) ?? null;
+    }
 
     _matchAccount(list, uuid) {
         if (!uuid) return null;

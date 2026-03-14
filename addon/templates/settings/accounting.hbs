@@ -20,18 +20,13 @@
                     @name="Base Currency"
                     @helpText="The reporting currency for all financial statements and the chart of accounts."
                 >
-                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
-                        <PowerSelect
-                            @options={{this.currencyOptions}}
-                            @selected={{find-by "value" this.base_currency this.currencyOptions}}
-                            @onChange={{this.onSelectCurrency}}
-                            @placeholder="Select base currency"
-                            @triggerClass="form-select form-input"
-                            as |opt|
-                        >
-                            <div class="text-sm">{{opt.label}}</div>
-                        </PowerSelect>
-                    </div>
+                    <CurrencySelect
+                        @currency={{this.base_currency}}
+                        @currencyData={{this.selectedCurrency}}
+                        @onCurrencyChange={{this.onSelectCurrency}}
+                        @triggerClass="form-select form-input"
+                        @placeholder="Select base currency"
+                    />
                 </InputGroup>
 
                 <InputGroup
