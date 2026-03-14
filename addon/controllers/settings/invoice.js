@@ -40,9 +40,12 @@ export default class SettingsInvoiceController extends Controller {
 
     constructor() {
         super(...arguments);
-        // Eagerly snapshot the company currency so it is available as a plain
-        // tracked value during rendering without triggering any state mutation.
-        this.companyCurrency = this.currentUser.getCompany()?.currency ?? 'USD';
+        // Use currentUser.currency (reads from whoisData/cache, never calls
+        // store.peekRecord) so this is safe to call in the constructor before
+        // the user session has fully loaded. getCompany() is NOT safe here
+        // because it calls store.peekRecord with an undefined id when the
+        // controller is instantiated during early route setup.
+        this.companyCurrency = this.currentUser.currency ?? 'USD';
         this.getSettings.perform();
     }
 
