@@ -11,6 +11,7 @@ use Fleetbase\Ledger\Exceptions\WebhookSignatureException;
 use Fleetbase\Ledger\Models\Gateway;
 use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\PaymentGatewayManager;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -25,14 +26,21 @@ use Illuminate\Support\Facades\Log;
  * The flow for every webhook:
  *   1. Identify the gateway by driver code + company context
  *   2. Delegate signature verification and parsing to the driver
- *   3. Check idempotency — if this event was already processed, return 200 immediately
- *   4. Persist the GatewayTransaction record
+ *   3. Persist the GatewayTransaction record (idempotent via firstOrCreate)
+ *   4. If the record already existed and was processed, return 200 immediately
  *   5. Dispatch the appropriate normalized Laravel event
  *   6. Return 200 to the gateway (always, to prevent retries on our processing errors)
  *
  * IMPORTANT: This controller always returns HTTP 200 to the gateway, even on
  * internal processing errors. This prevents the gateway from retrying the webhook
  * indefinitely. Internal errors are logged and the job is retried via the queue.
+ *
+ * IDEMPOTENCY NOTE:
+ *   Stripe fires multiple events that share the same gateway_reference_id (pi_xxx).
+ *   For example, payment_intent.created and payment_intent.succeeded both reference
+ *   the same PaymentIntent ID. The unique constraint is on
+ *   (gateway_reference_id, type, event_type) so each distinct event type gets its
+ *   own row. We use firstOrCreate to safely handle concurrent deliveries.
  */
 class WebhookController extends Controller
 {
@@ -97,12 +105,41 @@ class WebhookController extends Controller
             return response()->json(['message' => 'Webhook processing error.'], 200);
         }
 
-        // Idempotency check — skip if this exact event was already processed
         $gatewayReferenceId = $response->gatewayTransactionId;
         $eventType          = $response->eventType;
 
-        if ($gatewayReferenceId && GatewayTransaction::alreadyProcessed($gatewayReferenceId, 'webhook_event')) {
-            Log::channel('ledger')->info("Webhook already processed, skipping. [{$driver}]", [
+        // Persist the gateway transaction record idempotently.
+        //
+        // The unique key is (gateway_reference_id, type, event_type) so that
+        // multiple Stripe events sharing the same pi_xxx reference ID (e.g.
+        // payment_intent.created and payment_intent.succeeded) each get their
+        // own row without colliding.
+        //
+        // firstOrCreate returns [$model, $wasRecentlyCreated]. If the record
+        // already existed we skip dispatching to prevent double-processing.
+        try {
+            [$gatewayTransaction, $wasCreated] = GatewayTransaction::firstOrCreate(
+                // Unique match columns
+                [
+                    'gateway_reference_id' => $gatewayReferenceId,
+                    'type'                 => 'webhook_event',
+                    'event_type'           => $eventType,
+                ],
+                // Values to set only on creation
+                [
+                    'company_uuid'  => $gateway->company_uuid,
+                    'gateway_uuid'  => $gateway->uuid,
+                    'amount'        => $response->amount,
+                    'currency'      => $response->currency,
+                    'status'        => $response->status,
+                    'message'       => $response->message,
+                    'raw_response'  => $response->rawResponse,
+                ]
+            );
+        } catch (UniqueConstraintViolationException $e) {
+            // Extremely rare race condition: two concurrent requests both passed
+            // the firstOrCreate check and one lost. Treat as already-processed.
+            Log::channel('ledger')->info("Webhook duplicate race condition, skipping. [{$driver}]", [
                 'gateway_reference_id' => $gatewayReferenceId,
                 'event_type'           => $eventType,
             ]);
@@ -110,19 +147,16 @@ class WebhookController extends Controller
             return response()->json(['message' => 'Already processed.'], 200);
         }
 
-        // Persist the gateway transaction record
-        $gatewayTransaction = GatewayTransaction::create([
-            'company_uuid'         => $gateway->company_uuid,
-            'gateway_uuid'         => $gateway->uuid,
-            'gateway_reference_id' => $gatewayReferenceId,
-            'type'                 => 'webhook_event',
-            'event_type'           => $eventType,
-            'amount'               => $response->amount,
-            'currency'             => $response->currency,
-            'status'               => $response->status,
-            'message'              => $response->message,
-            'raw_response'         => $response->rawResponse,
-        ]);
+        if (!$wasCreated) {
+            // Record already existed — either a duplicate delivery or a retry.
+            Log::channel('ledger')->info("Webhook already recorded, skipping dispatch. [{$driver}]", [
+                'gateway_reference_id' => $gatewayReferenceId,
+                'event_type'           => $eventType,
+                'processed_at'         => $gatewayTransaction->processed_at,
+            ]);
+
+            return response()->json(['message' => 'Already processed.'], 200);
+        }
 
         // Dispatch the appropriate normalized event
         $this->dispatchEvent($response, $gateway, $gatewayTransaction);

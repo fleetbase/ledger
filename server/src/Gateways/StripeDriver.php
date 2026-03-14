@@ -307,8 +307,36 @@ class StripeDriver extends AbstractGatewayDriver
         [$normalizedEvent, $status] = $this->normalizeStripeEvent($event->type, $object);
 
         $gatewayTransactionId = $object->id ?? $event->id;
-        $amount               = $object->amount ?? $object->amount_received ?? null;
+        $amount               = $object->amount ?? $object->amount_received ?? $object->amount_total ?? null;
         $currency             = isset($object->currency) ? strtoupper($object->currency) : null;
+
+        // For checkout.session.completed, extract invoice_uuid from the session's
+        // own metadata (set by createCheckoutSession) so HandleSuccessfulPayment
+        // can resolve the invoice without needing to expand the PaymentIntent.
+        $extraData = [];
+        if ($event->type === 'checkout.session.completed') {
+            $sessionMetadata = $object->metadata ?? null;
+            $invoiceUuid     = $sessionMetadata->invoice_uuid
+                ?? ($object->payment_intent_data->metadata->invoice_uuid ?? null)
+                ?? null;
+            if ($invoiceUuid) {
+                $extraData['invoice_uuid'] = $invoiceUuid;
+            }
+            // Use the payment_intent ID as the reference if available, so the
+            // GatewayTransaction links to the same pi_xxx used by payment_intent.succeeded
+            if (!empty($object->payment_intent)) {
+                $gatewayTransactionId = is_string($object->payment_intent)
+                    ? $object->payment_intent
+                    : ($object->payment_intent->id ?? $gatewayTransactionId);
+            }
+            // Amount for checkout sessions is in amount_total (cents)
+            if ($amount === null && isset($object->amount_total)) {
+                $amount = $object->amount_total;
+            }
+            if ($currency === null && isset($object->currency)) {
+                $currency = strtoupper($object->currency);
+            }
+        }
 
         $this->logInfo('Webhook received', [
             'stripe_event'     => $event->type,
@@ -329,11 +357,11 @@ class StripeDriver extends AbstractGatewayDriver
             amount: $amount,
             currency: $currency,
             rawResponse: json_decode($payload, true),
-            data: [
+            data: array_merge([
                 'stripe_event_id'   => $event->id,
                 'stripe_event_type' => $event->type,
                 'object'            => $object->toArray(),
-            ],
+            ], $extraData),
         );
     }
 
@@ -397,10 +425,23 @@ class StripeDriver extends AbstractGatewayDriver
         $this->assertClientInitialized();
 
         try {
+            // Build the shared metadata block so invoice_uuid is accessible from
+            // both the CheckoutSession object AND the nested PaymentIntent.
+            // This is critical for webhook resolution: checkout.session.completed
+            // fires with the CheckoutSession as data.object, and its own metadata
+            // must contain invoice_uuid for HandleSuccessfulPayment to resolve it.
+            $sharedMetadata = array_merge($request->metadata, array_filter([
+                'invoice_uuid' => $request->invoiceUuid,
+                'order_uuid'   => $request->orderUuid,
+            ]));
+
             $params = [
                 'mode'        => 'payment',
                 'success_url' => $successUrl,
                 'cancel_url'  => $cancelUrl,
+                // Set metadata on the session itself so checkout.session.completed
+                // carries invoice_uuid in data.object.metadata
+                'metadata'    => $sharedMetadata,
                 'line_items'  => [
                     [
                         'quantity'   => 1,
@@ -413,11 +454,10 @@ class StripeDriver extends AbstractGatewayDriver
                         ],
                     ],
                 ],
+                // Also set on payment_intent_data so payment_intent.succeeded
+                // carries invoice_uuid in its own metadata
                 'payment_intent_data' => [
-                    'metadata' => array_merge($request->metadata, array_filter([
-                        'invoice_uuid' => $request->invoiceUuid,
-                        'order_uuid'   => $request->orderUuid,
-                    ])),
+                    'metadata' => $sharedMetadata,
                 ],
             ];
 
