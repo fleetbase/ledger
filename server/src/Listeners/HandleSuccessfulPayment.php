@@ -2,8 +2,10 @@
 
 namespace Fleetbase\Ledger\Listeners;
 
+use Fleetbase\Ledger\DTO\GatewayResponse;
 use Fleetbase\Ledger\Events\PaymentSucceeded;
 use Fleetbase\Ledger\Models\Account;
+use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Services\InvoiceService;
 use Fleetbase\Ledger\Services\LedgerService;
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\Log;
  * Queued listener that reacts to the PaymentSucceeded event.
  *
  * Responsibilities:
- *   1. If an invoice_uuid is present in the gateway transaction metadata,
+ *   1. If an invoice_uuid can be resolved from the gateway transaction,
  *      call InvoiceService::recordPayment() to mark the invoice paid and
  *      create the DEBIT Cash / CREDIT AR journal entry.
  *   2. If no invoice is linked (e.g. a standalone gateway charge), fall back
@@ -56,12 +58,11 @@ class HandleSuccessfulPayment implements ShouldQueue
         $gatewayTransaction = $event->gatewayTransaction;
         $gateway            = $event->gateway;
 
-        // Guard: do not process if already handled (idempotency)
+        // Guard: do not process if already handled (idempotency).
         if ($gatewayTransaction->isProcessed()) {
             Log::channel('ledger')->info('HandleSuccessfulPayment: already processed, skipping.', [
                 'gateway_transaction_uuid' => $gatewayTransaction->uuid,
             ]);
-
             return;
         }
 
@@ -70,11 +71,8 @@ class HandleSuccessfulPayment implements ShouldQueue
             $amount      = (int) $response->amount;
             $currency    = $response->currency ?? 'USD';
 
-            // Resolve the linked invoice (if any).
-            $invoiceUuid = $gatewayTransaction->raw_response['metadata']['invoice_uuid']
-                ?? data_get($response->rawResponse, 'metadata.invoice_uuid')
-                ?? data_get($response->data, 'invoice_uuid')
-                ?? null;
+            // Resolve the linked invoice (if any) using a robust multi-path helper.
+            $invoiceUuid = $this->resolveInvoiceUuid($gatewayTransaction, $response);
 
             $invoice = null;
             if ($invoiceUuid) {
@@ -141,7 +139,6 @@ class HandleSuccessfulPayment implements ShouldQueue
                         'meta'                     => [
                             'gateway_driver'         => $gateway->driver,
                             'gateway_transaction_id' => $response->gatewayTransactionId,
-                            'invoice_uuid'           => $invoiceUuid,
                         ],
                     ]
                 );
@@ -166,8 +163,63 @@ class HandleSuccessfulPayment implements ShouldQueue
                 'gateway_transaction_uuid' => $gatewayTransaction->uuid,
             ]);
 
-            // Re-throw so the queue retries
+            // Re-throw so the queue retries.
             throw $e;
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Resolve the Ledger invoice UUID from a gateway transaction.
+     *
+     * Different gateway drivers and webhook paths store the invoice reference
+     * in different locations. This method checks all known paths in order of
+     * reliability and returns the first non-empty value found, or null.
+     *
+     * Known locations:
+     *
+     * 1. raw_response.invoice_uuid
+     *    Set by PaymentService::persistTransaction() for direct API purchases
+     *    (Stripe PaymentIntent, QPay invoice). This is the most reliable path
+     *    because Ledger itself writes it.
+     *
+     * 2. raw_response.metadata.invoice_uuid
+     *    Stripe stores the metadata object inside the PaymentIntent. When a
+     *    Stripe webhook fires, the raw payload is stored as-is, so the
+     *    metadata block is nested one level deeper.
+     *
+     * 3. raw_response.data.object.metadata.invoice_uuid
+     *    Stripe webhook events wrap the PaymentIntent under data.object.
+     *    Some webhook shapes nest it here instead of at the top level.
+     *
+     * 4. response->data['invoice_uuid']
+     *    The GatewayResponse DTO's normalised data bag. Drivers may populate
+     *    this for non-Stripe gateways that carry the reference in their own
+     *    response body.
+     *
+     * @param GatewayTransaction $gatewayTransaction The persisted gateway transaction record
+     * @param GatewayResponse    $response           The normalised gateway response DTO
+     *
+     * @return string|null The resolved invoice UUID/public_id, or null if not found
+     */
+    private function resolveInvoiceUuid(
+        GatewayTransaction $gatewayTransaction,
+        GatewayResponse $response,
+    ): ?string {
+        $raw = $gatewayTransaction->raw_response ?? [];
+
+        return
+            // 1. Top-level key written by PaymentService::persistTransaction()
+            ($raw['invoice_uuid'] ?? null)
+            // 2. Stripe PaymentIntent metadata (direct API purchase, stored flat)
+            ?: ($raw['metadata']['invoice_uuid'] ?? null)
+            // 3. Stripe webhook event: data.object.metadata.invoice_uuid
+            ?: data_get($raw, 'data.object.metadata.invoice_uuid')
+            // 4. Normalised GatewayResponse data bag (driver-specific)
+            ?: ($response->data['invoice_uuid'] ?? null)
+            ?: null;
     }
 }
