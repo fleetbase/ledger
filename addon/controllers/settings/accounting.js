@@ -12,13 +12,18 @@ export default class SettingsAccountingController extends Controller {
     @service currentUser;
 
     // ── Tracked settings fields ───────────────────────────────────────────────
-    @tracked base_currency = null; // null = "use company default"
+    @tracked base_currency = null;          // null = "use company default"
     @tracked fiscal_year_start_month = 1;
     @tracked auto_post_journal_entries = false;
     @tracked default_revenue_account_uuid = null;
     @tracked default_expense_account_uuid = null;
     @tracked default_ar_account_uuid = null;
     @tracked default_ap_account_uuid = null;
+
+    // Read once in the constructor (before any render) so getters never call
+    // getCompany() during a Glimmer render computation, which would violate
+    // Glimmer's no-mutation-during-render rule (getCompany sets this.company).
+    @tracked companyCurrency = 'USD';
 
     // ── Account lists for selectors ───────────────────────────────────────────
     @tracked revenueAccounts = [];
@@ -46,19 +51,14 @@ export default class SettingsAccountingController extends Controller {
 
     constructor() {
         super(...arguments);
+        // Eagerly snapshot the company currency so it is available as a plain
+        // tracked value during rendering without triggering any state mutation.
+        this.companyCurrency = this.currentUser.getCompany()?.currency ?? 'USD';
         this.loadAccounts.perform();
         this.getSettings.perform();
     }
 
     // ── Computed helpers ──────────────────────────────────────────────────────
-
-    /**
-     * The organisation's currency from the company profile.
-     * Used as the fallback when no base currency has been explicitly saved.
-     */
-    get companyCurrency() {
-        return this.currentUser.getCompany()?.currency ?? 'USD';
-    }
 
     /**
      * The effective base currency: the explicitly saved setting if present,
@@ -114,8 +114,8 @@ export default class SettingsAccountingController extends Controller {
                 'settings/accounting-settings',
                 {
                     accountingSettings: {
-                        // Save null when the user hasn't picked a currency so the
-                        // backend (and future reads) know to fall back to company default.
+                        // Persist null when no override chosen so backend knows
+                        // to fall back to company default on future reads.
                         base_currency: this.base_currency || null,
                         fiscal_year_start_month: this.fiscal_year_start_month,
                         auto_post_journal_entries: this.auto_post_journal_entries,
@@ -146,8 +146,7 @@ export default class SettingsAccountingController extends Controller {
     }
 
     _accountId(account) {
-        // Prefer uuid (internal), fall back to public_id or Ember Data id
-        return account ? account.uuid || account.public_id || account.id : null;
+        return account ? (account.uuid || account.public_id || account.id) : null;
     }
 
     @action onSelectRevenueAccount(account) {

@@ -12,12 +12,17 @@ export default class SettingsInvoiceController extends Controller {
 
     // ── Tracked settings fields ───────────────────────────────────────────────
     @tracked invoice_prefix = 'INV';
-    @tracked default_currency = null; // null = "use company default"
+    @tracked default_currency = null;       // null = "use company default"
     @tracked payment_terms_days = 30;
     @tracked due_date_offset_days = 30;
     @tracked default_notes = '';
     @tracked default_terms = '';
     @tracked auto_send_on_creation = false;
+
+    // Read once in the constructor (before any render) so getters never call
+    // getCompany() during a Glimmer render computation, which would violate
+    // Glimmer's no-mutation-during-render rule (getCompany sets this.company).
+    @tracked companyCurrency = 'USD';
 
     // ── Static options ────────────────────────────────────────────────────────
     currencies = getCurrency();
@@ -35,18 +40,13 @@ export default class SettingsInvoiceController extends Controller {
 
     constructor() {
         super(...arguments);
+        // Eagerly snapshot the company currency so it is available as a plain
+        // tracked value during rendering without triggering any state mutation.
+        this.companyCurrency = this.currentUser.getCompany()?.currency ?? 'USD';
         this.getSettings.perform();
     }
 
     // ── Computed helpers ──────────────────────────────────────────────────────
-
-    /**
-     * The organisation's currency from the company profile.
-     * Used as the fallback when no currency has been explicitly saved in settings.
-     */
-    get companyCurrency() {
-        return this.currentUser.getCompany()?.currency ?? 'USD';
-    }
 
     /**
      * The effective currency: the explicitly saved setting if present,
@@ -87,8 +87,8 @@ export default class SettingsInvoiceController extends Controller {
                 {
                     invoiceSettings: {
                         invoice_prefix: this.invoice_prefix,
-                        // Save null when the user hasn't picked a currency so the
-                        // backend (and future reads) know to fall back to company default.
+                        // Persist null when no override chosen so backend knows
+                        // to fall back to company default on future reads.
                         default_currency: this.default_currency || null,
                         payment_terms_days: this.payment_terms_days,
                         due_date_offset_days: this.due_date_offset_days,

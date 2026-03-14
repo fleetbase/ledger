@@ -45,7 +45,7 @@
                     {{#unless this.availableGateways.length}}
                         <div class="mt-1 text-[11px] text-amber-600">
                             No active gateways found.
-                            <LinkTo @route="console.ledger.payments.gateways.index.new" class="underline">Add a gateway</LinkTo>
+                            <LinkTo @route="payments.gateways.index.new" class="underline">Add a gateway</LinkTo>
                             to enable online payments.
                         </div>
                     {{/unless}}
