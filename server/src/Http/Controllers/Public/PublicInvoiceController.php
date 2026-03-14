@@ -10,6 +10,7 @@ use Fleetbase\Ledger\Models\Gateway;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\PaymentGatewayManager;
 use Fleetbase\Ledger\Services\InvoiceService;
+use Fleetbase\Support\Utils;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -159,11 +160,17 @@ class PublicInvoiceController extends Controller
      */
     private function initiateStripeCheckout(StripeDriver $driver, Invoice $invoice, Request $request): JsonResponse
     {
-        // Build the base invoice URL (the public-facing /~/invoice page)
-        $invoiceUrl = rtrim(config('app.url'), '/') . '/~/invoice?id=' . $invoice->public_id;
-
-        $successUrl = $invoiceUrl . '&payment=success';
-        $cancelUrl  = $invoiceUrl . '&payment=cancelled';
+        // Build the redirect URLs pointing to the console's public invoice page.
+        // Utils::consoleUrl reads fleetbase.console.host (CONSOLE_HOST env var) so
+        // the redirect always targets the frontend host, never the API host.
+        $successUrl = Utils::consoleUrl('~/invoice', [
+            'id'      => $invoice->public_id,
+            'payment' => 'success',
+        ]);
+        $cancelUrl = Utils::consoleUrl('~/invoice', [
+            'id'      => $invoice->public_id,
+            'payment' => 'cancelled',
+        ]);
 
         // Resolve customer email if available
         $customerEmail = null;
