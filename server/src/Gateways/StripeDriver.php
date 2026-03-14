@@ -53,6 +53,7 @@ class StripeDriver extends AbstractGatewayDriver
             'refund',
             'tokenization',
             'setup_intent',
+            'checkout_session',
             'webhooks',
             'sandbox',
             'recurring',
@@ -359,6 +360,81 @@ class StripeDriver extends AbstractGatewayDriver
         }
     }
 
+    /**
+     * Create a Stripe Checkout Session for hosted, redirect-based payment.
+     *
+     * Uses inline price_data so no Products or Prices need to be pre-created in Stripe.
+     * Returns a pending GatewayResponse with data.checkout_url set.
+     * The caller should return checkout_url to the frontend and let it redirect.
+     *
+     * @param PurchaseRequest $request    The purchase request DTO
+     * @param string          $successUrl URL Stripe redirects to on successful payment
+     * @param string          $cancelUrl  URL Stripe redirects to if the customer cancels
+     */
+    public function createCheckoutSession(PurchaseRequest $request, string $successUrl, string $cancelUrl): GatewayResponse
+    {
+        try {
+            $params = [
+                'mode'        => 'payment',
+                'success_url' => $successUrl,
+                'cancel_url'  => $cancelUrl,
+                'line_items'  => [
+                    [
+                        'quantity'   => 1,
+                        'price_data' => [
+                            'currency'     => strtolower($request->currency),
+                            'unit_amount'  => $request->amount,
+                            'product_data' => [
+                                'name' => $request->description,
+                            ],
+                        ],
+                    ],
+                ],
+                'payment_intent_data' => [
+                    'metadata' => array_merge($request->metadata, array_filter([
+                        'invoice_uuid' => $request->invoiceUuid,
+                        'order_uuid'   => $request->orderUuid,
+                    ])),
+                ],
+            ];
+
+            if ($request->customerEmail) {
+                $params['customer_email'] = $request->customerEmail;
+            }
+
+            $session = $this->client->checkout->sessions->create($params);
+
+            $this->logInfo('Checkout Session created', [
+                'id'     => $session->id,
+                'amount' => $request->amount,
+            ]);
+
+            return GatewayResponse::pending(
+                gatewayTransactionId: $session->id,
+                eventType: GatewayResponse::EVENT_PAYMENT_PENDING,
+                message: 'Stripe Checkout Session created. Redirect customer to checkout_url.',
+                rawResponse: $session->toArray(),
+                data: [
+                    'checkout_url'        => $session->url,
+                    'checkout_session_id' => $session->id,
+                    'publishable_key'     => $this->config('publishable_key'),
+                ],
+            );
+        } catch (ApiErrorException $e) {
+            $this->logError('Checkout Session creation failed', [
+                'error' => $e->getMessage(),
+                'code'  => $e->getStripeCode(),
+            ]);
+
+            return GatewayResponse::failure(
+                eventType: GatewayResponse::EVENT_PAYMENT_FAILED,
+                message: $e->getMessage(),
+                errorCode: $e->getStripeCode(),
+                rawResponse: ['error' => $e->getMessage()],
+            );
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Private Helpers
     // -------------------------------------------------------------------------
@@ -378,6 +454,10 @@ class StripeDriver extends AbstractGatewayDriver
             'payment_intent.payment_failed'           => [GatewayResponse::EVENT_PAYMENT_FAILED,    GatewayResponse::STATUS_FAILED],
             'payment_intent.created',
             'payment_intent.processing'               => [GatewayResponse::EVENT_PAYMENT_PENDING,   GatewayResponse::STATUS_PENDING],
+            // checkout.session.completed fires when the customer completes a Checkout Session.
+            // The payment_intent nested inside the session is the authoritative transaction ID.
+            'checkout.session.completed'              => [GatewayResponse::EVENT_PAYMENT_SUCCEEDED, GatewayResponse::STATUS_SUCCEEDED],
+            'checkout.session.expired'                => [GatewayResponse::EVENT_PAYMENT_FAILED,    GatewayResponse::STATUS_FAILED],
             'charge.refunded'                         => [GatewayResponse::EVENT_REFUND_PROCESSED,  GatewayResponse::STATUS_REFUNDED],
             'charge.refund.updated'                   => $this->resolveRefundUpdate($object),
             'setup_intent.succeeded'                  => [GatewayResponse::EVENT_SETUP_SUCCEEDED,   GatewayResponse::STATUS_SUCCEEDED],

@@ -31,6 +31,7 @@ export default class CustomerInvoiceComponent extends Component {
     @tracked paymentReference = '';
     @tracked error = null;
     @tracked successMessage = null;
+    @tracked isRedirectingToCheckout = false;
 
     constructor() {
         super(...arguments);
@@ -59,16 +60,35 @@ export default class CustomerInvoiceComponent extends Component {
         return this.gateways.length > 0;
     }
 
+    get selectedGateway() {
+        return this.gateways.find((g) => g.id === this.selectedGatewayId) ?? null;
+    }
+
+    get isStripeGateway() {
+        return this.selectedGateway?.driver === 'stripe';
+    }
+
     // ── Tasks ─────────────────────────────────────────────────────────────────
 
     /**
      * Loads the invoice and available payment gateways.
      * Task state (isRunning, isIdle) is used directly in the template.
+     * If ?payment=success is present (Stripe redirect-back), shows a success
+     * message and reloads the invoice to reflect the paid status.
      */
     @task({ restartable: true })
     *loadInvoice() {
         this.error = null;
         const id = this.invoiceId;
+
+        // Detect Stripe redirect-back
+        const paymentParam = this.urlSearchParams.get('payment');
+        if (paymentParam === 'success') {
+            this.successMessage = 'Your payment was completed successfully. Thank you!';
+            this.showPaymentForm = false;
+        } else if (paymentParam === 'cancelled') {
+            this.error = 'Payment was cancelled. You can try again below.';
+        }
 
         if (!id) {
             this.error = 'No invoice identifier provided. Please check the link and try again.';
@@ -100,8 +120,14 @@ export default class CustomerInvoiceComponent extends Component {
     }
 
     /**
-     * Submits a manual payment confirmation.
-     * Task state (isRunning) drives the submit button disabled/spinner state.
+     * Submits a payment request.
+     *
+     * For Stripe: backend returns { checkout_url } and the browser is redirected
+     * to Stripe's hosted checkout page. isRedirectingToCheckout is set to true
+     * to show a loading state while the redirect happens.
+     *
+     * For other gateways: backend records the payment immediately and returns
+     * the updated invoice.
      */
     @task({ drop: true })
     *submitPayment() {
@@ -111,12 +137,20 @@ export default class CustomerInvoiceComponent extends Component {
             const data = yield this.fetch.post(
                 `invoices/${this.invoiceId}/pay`,
                 {
-                    payment_method: 'bank_transfer',
+                    gateway_id: this.selectedGatewayId,
                     reference: this.paymentReference || null,
                 },
                 { namespace: 'ledger/public' }
             );
 
+            // Stripe Checkout Session — redirect the browser to Stripe's hosted page
+            if (data?.checkout_url) {
+                this.isRedirectingToCheckout = true;
+                window.location.href = data.checkout_url;
+                return;
+            }
+
+            // Immediate payment recorded (cash, bank transfer, etc.)
             this.invoice = data?.invoice ?? data;
             this.successMessage = 'Your payment has been recorded successfully. Thank you!';
             this.showPaymentForm = false;

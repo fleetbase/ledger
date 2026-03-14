@@ -86,7 +86,7 @@
                                             {{format-currency item.unit_price this.invoice.currency}}
                                         </td>
                                         <td class="py-2 text-right font-medium text-gray-800 dark:text-gray-100">
-                                            {{format-currency item.total this.invoice.currency}}
+                                            {{format-currency item.amount this.invoice.currency}}
                                         </td>
                                     </tr>
                                 {{/each}}
@@ -186,23 +186,31 @@
                                 />
                             </div>
 
-                            {{! Submit }}
-                            <div class="flex items-center justify-between pt-2">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    Amount due:
-                                    <span class="font-semibold text-gray-800 dark:text-gray-100">
-                                        {{format-currency this.invoice.balance this.invoice.currency}}
-                                    </span>
-                                </p>
-                                <Button
-                                    @type="primary"
-                                    @icon={{if this.submitPayment.isRunning "spinner" "lock"}}
-                                    @iconSpin={{this.submitPayment.isRunning}}
-                                    @text={{if this.submitPayment.isRunning "Processing…" "Confirm Payment"}}
-                                    @disabled={{this.submitPayment.isRunning}}
-                                    @onClick={{perform this.submitPayment}}
-                                />
-                            </div>
+                            {{! Redirecting to Stripe overlay }}
+                            {{#if this.isRedirectingToCheckout}}
+                                <div class="flex flex-col items-center justify-center py-6 gap-3 text-indigo-600 dark:text-indigo-400">
+                                    <FaIcon @icon="spinner" @spin={{true}} @size="lg" />
+                                    <p class="text-sm font-medium">Redirecting to secure payment page…</p>
+                                </div>
+                            {{else}}
+                                {{! Submit }}
+                                <div class="flex items-center justify-between pt-2">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                        Amount due:
+                                        <span class="font-semibold text-gray-800 dark:text-gray-100">
+                                            {{format-currency this.invoice.balance this.invoice.currency}}
+                                        </span>
+                                    </p>
+                                    <Button
+                                        @type="primary"
+                                        @icon={{if this.submitPayment.isRunning "spinner" "lock"}}
+                                        @iconSpin={{this.submitPayment.isRunning}}
+                                        @text={{if this.submitPayment.isRunning "Processing…" (if this.isStripeGateway "Pay with Stripe" "Confirm Payment")}}
+                                        @disabled={{this.submitPayment.isRunning}}
+                                        @onClick={{perform this.submitPayment}}
+                                    />
+                                </div>
+                            {{/if}}
                         </div>
                     {{/if}}
                 </div>
