@@ -36,12 +36,16 @@
                     @helpText="The currency applied to new invoices unless overridden on the invoice itself."
                 >
                     <CurrencySelect
-                        @currency={{this.default_currency}}
+                        @currency={{this.effectiveCurrency}}
                         @currencyData={{this.selectedCurrency}}
                         @onCurrencyChange={{this.onSelectCurrency}}
                         @triggerClass="form-select form-input"
-                        @placeholder="Select currency"
+                        @placeholder={{concat "Default: " this.companyCurrency}}
+                        @allowClear={{true}}
                     />
+                    {{#unless this.default_currency}}
+                        <p class="text-xs text-gray-400 mt-1">Using organisation default ({{this.companyCurrency}}). Select a currency above to override.</p>
+                    {{/unless}}
                 </InputGroup>
 
                 <InputGroup

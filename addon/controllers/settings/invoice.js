@@ -8,10 +8,11 @@ import getCurrency from '@fleetbase/ember-ui/utils/get-currency';
 export default class SettingsInvoiceController extends Controller {
     @service fetch;
     @service notifications;
+    @service currentUser;
 
     // ── Tracked settings fields ───────────────────────────────────────────────
     @tracked invoice_prefix = 'INV';
-    @tracked default_currency = 'USD';
+    @tracked default_currency = null;   // null = "use company default"
     @tracked payment_terms_days = 30;
     @tracked due_date_offset_days = 30;
     @tracked default_notes = '';
@@ -37,6 +38,28 @@ export default class SettingsInvoiceController extends Controller {
         this.getSettings.perform();
     }
 
+    // ── Computed helpers ──────────────────────────────────────────────────────
+
+    /**
+     * The organisation's currency from the company profile.
+     * Used as the fallback when no currency has been explicitly saved in settings.
+     */
+    get companyCurrency() {
+        return this.currentUser.getCompany()?.currency ?? 'USD';
+    }
+
+    /**
+     * The effective currency: the explicitly saved setting if present,
+     * otherwise the organisation's default currency.
+     */
+    get effectiveCurrency() {
+        return this.default_currency || this.companyCurrency;
+    }
+
+    get selectedCurrency() {
+        return getCurrency(this.effectiveCurrency) ?? null;
+    }
+
     // ── Tasks ─────────────────────────────────────────────────────────────────
 
     @task *getSettings() {
@@ -44,7 +67,8 @@ export default class SettingsInvoiceController extends Controller {
             const { invoiceSettings } = yield this.fetch.get('settings/invoice-settings', {}, { namespace: 'ledger/int/v1' });
             if (invoiceSettings) {
                 this.invoice_prefix = invoiceSettings.invoice_prefix ?? 'INV';
-                this.default_currency = invoiceSettings.default_currency ?? 'USD';
+                // null means "not yet set — use company default"
+                this.default_currency = invoiceSettings.default_currency ?? null;
                 this.payment_terms_days = invoiceSettings.payment_terms_days ?? 30;
                 this.due_date_offset_days = invoiceSettings.due_date_offset_days ?? 30;
                 this.default_notes = invoiceSettings.default_notes ?? '';
@@ -63,7 +87,9 @@ export default class SettingsInvoiceController extends Controller {
                 {
                     invoiceSettings: {
                         invoice_prefix: this.invoice_prefix,
-                        default_currency: this.default_currency,
+                        // Save null when the user hasn't picked a currency so the
+                        // backend (and future reads) know to fall back to company default.
+                        default_currency: this.default_currency || null,
                         payment_terms_days: this.payment_terms_days,
                         due_date_offset_days: this.due_date_offset_days,
                         default_notes: this.default_notes,
@@ -82,18 +108,13 @@ export default class SettingsInvoiceController extends Controller {
     // ── Actions ───────────────────────────────────────────────────────────────
 
     @action onSelectCurrency(currency) {
-        // CurrencySelect passes the full currency object; we store the ISO code
-        this.default_currency = currency?.code ?? currency;
+        // CurrencySelect passes the full currency object; store the ISO code.
+        // Clearing the selection (null/undefined) resets to company default.
+        this.default_currency = currency?.code ?? null;
     }
 
     @action onSelectPaymentTerms(option) {
         this.payment_terms_days = option.value;
         this.due_date_offset_days = option.value;
-    }
-
-    // ── Computed helpers ──────────────────────────────────────────────────────
-
-    get selectedCurrency() {
-        return getCurrency(this.default_currency) ?? null;
     }
 }

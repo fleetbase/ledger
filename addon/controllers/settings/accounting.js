@@ -9,9 +9,10 @@ export default class SettingsAccountingController extends Controller {
     @service fetch;
     @service notifications;
     @service store;
+    @service currentUser;
 
     // ── Tracked settings fields ───────────────────────────────────────────────
-    @tracked base_currency = 'USD';
+    @tracked base_currency = null;   // null = "use company default"
     @tracked fiscal_year_start_month = 1;
     @tracked auto_post_journal_entries = false;
     @tracked default_revenue_account_uuid = null;
@@ -49,6 +50,28 @@ export default class SettingsAccountingController extends Controller {
         this.getSettings.perform();
     }
 
+    // ── Computed helpers ──────────────────────────────────────────────────────
+
+    /**
+     * The organisation's currency from the company profile.
+     * Used as the fallback when no base currency has been explicitly saved.
+     */
+    get companyCurrency() {
+        return this.currentUser.getCompany()?.currency ?? 'USD';
+    }
+
+    /**
+     * The effective base currency: the explicitly saved setting if present,
+     * otherwise the organisation's default currency.
+     */
+    get effectiveCurrency() {
+        return this.base_currency || this.companyCurrency;
+    }
+
+    get selectedCurrency() {
+        return getCurrency(this.effectiveCurrency) ?? null;
+    }
+
     // ── Tasks ─────────────────────────────────────────────────────────────────
 
     @task *loadAccounts() {
@@ -71,7 +94,8 @@ export default class SettingsAccountingController extends Controller {
         try {
             const { accountingSettings } = yield this.fetch.get('settings/accounting-settings', {}, { namespace: 'ledger/int/v1' });
             if (accountingSettings) {
-                this.base_currency = accountingSettings.base_currency ?? 'USD';
+                // null means "not yet set — use company default"
+                this.base_currency = accountingSettings.base_currency ?? null;
                 this.fiscal_year_start_month = accountingSettings.fiscal_year_start_month ?? 1;
                 this.auto_post_journal_entries = accountingSettings.auto_post_journal_entries ?? false;
                 this.default_revenue_account_uuid = accountingSettings.default_revenue_account_uuid ?? null;
@@ -90,7 +114,9 @@ export default class SettingsAccountingController extends Controller {
                 'settings/accounting-settings',
                 {
                     accountingSettings: {
-                        base_currency: this.base_currency,
+                        // Save null when the user hasn't picked a currency so the
+                        // backend (and future reads) know to fall back to company default.
+                        base_currency: this.base_currency || null,
                         fiscal_year_start_month: this.fiscal_year_start_month,
                         auto_post_journal_entries: this.auto_post_journal_entries,
                         default_revenue_account_uuid: this.default_revenue_account_uuid,
@@ -110,8 +136,9 @@ export default class SettingsAccountingController extends Controller {
     // ── Actions ───────────────────────────────────────────────────────────────
 
     @action onSelectCurrency(currency) {
-        // CurrencySelect passes the full currency object; we store the ISO code
-        this.base_currency = currency?.code ?? currency;
+        // CurrencySelect passes the full currency object; store the ISO code.
+        // Clearing the selection (null/undefined) resets to company default.
+        this.base_currency = currency?.code ?? null;
     }
 
     @action onSelectFiscalYearMonth(option) {
@@ -139,11 +166,7 @@ export default class SettingsAccountingController extends Controller {
         this.default_ap_account_uuid = this._accountId(account);
     }
 
-    // ── Computed helpers ──────────────────────────────────────────────────────
-
-    get selectedCurrency() {
-        return getCurrency(this.base_currency) ?? null;
-    }
+    // ── Computed helpers (account selectors) ──────────────────────────────────
 
     _matchAccount(list, uuid) {
         if (!uuid) return null;
