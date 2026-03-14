@@ -99,8 +99,9 @@ invoice:
     record-payment: Record Payment
     record-payment-title: "Record Payment — {number}"
     copy-payment-link: Copy Payment Link
-    payment-link-copied: Payment link copied to clipboard.
-    payment-link-copy-failed: Failed to copy payment link. Please copy it manually.
+    copy-invoice-url: Copy Invoice URL
+    payment-link-copied: Invoice URL copied to clipboard.
+    payment-link-copy-failed: Failed to copy invoice URL. Please copy it manually.
     send: Send Invoice
     void: Void Invoice
     edit: Edit Invoice

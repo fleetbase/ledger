@@ -66,6 +66,30 @@
                 </div>
             {{/if}}
 
+            {{#if this.invoiceUrl}}
+                <div class="field-info-container lg:col-span-2">
+                    <div class="field-name">Invoice URL</div>
+                    <div class="field-value flex items-center gap-2">
+                        <a
+                            href={{this.invoiceUrl}}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-blue-500 hover:underline truncate max-w-xs font-mono"
+                        >
+                            {{this.invoiceUrl}}
+                        </a>
+                        <button
+                            type="button"
+                            class="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                            title="Copy Invoice URL"
+                            {{on "click" (fn this.invoiceActions.copyInvoiceUrl @resource)}}
+                        >
+                            <FaIcon @icon="copy" @size="xs" />
+                        </button>
+                    </div>
+                </div>
+            {{/if}}
+
         </div>
     </ContentPanel>
 

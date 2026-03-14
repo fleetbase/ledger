@@ -158,9 +158,9 @@ export default class BillingInvoicesIndexController extends Controller {
                         permission: 'ledger view invoice',
                     },
                     {
-                        label:      this.intl.t('invoice.actions.copy-payment-link'),
+                        label:      this.intl.t('invoice.actions.copy-invoice-url'),
                         icon:       'link',
-                        fn:         this.invoiceActions.copyPaymentLink,
+                        fn:         this.invoiceActions.copyInvoiceUrl,
                         permission: 'ledger view invoice',
                     },
                     {

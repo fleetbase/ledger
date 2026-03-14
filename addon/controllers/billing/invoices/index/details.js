@@ -31,7 +31,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         const invoice = this.model;
         const buttons = [];
 
-        // Preview — only when an invoice template is assigned.
+        // Preview — individual button, only when an invoice template is assigned.
         if (invoice?.template_uuid) {
             buttons.push({
                 label:    'Preview',
@@ -42,7 +42,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
             });
         }
 
-        // Edit — available for all statuses except paid / void / cancelled.
+        // Edit — individual button, available for all statuses except paid / void / cancelled.
         if (!['paid', 'void', 'cancelled'].includes(invoice?.status)) {
             buttons.push({
                 label:    'Edit',
@@ -53,36 +53,55 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
             });
         }
 
+        // Dropdown — groups Send, Record Payment, Void, and Copy Invoice URL.
+        const dropdownItems = [];
+
         // Send — draft invoices only.
         if (invoice?.status === 'draft') {
-            buttons.push({
-                label:    'Send',
-                icon:     'paper-plane',
-                type:     'primary',
-                helpText: this.intl.t('invoice.actions.send'),
-                onClick:  this.sendInvoice,
+            dropdownItems.push({
+                text: 'Send Invoice',
+                icon: 'paper-plane',
+                fn:   () => this.sendInvoice(),
             });
         }
 
         // Record Payment — for open / overdue / partially-paid invoices.
         if (['sent', 'viewed', 'overdue', 'partial'].includes(invoice?.status)) {
-            buttons.push({
-                label:    'Record Payment',
-                icon:     'check-circle',
-                type:     'success',
-                helpText: this.intl.t('invoice.actions.record-payment'),
-                onClick:  this.recordPayment,
+            dropdownItems.push({
+                text: this.intl.t('invoice.actions.record-payment'),
+                icon: 'check-circle',
+                fn:   () => this.recordPayment(),
             });
         }
 
         // Void — for any non-terminal status.
         if (!['paid', 'void', 'cancelled'].includes(invoice?.status)) {
+            dropdownItems.push({
+                text:  this.intl.t('invoice.actions.void'),
+                icon:  'ban',
+                class: 'text-red-500 hover:text-red-700',
+                fn:    () => this.voidInvoice(),
+            });
+        }
+
+        // Separator before copy URL.
+        if (dropdownItems.length > 0) {
+            dropdownItems.push({ separator: true });
+        }
+
+        // Copy Invoice URL — always available.
+        dropdownItems.push({
+            text: this.intl.t('invoice.actions.copy-invoice-url'),
+            icon: 'link',
+            fn:   () => this.invoiceActions.copyInvoiceUrl(invoice),
+        });
+
+        if (dropdownItems.length > 0) {
             buttons.push({
-                label:    'Void',
-                icon:     'ban',
-                type:     'danger',
-                helpText: this.intl.t('invoice.actions.void'),
-                onClick:  this.voidInvoice,
+                icon:          'ellipsis-h',
+                iconPrefix:    'fas',
+                renderInPlace: true,
+                items:         dropdownItems,
             });
         }
 
