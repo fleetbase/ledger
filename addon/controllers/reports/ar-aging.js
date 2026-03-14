@@ -31,9 +31,7 @@ export default class ReportsArAgingController extends Controller {
 
     get allInvoices() {
         if (!this.data?.buckets) return [];
-        return Object.values(this.data.buckets).flatMap((b) =>
-            (b.invoices ?? []).map((inv) => ({ ...inv, bucketLabel: b.label, daysRange: b.days_range }))
-        );
+        return Object.values(this.data.buckets).flatMap((b) => (b.invoices ?? []).map((inv) => ({ ...inv, bucketLabel: b.label, daysRange: b.days_range })));
     }
 
     @task *loadReport() {

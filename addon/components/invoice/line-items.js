@@ -52,11 +52,11 @@ export default class InvoiceLineItemsComponent extends Component {
 
     @action addItem() {
         const newItem = this.store.createRecord('ledger-invoice-item', {
-            invoice:     this.args.invoice,
+            invoice: this.args.invoice,
             description: '',
-            quantity:    1,
-            unit_price:  '0',
-            tax_rate:    0,
+            quantity: 1,
+            unit_price: '0',
+            tax_rate: 0,
         });
         this.items = [...this.items, newItem];
     }

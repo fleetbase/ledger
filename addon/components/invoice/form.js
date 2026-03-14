@@ -54,11 +54,7 @@ export default class InvoiceFormComponent extends Component {
         const items = this.lineItemsRef.getItems();
         const invalid = items.filter((item) => !item.description?.trim());
         if (invalid.length) {
-            const err = new Error(
-                invalid.length === 1
-                    ? 'One line item is missing a description.'
-                    : `${invalid.length} line items are missing a description.`
-            );
+            const err = new Error(invalid.length === 1 ? 'One line item is missing a description.' : `${invalid.length} line items are missing a description.`);
             err.errors = [err.message];
             throw err;
         }
@@ -113,7 +109,7 @@ export default class InvoiceFormComponent extends Component {
     @action
     onTemplateChange(template) {
         if (this.args.resource) {
-            this.args.resource.template      = template;
+            this.args.resource.template = template;
             this.args.resource.template_uuid = template?.id ?? null;
         }
     }

@@ -203,10 +203,10 @@ class SettingController extends Controller
     public function getAccountingSettings(): JsonResponse
     {
         $defaults = [
-            'base_currency'              => 'USD',
-            'fiscal_year_start_month'    => 1,   // January
-            'auto_post_journal_entries'  => false,
-            'default_ar_account_uuid'    => null,
+            'base_currency'                => 'USD',
+            'fiscal_year_start_month'      => 1,   // January
+            'auto_post_journal_entries'    => false,
+            'default_ar_account_uuid'      => null,
             'default_revenue_account_uuid' => null,
             'default_expense_account_uuid' => null,
         ];

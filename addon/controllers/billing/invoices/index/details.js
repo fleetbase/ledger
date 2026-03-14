@@ -22,7 +22,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
      */
     get tabs() {
         return [
-            { label: 'Details',      route: 'billing.invoices.index.details.index' },
+            { label: 'Details', route: 'billing.invoices.index.details.index' },
             { label: 'Transactions', route: 'billing.invoices.index.details.transactions' },
         ];
     }
@@ -34,22 +34,22 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         // Preview — individual button, only when an invoice template is assigned.
         if (invoice?.template_uuid) {
             buttons.push({
-                label:    'Preview',
-                icon:     'eye',
-                type:     'default',
+                label: 'Preview',
+                icon: 'eye',
+                type: 'default',
                 helpText: this.intl.t('invoice.actions.preview-invoice', { number: invoice.number }),
-                onClick:  () => this.invoiceActions.previewInvoice(invoice),
+                onClick: () => this.invoiceActions.previewInvoice(invoice),
             });
         }
 
         // Edit — individual button, available for all statuses except paid / void / cancelled.
         if (!['paid', 'void', 'cancelled'].includes(invoice?.status)) {
             buttons.push({
-                label:    'Edit',
-                icon:     'pencil',
-                type:     'default',
+                label: 'Edit',
+                icon: 'pencil',
+                type: 'default',
                 helpText: this.intl.t('invoice.actions.edit'),
-                onClick:  () => this.hostRouter.transitionTo('console.ledger.billing.invoices.index.edit', invoice.id),
+                onClick: () => this.hostRouter.transitionTo('console.ledger.billing.invoices.index.edit', invoice.id),
             });
         }
 
@@ -61,7 +61,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
             dropdownItems.push({
                 text: 'Send Invoice',
                 icon: 'paper-plane',
-                fn:   () => this.sendInvoice(),
+                fn: () => this.sendInvoice(),
             });
         }
 
@@ -70,17 +70,17 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
             dropdownItems.push({
                 text: this.intl.t('invoice.actions.record-payment'),
                 icon: 'check-circle',
-                fn:   () => this.recordPayment(),
+                fn: () => this.recordPayment(),
             });
         }
 
         // Void — for any non-terminal status.
         if (!['paid', 'void', 'cancelled'].includes(invoice?.status)) {
             dropdownItems.push({
-                text:  this.intl.t('invoice.actions.void'),
-                icon:  'ban',
+                text: this.intl.t('invoice.actions.void'),
+                icon: 'ban',
                 class: 'text-red-500 hover:text-red-700',
-                fn:    () => this.voidInvoice(),
+                fn: () => this.voidInvoice(),
             });
         }
 
@@ -93,15 +93,15 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         dropdownItems.push({
             text: this.intl.t('invoice.actions.copy-invoice-url'),
             icon: 'link',
-            fn:   () => this.invoiceActions.copyInvoiceUrl(invoice),
+            fn: () => this.invoiceActions.copyInvoiceUrl(invoice),
         });
 
         if (dropdownItems.length > 0) {
             buttons.push({
-                icon:          'ellipsis-h',
-                iconPrefix:    'fas',
+                icon: 'ellipsis-h',
+                iconPrefix: 'fas',
                 renderInPlace: true,
-                items:         dropdownItems,
+                items: dropdownItems,
             });
         }
 
@@ -122,22 +122,22 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
     @action async recordPayment() {
         const invoice = this.model;
         const options = {
-            title:                this.intl.t('invoice.actions.record-payment-title', { number: invoice.number }),
-            acceptButtonText:     this.intl.t('invoice.actions.record-payment'),
-            acceptButtonIcon:     'check-circle',
+            title: this.intl.t('invoice.actions.record-payment-title', { number: invoice.number }),
+            acceptButtonText: this.intl.t('invoice.actions.record-payment'),
+            acceptButtonIcon: 'check-circle',
             invoice,
-            amount:               invoice.balance ?? 0,
-            paymentMethod:        'bank_transfer',
-            reference:            '',
+            amount: invoice.balance ?? 0,
+            paymentMethod: 'bank_transfer',
+            reference: '',
             paymentMethodOptions: [
-                { label: 'Bank Transfer',  value: 'bank_transfer' },
-                { label: 'Cash',           value: 'cash' },
-                { label: 'Cheque',         value: 'cheque' },
-                { label: 'Credit Card',    value: 'credit_card' },
-                { label: 'Debit Card',     value: 'debit_card' },
-                { label: 'PayPal',         value: 'paypal' },
-                { label: 'Stripe',         value: 'stripe' },
-                { label: 'Other',          value: 'other' },
+                { label: 'Bank Transfer', value: 'bank_transfer' },
+                { label: 'Cash', value: 'cash' },
+                { label: 'Cheque', value: 'cheque' },
+                { label: 'Credit Card', value: 'credit_card' },
+                { label: 'Debit Card', value: 'debit_card' },
+                { label: 'PayPal', value: 'paypal' },
+                { label: 'Stripe', value: 'stripe' },
+                { label: 'Other', value: 'other' },
             ],
             setAmount: (centsValue) => {
                 options.amount = centsValue;
@@ -158,9 +158,9 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
                     await this.fetch.post(
                         `invoices/${invoice.id}/record-payment`,
                         {
-                            amount:         options.amount,
+                            amount: options.amount,
                             payment_method: options.paymentMethod,
-                            reference:      options.reference || null,
+                            reference: options.reference || null,
                         },
                         { namespace: 'ledger/int/v1' }
                     );

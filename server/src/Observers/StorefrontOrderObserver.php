@@ -58,6 +58,7 @@ class StorefrontOrderObserver
                     Log::channel('ledger')->info('[Ledger] StorefrontOrderObserver: skipping order with zero total.', [
                         'order_uuid' => $order->uuid,
                     ]);
+
                     return;
                 }
 

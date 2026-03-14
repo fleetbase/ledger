@@ -115,10 +115,7 @@ class StripeDriver extends AbstractGatewayDriver
     private function assertClientInitialized(): void
     {
         if ($this->client === null) {
-            throw new \RuntimeException(
-                'Stripe client is not initialized. The gateway configuration is missing a valid secret_key. '
-                . 'Please update the gateway in Ledger → Settings → Gateways and save your Stripe credentials.'
-            );
+            throw new \RuntimeException('Stripe client is not initialized. The gateway configuration is missing a valid secret_key. Please update the gateway in Ledger → Settings → Gateways and save your Stripe credentials.');
         }
     }
 

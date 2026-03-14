@@ -33,13 +33,13 @@ export default class LedgerTransactionModel extends Model {
     @attr('string') subject_type;
     @attr('string') payer_uuid;
     @attr('string') payer_type;
-    @attr('string') payer_name;       // resolved display name from the payer relation
+    @attr('string') payer_name; // resolved display name from the payer relation
     @attr('string') payee_uuid;
     @attr('string') payee_type;
-    @attr('string') payee_name;       // resolved display name from the payee relation
+    @attr('string') payee_name; // resolved display name from the payee relation
     @attr('string') initiator_uuid;
     @attr('string') initiator_type;
-    @attr('string') initiator_name;   // resolved display name from the initiator relation
+    @attr('string') initiator_name; // resolved display name from the initiator relation
     @attr('string') context_uuid;
     @attr('string') context_type;
     // Gateway

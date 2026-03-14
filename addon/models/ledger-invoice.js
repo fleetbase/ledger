@@ -26,12 +26,12 @@ export default class LedgerInvoiceModel extends Model {
     @attr('string') currency;
     @attr('string') notes;
     @attr('string') terms;
-    @attr('number') subtotal;      // integer cents
-    @attr('number') tax;           // integer cents
-    @attr('number') total_amount;  // integer cents — canonical "total" field
-    @attr('number') amount_paid;   // integer cents
-    @attr('number') balance;       // integer cents
-    @attr('raw')    meta;
+    @attr('number') subtotal; // integer cents
+    @attr('number') tax; // integer cents
+    @attr('number') total_amount; // integer cents — canonical "total" field
+    @attr('number') amount_paid; // integer cents
+    @attr('number') balance; // integer cents
+    @attr('raw') meta;
 
     // -------------------------------------------------------------------------
     // Dates
@@ -95,12 +95,16 @@ export default class LedgerInvoiceModel extends Model {
     // Date helpers — date (invoice date)
     // -------------------------------------------------------------------------
     @computed('date') get invoiceDateAgo() {
-        if (!isValidDate(this.date)) { return null; }
+        if (!isValidDate(this.date)) {
+            return null;
+        }
         return formatDistanceToNow(this.date);
     }
 
     @computed('date') get invoiceDate() {
-        if (!isValidDate(this.date)) { return null; }
+        if (!isValidDate(this.date)) {
+            return null;
+        }
         return formatDate(this.date, 'PP');
     }
 
@@ -110,7 +114,9 @@ export default class LedgerInvoiceModel extends Model {
     }
 
     @computed('date') get invoiceDateShort() {
-        if (!isValidDate(this.date)) { return null; }
+        if (!isValidDate(this.date)) {
+            return null;
+        }
         return formatDate(this.date, 'dd MMM');
     }
 
@@ -118,17 +124,23 @@ export default class LedgerInvoiceModel extends Model {
     // Date helpers — due_date
     // -------------------------------------------------------------------------
     @computed('due_date') get dueDateAgo() {
-        if (!isValidDate(this.due_date)) { return null; }
+        if (!isValidDate(this.due_date)) {
+            return null;
+        }
         return formatDistanceToNow(this.due_date);
     }
 
     @computed('due_date') get dueDate() {
-        if (!isValidDate(this.due_date)) { return null; }
+        if (!isValidDate(this.due_date)) {
+            return null;
+        }
         return formatDate(this.due_date, 'PP');
     }
 
     @computed('due_date') get dueDateShort() {
-        if (!isValidDate(this.due_date)) { return null; }
+        if (!isValidDate(this.due_date)) {
+            return null;
+        }
         return formatDate(this.due_date, 'dd MMM');
     }
 
@@ -136,12 +148,16 @@ export default class LedgerInvoiceModel extends Model {
     // Date helpers — paid_at
     // -------------------------------------------------------------------------
     @computed('paid_at') get paidAtAgo() {
-        if (!isValidDate(this.paid_at)) { return null; }
+        if (!isValidDate(this.paid_at)) {
+            return null;
+        }
         return formatDistanceToNow(this.paid_at);
     }
 
     @computed('paid_at') get paidAt() {
-        if (!isValidDate(this.paid_at)) { return null; }
+        if (!isValidDate(this.paid_at)) {
+            return null;
+        }
         return formatDate(this.paid_at, 'PP HH:mm');
     }
 
@@ -149,12 +165,16 @@ export default class LedgerInvoiceModel extends Model {
     // Date helpers — sent_at / viewed_at
     // -------------------------------------------------------------------------
     @computed('sent_at') get sentAt() {
-        if (!isValidDate(this.sent_at)) { return null; }
+        if (!isValidDate(this.sent_at)) {
+            return null;
+        }
         return formatDate(this.sent_at, 'PP HH:mm');
     }
 
     @computed('viewed_at') get viewedAt() {
-        if (!isValidDate(this.viewed_at)) { return null; }
+        if (!isValidDate(this.viewed_at)) {
+            return null;
+        }
         return formatDate(this.viewed_at, 'PP HH:mm');
     }
 
@@ -162,27 +182,37 @@ export default class LedgerInvoiceModel extends Model {
     // Date helpers — created_at / updated_at
     // -------------------------------------------------------------------------
     @computed('created_at') get createdAtAgo() {
-        if (!isValidDate(this.created_at)) { return null; }
+        if (!isValidDate(this.created_at)) {
+            return null;
+        }
         return formatDistanceToNow(this.created_at);
     }
 
     @computed('created_at') get createdAt() {
-        if (!isValidDate(this.created_at)) { return null; }
+        if (!isValidDate(this.created_at)) {
+            return null;
+        }
         return formatDate(this.created_at, 'PP HH:mm');
     }
 
     @computed('created_at') get createdAtShort() {
-        if (!isValidDate(this.created_at)) { return null; }
+        if (!isValidDate(this.created_at)) {
+            return null;
+        }
         return formatDate(this.created_at, 'dd MMM');
     }
 
     @computed('updated_at') get updatedAtAgo() {
-        if (!isValidDate(this.updated_at)) { return null; }
+        if (!isValidDate(this.updated_at)) {
+            return null;
+        }
         return formatDistanceToNow(this.updated_at);
     }
 
     @computed('updated_at') get updatedAt() {
-        if (!isValidDate(this.updated_at)) { return null; }
+        if (!isValidDate(this.updated_at)) {
+            return null;
+        }
         return formatDate(this.updated_at, 'PP HH:mm');
     }
 
@@ -215,14 +245,14 @@ export default class LedgerInvoiceModel extends Model {
      */
     @computed('status') get statusBadgeColor() {
         const map = {
-            draft:     'gray',
-            sent:      'blue',
-            viewed:    'indigo',
-            partial:   'yellow',
-            paid:      'green',
-            overdue:   'red',
+            draft: 'gray',
+            sent: 'blue',
+            viewed: 'indigo',
+            partial: 'yellow',
+            paid: 'green',
+            overdue: 'red',
             cancelled: 'red',
-            void:      'red',
+            void: 'red',
         };
         return map[this.status] ?? 'gray';
     }

@@ -23,13 +23,13 @@ export default class LedgerInvoiceItemModel extends Model {
     @attr('string') invoice_uuid;
     @attr('string') description;
     @attr('number') quantity;
-    @attr('string') unit_price;   // integer cents as string, e.g. "20000"
-    @attr('string') amount;       // integer cents as string (server-computed)
-    @attr('number') tax_rate;     // percentage, e.g. 10 = 10%
-    @attr('string') tax_amount;   // integer cents as string (server-computed)
-    @attr('raw')    meta;
-    @attr('date')   created_at;
-    @attr('date')   updated_at;
+    @attr('string') unit_price; // integer cents as string, e.g. "20000"
+    @attr('string') amount; // integer cents as string (server-computed)
+    @attr('number') tax_rate; // percentage, e.g. 10 = 10%
+    @attr('string') tax_amount; // integer cents as string (server-computed)
+    @attr('raw') meta;
+    @attr('date') created_at;
+    @attr('date') updated_at;
 
     @belongsTo('ledger-invoice', { async: false, inverse: 'items' }) invoice;
 
@@ -38,7 +38,7 @@ export default class LedgerInvoiceItemModel extends Model {
      * Reads from the tracked @attr fields so it updates reactively.
      */
     get computedAmount() {
-        const qty   = parseInt(numbersOnly(this.quantity))   || 0;
+        const qty = parseInt(numbersOnly(this.quantity)) || 0;
         const price = parseInt(numbersOnly(this.unit_price)) || 0;
         return qty * price;
     }

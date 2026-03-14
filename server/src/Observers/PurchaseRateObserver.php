@@ -52,6 +52,7 @@ class PurchaseRateObserver
                     'purchase_rate_uuid' => $purchaseRate->uuid,
                     'payload_uuid'       => $purchaseRate->payload_uuid,
                 ]);
+
                 return;
             }
 

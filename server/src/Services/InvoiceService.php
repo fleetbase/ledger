@@ -199,7 +199,7 @@ class InvoiceService
             // payment_method and reference are forwarded from the controller options if provided.
             $paymentMethod = data_get($options, 'payment_method', 'manual');
             $reference     = data_get($options, 'reference');
-            $transaction = Transaction::create([
+            $transaction   = Transaction::create([
                 'company_uuid'   => $invoice->company_uuid,
                 'owner_uuid'     => $invoice->customer_uuid,
                 'owner_type'     => $invoice->customer_type,

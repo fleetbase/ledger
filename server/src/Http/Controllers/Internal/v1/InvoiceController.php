@@ -202,9 +202,6 @@ class InvoiceController extends LedgerResourceController
      *
      * We clone the model in-memory (without persisting) so the DB record is
      * not affected.
-     *
-     * @param  \Fleetbase\Models\Template  $template
-     * @return \Fleetbase\Models\Template
      */
     private function normaliseTemplateContextType(\Fleetbase\Models\Template $template): \Fleetbase\Models\Template
     {
@@ -242,9 +239,6 @@ class InvoiceController extends LedgerResourceController
      *   2. Delete any existing items NOT in that set (removed by the user).
      *   3. For each incoming item: update if UUID exists, create if not.
      *   4. Call calculateAmount() on each item before saving.
-     *
-     * @param Invoice $invoice
-     * @param array   $items
      */
     protected function _syncItems(Invoice $invoice, array $items): void
     {

@@ -63,6 +63,7 @@ class HandleSuccessfulPayment implements ShouldQueue
             Log::channel('ledger')->info('HandleSuccessfulPayment: already processed, skipping.', [
                 'gateway_transaction_uuid' => $gatewayTransaction->uuid,
             ]);
+
             return;
         }
 

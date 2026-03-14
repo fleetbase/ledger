@@ -11,9 +11,9 @@ export default class InvoiceActionsService extends ResourceActionService {
     }
 
     transition = {
-        view:   (invoice) => this.transitionTo('billing.invoices.index.details', invoice),
-        edit:   (invoice) => this.transitionTo('billing.invoices.index.edit', invoice.id),
-        create: ()        => this.transitionTo('billing.invoices.index.new'),
+        view: (invoice) => this.transitionTo('billing.invoices.index.details', invoice),
+        edit: (invoice) => this.transitionTo('billing.invoices.index.edit', invoice.id),
+        create: () => this.transitionTo('billing.invoices.index.new'),
     };
 
     panel = {
@@ -56,22 +56,22 @@ export default class InvoiceActionsService extends ResourceActionService {
      */
     @action async recordPayment(invoice, options = {}) {
         const modalOptions = {
-            title:                `Record Payment — ${invoice.number}`,
-            acceptButtonText:     'Record Payment',
-            acceptButtonIcon:     'check-circle',
+            title: `Record Payment — ${invoice.number}`,
+            acceptButtonText: 'Record Payment',
+            acceptButtonIcon: 'check-circle',
             invoice,
-            amount:               invoice.balance ?? 0,
-            paymentMethod:        'bank_transfer',
-            reference:            '',
+            amount: invoice.balance ?? 0,
+            paymentMethod: 'bank_transfer',
+            reference: '',
             paymentMethodOptions: [
                 { label: 'Bank Transfer', value: 'bank_transfer' },
-                { label: 'Cash',          value: 'cash' },
-                { label: 'Cheque',        value: 'cheque' },
-                { label: 'Credit Card',   value: 'credit_card' },
-                { label: 'Debit Card',    value: 'debit_card' },
-                { label: 'PayPal',        value: 'paypal' },
-                { label: 'Stripe',        value: 'stripe' },
-                { label: 'Other',         value: 'other' },
+                { label: 'Cash', value: 'cash' },
+                { label: 'Cheque', value: 'cheque' },
+                { label: 'Credit Card', value: 'credit_card' },
+                { label: 'Debit Card', value: 'debit_card' },
+                { label: 'PayPal', value: 'paypal' },
+                { label: 'Stripe', value: 'stripe' },
+                { label: 'Other', value: 'other' },
             ],
             setAmount: (centsValue) => {
                 modalOptions.amount = centsValue;
@@ -92,9 +92,9 @@ export default class InvoiceActionsService extends ResourceActionService {
                     await this.fetch.post(
                         `invoices/${invoice.id}/record-payment`,
                         {
-                            amount:         modalOptions.amount,
+                            amount: modalOptions.amount,
                             payment_method: modalOptions.paymentMethod,
-                            reference:      modalOptions.reference || null,
+                            reference: modalOptions.reference || null,
                         },
                         { namespace: 'ledger/int/v1' }
                     );
@@ -112,9 +112,7 @@ export default class InvoiceActionsService extends ResourceActionService {
     }
 
     @action async previewInvoice(invoice, options = {}) {
-        const title = invoice.number
-            ? this.intl.t('invoice.actions.preview-invoice', { number: invoice.number })
-            : this.intl.t('invoice.actions.preview-invoice-fallback');
+        const title = invoice.number ? this.intl.t('invoice.actions.preview-invoice', { number: invoice.number }) : this.intl.t('invoice.actions.preview-invoice-fallback');
 
         // Reset cached HTML each time a new preview is opened.
         this._previewHtml = null;
@@ -157,13 +155,16 @@ export default class InvoiceActionsService extends ResourceActionService {
      */
     @action copyInvoiceUrl(invoice) {
         const origin = window.location.origin;
-        const url    = `${origin}/~/invoice?id=${invoice.public_id}`;
+        const url = `${origin}/~/invoice?id=${invoice.public_id}`;
         if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).then(() => {
-                this.notifications.success(this.intl.t('invoice.actions.payment-link-copied'));
-            }).catch(() => {
-                this._fallbackCopy(url);
-            });
+            navigator.clipboard
+                .writeText(url)
+                .then(() => {
+                    this.notifications.success(this.intl.t('invoice.actions.payment-link-copied'));
+                })
+                .catch(() => {
+                    this._fallbackCopy(url);
+                });
         } else {
             this._fallbackCopy(url);
         }
@@ -253,7 +254,7 @@ export default class InvoiceActionsService extends ResourceActionService {
         const el = document.createElement('textarea');
         el.value = text;
         el.style.position = 'fixed';
-        el.style.opacity  = '0';
+        el.style.opacity = '0';
         document.body.appendChild(el);
         el.focus();
         el.select();

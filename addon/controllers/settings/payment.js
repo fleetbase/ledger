@@ -93,10 +93,6 @@ export default class SettingsPaymentController extends Controller {
 
     get selectedGateway() {
         if (!this.default_gateway_uuid) return null;
-        return (
-            this.availableGateways.find(
-                (g) => g.uuid === this.default_gateway_uuid || g.public_id === this.default_gateway_uuid || g.id === this.default_gateway_uuid
-            ) ?? null
-        );
+        return this.availableGateways.find((g) => g.uuid === this.default_gateway_uuid || g.public_id === this.default_gateway_uuid || g.id === this.default_gateway_uuid) ?? null;
     }
 }
