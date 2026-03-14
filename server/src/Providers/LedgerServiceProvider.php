@@ -38,6 +38,10 @@ class LedgerServiceProvider extends CoreServiceProvider
         \Fleetbase\Ledger\Models\Invoice::class => \Fleetbase\Ledger\Observers\InvoiceObserver::class,
         \Fleetbase\Models\Company::class        => \Fleetbase\Ledger\Observers\CompanyObserver::class,
         \Fleetbase\Models\User::class           => \Fleetbase\Ledger\Observers\UserObserver::class,
+        // Optional integrations — silently skipped when the package is not installed.
+        // CoreServiceProvider::registerObservers() guards each entry with Utils::classExists().
+        'Fleetbase\\FleetOps\\Models\\PurchaseRate' => \Fleetbase\Ledger\Observers\PurchaseRateObserver::class,
+        'Fleetbase\\FleetOps\\Models\\Order'        => \Fleetbase\Ledger\Observers\StorefrontOrderObserver::class,
     ];
 
     /**
