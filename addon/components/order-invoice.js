@@ -22,14 +22,18 @@ import { task } from 'ember-concurrency';
  *   );
  *
  * Args:
- *   @order   {Model}  The Fleet-Ops order model instance (primary).
- *   @resource {Model} Also the order model instance (alias passed by the host).
- *   @params  {Object} Optional componentParams passed in by the host.
+ *   @order    {Model}  The Fleet-Ops order model instance (primary).
+ *   @resource {Model}  Also the order model instance (alias passed by the host).
+ *   @params   {Object} Optional componentParams passed in by the host.
+ *
+ * NOTE: This component is rendered inside the Fleet-Ops engine context, so it
+ * must NOT inject any services that are only registered in the Ledger engine
+ * (e.g. invoiceActions).  All cross-engine functionality must be implemented
+ * inline or via services that are in the shared hostServices list.
  */
 export default class OrderInvoiceComponent extends Component {
     @service store;
     @service fetch;
-    @service invoiceActions;
     @service hostRouter;
     @service notifications;
 
@@ -54,10 +58,15 @@ export default class OrderInvoiceComponent extends Component {
     /**
      * The public customer-facing invoice URL.
      * Resolves to: <origin>/~/invoice?id=<invoice.public_id>
+     *
+     * Built inline so this component does not depend on the Ledger-only
+     * invoiceActions service, which is not available in the Fleet-Ops engine
+     * container and would resolve to undefined, causing a TypeError.
      */
     get invoiceUrl() {
-        if (!this.invoice) return null;
-        return this.invoiceActions.getInvoiceUrl(this.invoice);
+        if (!this.invoice?.public_id) return null;
+        const origin = window.location.origin;
+        return `${origin}/~/invoice?id=${this.invoice.public_id}`;
     }
 
     // ── Data loading ──────────────────────────────────────────────────────────
@@ -96,11 +105,21 @@ export default class OrderInvoiceComponent extends Component {
 
     /**
      * Navigate to the full invoice detail view inside the Ledger engine.
-     * Uses the invoiceActions transition helper so the correct Ledger route
-     * is resolved regardless of the current engine context.
+     *
+     * Uses hostRouter to transition to the Ledger billing route so this works
+     * from any engine context without needing the Ledger-only invoiceActions
+     * service.
      */
     @action openInLedger() {
         if (!this.invoice) return;
-        this.invoiceActions.transition.view(this.invoice);
+        try {
+            this.hostRouter.transitionTo('console.ledger.billing.invoices.index.details', this.invoice.id);
+        } catch {
+            // Fallback: open the public invoice URL in a new tab if the Ledger
+            // route is not reachable from the current engine context.
+            if (this.invoiceUrl) {
+                window.open(this.invoiceUrl, '_blank');
+            }
+        }
     }
 }
