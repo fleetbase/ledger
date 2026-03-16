@@ -14,14 +14,14 @@
                 {{#each @data.operating as |item|}}
                     <tr class="border-b border-gray-100 dark:border-gray-700">
                         <td class="py-1.5 text-gray-700 dark:text-gray-300 capitalize">{{item.type}}</td>
-                        <td class="py-1.5 text-right font-medium {{if (gt item.net 0) "text-green-600" "text-red-600"}}">{{format-currency item.net @data.currency}}</td>
+                        <td class="py-1.5 text-right font-medium {{if (gt item.net 0) 'text-green-600' 'text-red-600'}}">{{format-currency item.net @data.currency}}</td>
                     </tr>
                 {{/each}}
             </tbody>
             <tfoot>
                 <tr class="border-t-2 border-gray-300">
                     <td class="py-2 font-semibold text-gray-900 dark:text-white">Net Operating Cash Flow</td>
-                    <td class="py-2 text-right font-bold {{if (gt @data.net_operating 0) "text-green-600" "text-red-600"}}">{{format-currency @data.net_operating @data.currency}}</td>
+                    <td class="py-2 text-right font-bold {{if (gt @data.net_operating 0) 'text-green-600' 'text-red-600'}}">{{format-currency @data.net_operating @data.currency}}</td>
                 </tr>
             </tfoot>
         </table>
@@ -35,14 +35,14 @@
                 {{#each @data.financing as |item|}}
                     <tr class="border-b border-gray-100 dark:border-gray-700">
                         <td class="py-1.5 text-gray-700 dark:text-gray-300 capitalize">{{item.type}}</td>
-                        <td class="py-1.5 text-right font-medium {{if (gt item.net 0) "text-green-600" "text-red-600"}}">{{format-currency item.net @data.currency}}</td>
+                        <td class="py-1.5 text-right font-medium {{if (gt item.net 0) 'text-green-600' 'text-red-600'}}">{{format-currency item.net @data.currency}}</td>
                     </tr>
                 {{/each}}
             </tbody>
             <tfoot>
                 <tr class="border-t-2 border-gray-300">
                     <td class="py-2 font-semibold text-gray-900 dark:text-white">Net Financing Cash Flow</td>
-                    <td class="py-2 text-right font-bold {{if (gt @data.net_financing 0) "text-green-600" "text-red-600"}}">{{format-currency @data.net_financing @data.currency}}</td>
+                    <td class="py-2 text-right font-bold {{if (gt @data.net_financing 0) 'text-green-600' 'text-red-600'}}">{{format-currency @data.net_financing @data.currency}}</td>
                 </tr>
             </tfoot>
         </table>
@@ -52,7 +52,7 @@
     <div class="border-t-2 border-gray-400 pt-4">
         <div class="flex justify-between items-center">
             <span class="text-base font-bold text-gray-900 dark:text-white">Net Change in Cash</span>
-            <span class="text-base font-bold {{if (gt @data.net_change 0) "text-green-600" "text-red-600"}}">
+            <span class="text-base font-bold {{if (gt @data.net_change 0) 'text-green-600' 'text-red-600'}}">
                 {{format-currency @data.net_change @data.currency}}
             </span>
         </div>

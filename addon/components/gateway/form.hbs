@@ -9,23 +9,11 @@
             </div>
 
             <InputGroup @name="Gateway Name" @wrapperClass="col-span-2">
-                <Input
-                    @value={{@resource.name}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="e.g. Stripe Production"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.name}} @type="text" class="w-full form-input" placeholder="e.g. Stripe Production" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Code">
-                <Input
-                    @value={{@resource.code}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="e.g. stripe_prod"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.code}} @type="text" class="w-full form-input" placeholder="e.g. stripe_prod" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Driver">
@@ -98,13 +86,7 @@
             </InputGroup>
 
             <InputGroup @name="Description" @wrapperClass="col-span-2">
-                <Textarea
-                    @value={{@resource.description}}
-                    class="w-full form-input"
-                    rows="2"
-                    placeholder="Optional description of this gateway..."
-                    disabled={{cannot-write @resource}}
-                />
+                <Textarea @value={{@resource.description}} class="w-full form-input" rows="2" placeholder="Optional description of this gateway..." disabled={{cannot-write @resource}} />
             </InputGroup>
 
             {{! URLs }}
@@ -112,32 +94,12 @@
                 URLs
             </div>
 
-            <InputGroup
-                @name="Return URL"
-                @helpText="The URL the customer is redirected to after a successful payment."
-                @wrapperClass="col-span-2"
-            >
-                <Input
-                    @value={{@resource.return_url}}
-                    @type="url"
-                    class="w-full form-input"
-                    placeholder="https://yourapp.com/payment/success"
-                    disabled={{cannot-write @resource}}
-                />
+            <InputGroup @name="Return URL" @helpText="The URL the customer is redirected to after a successful payment." @wrapperClass="col-span-2">
+                <Input @value={{@resource.return_url}} @type="url" class="w-full form-input" placeholder="https://yourapp.com/payment/success" disabled={{cannot-write @resource}} />
             </InputGroup>
 
-            <InputGroup
-                @name="Webhook / Callback URL"
-                @helpText="The URL the gateway will POST payment events to. Register this in your gateway dashboard."
-                @wrapperClass="col-span-2"
-            >
-                <Input
-                    @value={{@resource.webhook_url}}
-                    @type="url"
-                    class="w-full form-input"
-                    placeholder="https://yourapp.com/ledger/webhooks/stripe"
-                    disabled={{cannot-write @resource}}
-                />
+            <InputGroup @name="Webhook / Callback URL" @helpText="The URL the gateway will POST payment events to. Register this in your gateway dashboard." @wrapperClass="col-span-2">
+                <Input @value={{@resource.webhook_url}} @type="url" class="w-full form-input" placeholder="https://yourapp.com/ledger/webhooks/stripe" disabled={{cannot-write @resource}} />
                 {{#if @resource.system_webhook_url}}
                     <div class="mt-1 text-[11px] text-gray-500">
                         System webhook URL:
@@ -154,7 +116,8 @@
         <ContentPanel @title="Configuration" @open={{true}} @wrapperClass="bordered-top">
             <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
                 <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
-                    {{@resource.driver}} Configuration
+                    {{@resource.driver}}
+                    Configuration
                 </div>
 
                 {{#each this.configSchema as |field|}}

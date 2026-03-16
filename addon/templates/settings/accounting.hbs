@@ -16,10 +16,7 @@
 
             {{! ── Base Currency & Fiscal Year ────────────────────────────────────── }}
             <ContentPanel @title="Currency & Fiscal Year" @open={{true}} @wrapperClass="bordered-classic">
-                <InputGroup
-                    @name="Base Currency"
-                    @helpText="The reporting currency for all financial statements and the chart of accounts."
-                >
+                <InputGroup @name="Base Currency" @helpText="The reporting currency for all financial statements and the chart of accounts.">
                     <CurrencySelect
                         @currency={{this.effectiveCurrency}}
                         @currencyData={{this.selectedCurrency}}
@@ -33,10 +30,7 @@
                     {{/unless}}
                 </InputGroup>
 
-                <InputGroup
-                    @name="Fiscal Year Start Month"
-                    @helpText="The month in which your organisation's fiscal year begins. Affects period-based financial reports."
-                >
+                <InputGroup @name="Fiscal Year Start Month" @helpText="The month in which your organisation's fiscal year begins. Affects period-based financial reports.">
                     <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                         <PowerSelect
                             @options={{this.fiscalYearMonthOptions}}
@@ -58,10 +52,7 @@
                     These accounts are used automatically when posting transactions unless a specific account is selected on the transaction itself.
                 </div>
 
-                <InputGroup
-                    @name="Default Revenue Account"
-                    @helpText="Applied to income line items on invoices and sales transactions."
-                >
+                <InputGroup @name="Default Revenue Account" @helpText="Applied to income line items on invoices and sales transactions.">
                     <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                         <PowerSelect
                             @options={{this.revenueAccounts}}
@@ -82,10 +73,7 @@
                     </div>
                 </InputGroup>
 
-                <InputGroup
-                    @name="Default Expense Account"
-                    @helpText="Applied to cost and expense line items on bills and purchase transactions."
-                >
+                <InputGroup @name="Default Expense Account" @helpText="Applied to cost and expense line items on bills and purchase transactions.">
                     <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                         <PowerSelect
                             @options={{this.expenseAccounts}}
@@ -106,10 +94,7 @@
                     </div>
                 </InputGroup>
 
-                <InputGroup
-                    @name="Default Accounts Receivable (AR) Account"
-                    @helpText="The asset account that tracks money owed to your organisation from customers."
-                >
+                <InputGroup @name="Default Accounts Receivable (AR) Account" @helpText="The asset account that tracks money owed to your organisation from customers.">
                     <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                         <PowerSelect
                             @options={{this.arAccounts}}
@@ -130,10 +115,7 @@
                     </div>
                 </InputGroup>
 
-                <InputGroup
-                    @name="Default Accounts Payable (AP) Account"
-                    @helpText="The liability account that tracks money your organisation owes to vendors."
-                >
+                <InputGroup @name="Default Accounts Payable (AP) Account" @helpText="The liability account that tracks money your organisation owes to vendors.">
                     <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                         <PowerSelect
                             @options={{this.apAccounts}}

@@ -9,22 +9,11 @@
             </div>
 
             <InputGroup @name="Entry Number">
-                <Input
-                    @value={{@resource.number}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="e.g. JE-0001"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.number}} @type="text" class="w-full form-input" placeholder="e.g. JE-0001" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Entry Date">
-                <Input
-                    @value={{@resource.entry_date}}
-                    @type="date"
-                    class="w-full form-input"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.entry_date}} @type="date" class="w-full form-input" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Type">
@@ -46,7 +35,43 @@
             <InputGroup @name="Currency">
                 <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                     <PowerSelect
-                        @options={{array "USD" "EUR" "GBP" "AED" "SAR" "QAR" "KWD" "BHD" "OMR" "JOD" "EGP" "NGN" "KES" "GHS" "ZAR" "INR" "PKR" "BDT" "MYR" "SGD" "IDR" "PHP" "THB" "CNY" "JPY" "KRW" "AUD" "CAD" "NZD" "CHF" "SEK" "NOK" "DKK" "BRL" "MXN"}}
+                        @options={{array
+                            "USD"
+                            "EUR"
+                            "GBP"
+                            "AED"
+                            "SAR"
+                            "QAR"
+                            "KWD"
+                            "BHD"
+                            "OMR"
+                            "JOD"
+                            "EGP"
+                            "NGN"
+                            "KES"
+                            "GHS"
+                            "ZAR"
+                            "INR"
+                            "PKR"
+                            "BDT"
+                            "MYR"
+                            "SGD"
+                            "IDR"
+                            "PHP"
+                            "THB"
+                            "CNY"
+                            "JPY"
+                            "KRW"
+                            "AUD"
+                            "CAD"
+                            "NZD"
+                            "CHF"
+                            "SEK"
+                            "NOK"
+                            "DKK"
+                            "BRL"
+                            "MXN"
+                        }}
                         @selected={{@resource.currency}}
                         @onChange={{fn (mut @resource.currency)}}
                         @placeholder="Select currency"
@@ -104,13 +129,7 @@
             </InputGroup>
 
             <InputGroup @name="Debit Account Code">
-                <Input
-                    @value={{@resource.debit_account_code}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="e.g. 1000"
-                    disabled={{true}}
-                />
+                <Input @value={{@resource.debit_account_code}} @type="text" class="w-full form-input" placeholder="e.g. 1000" disabled={{true}} />
             </InputGroup>
 
             {{! Credit Account }}
@@ -140,13 +159,7 @@
             </InputGroup>
 
             <InputGroup @name="Credit Account Code">
-                <Input
-                    @value={{@resource.credit_account_code}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="e.g. 2000"
-                    disabled={{true}}
-                />
+                <Input @value={{@resource.credit_account_code}} @type="text" class="w-full form-input" placeholder="e.g. 2000" disabled={{true}} />
             </InputGroup>
 
         </div>

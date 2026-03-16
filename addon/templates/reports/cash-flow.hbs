@@ -36,7 +36,7 @@
                         {{#each this.data.operating as |item|}}
                             <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 <td class="px-4 py-2 text-gray-700 dark:text-gray-300 capitalize">{{item.type}}</td>
-                                <td class="px-4 py-2 text-right font-medium {{if (gt item.net 0) "text-green-600 dark:text-green-400" "text-red-600 dark:text-red-400"}}">
+                                <td class="px-4 py-2 text-right font-medium {{if (gt item.net 0) 'text-green-600 dark:text-green-400' 'text-red-600 dark:text-red-400'}}">
                                     {{format-currency item.net (or item.currency this.companyCurrency)}}
                                 </td>
                             </tr>
@@ -47,7 +47,7 @@
                     <tfoot>
                         <tr class="bg-gray-50 dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-700">
                             <td class="px-4 py-2.5 font-semibold text-gray-900 dark:text-white">Net Operating Cash Flow</td>
-                            <td class="px-4 py-2.5 text-right font-bold {{if (gt this.data.net_operating 0) "text-green-600 dark:text-green-400" "text-red-600 dark:text-red-400"}}">
+                            <td class="px-4 py-2.5 text-right font-bold {{if (gt this.data.net_operating 0) 'text-green-600 dark:text-green-400' 'text-red-600 dark:text-red-400'}}">
                                 {{format-currency this.data.net_operating this.companyCurrency}}
                             </td>
                         </tr>
@@ -65,7 +65,7 @@
                         {{#each this.data.financing as |item|}}
                             <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 <td class="px-4 py-2 text-gray-700 dark:text-gray-300 capitalize">{{item.type}}</td>
-                                <td class="px-4 py-2 text-right font-medium {{if (gt item.net 0) "text-green-600 dark:text-green-400" "text-red-600 dark:text-red-400"}}">
+                                <td class="px-4 py-2 text-right font-medium {{if (gt item.net 0) 'text-green-600 dark:text-green-400' 'text-red-600 dark:text-red-400'}}">
                                     {{format-currency item.net (or item.currency this.companyCurrency)}}
                                 </td>
                             </tr>
@@ -76,7 +76,7 @@
                     <tfoot>
                         <tr class="bg-gray-50 dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-700">
                             <td class="px-4 py-2.5 font-semibold text-gray-900 dark:text-white">Net Financing Cash Flow</td>
-                            <td class="px-4 py-2.5 text-right font-bold {{if (gt this.data.net_financing 0) "text-green-600 dark:text-green-400" "text-red-600 dark:text-red-400"}}">
+                            <td class="px-4 py-2.5 text-right font-bold {{if (gt this.data.net_financing 0) 'text-green-600 dark:text-green-400' 'text-red-600 dark:text-red-400'}}">
                                 {{format-currency this.data.net_financing this.companyCurrency}}
                             </td>
                         </tr>
@@ -88,7 +88,7 @@
             <div class="border-t-2 border-gray-400 dark:border-gray-700 pt-4">
                 <div class="flex justify-between items-center py-1">
                     <span class="text-base font-bold text-gray-900 dark:text-white">Net Change in Cash</span>
-                    <span class="text-base font-bold {{if (gt this.data.net_change 0) "text-green-600 dark:text-green-400" "text-red-600 dark:text-red-400"}}">
+                    <span class="text-base font-bold {{if (gt this.data.net_change 0) 'text-green-600 dark:text-green-400' 'text-red-600 dark:text-red-400'}}">
                         {{format-currency this.data.net_change this.companyCurrency}}
                     </span>
                 </div>

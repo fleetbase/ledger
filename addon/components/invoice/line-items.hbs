@@ -17,13 +17,7 @@
                 {{#each this.items as |item|}}
                     <tr class="border-b border-gray-100 dark:border-gray-800">
                         <td class="py-1 pr-2">
-                            <Input
-                                @type="text"
-                                @value={{item.description}}
-                                placeholder="Item description"
-                                disabled={{@disabled}}
-                                class="w-full form-input text-xs"
-                            />
+                            <Input @type="text" @value={{item.description}} placeholder="Item description" disabled={{@disabled}} class="w-full form-input text-xs" />
                         </td>
                         <td class="py-1 px-2">
                             <input
@@ -37,13 +31,7 @@
                             />
                         </td>
                         <td class="py-1 px-2">
-                            <MoneyInput
-                                @value={{item.unit_price}}
-                                @currency={{@currency}}
-                                @onChange={{fn this.updateUnitPrice item}}
-                                disabled={{@disabled}}
-                                class="w-full"
-                            />
+                            <MoneyInput @value={{item.unit_price}} @currency={{@currency}} @onChange={{fn this.updateUnitPrice item}} disabled={{@disabled}} class="w-full" />
                         </td>
                         <td class="py-1 px-2">
                             <input
@@ -63,11 +51,7 @@
                         </td>
                         {{#unless @disabled}}
                             <td class="py-1 pl-2 text-center">
-                                <button
-                                    type="button"
-                                    class="text-red-400 hover:text-red-600 transition-colors"
-                                    {{on "click" (fn this.removeItem item)}}
-                                >
+                                <button type="button" class="text-red-400 hover:text-red-600 transition-colors" {{on "click" (fn this.removeItem item)}}>
                                     <FaIcon @icon="times" @size="xs" />
                                 </button>
                             </td>
@@ -117,11 +101,7 @@
 
     {{#unless @disabled}}
         <div class="mt-2">
-            <button
-                type="button"
-                class="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 transition-colors"
-                {{on "click" this.addItem}}
-            >
+            <button type="button" class="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 transition-colors" {{on "click" this.addItem}}>
                 <FaIcon @icon="plus" @size="xs" />
                 Add line item
             </button>

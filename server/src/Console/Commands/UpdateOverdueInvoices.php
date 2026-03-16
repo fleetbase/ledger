@@ -2,9 +2,9 @@
 
 namespace Fleetbase\Ledger\Console\Commands;
 
-use Illuminate\Console\Command;
-use Fleetbase\Ledger\Models\Invoice;
 use Carbon\Carbon;
+use Fleetbase\Ledger\Models\Invoice;
+use Illuminate\Console\Command;
 
 class UpdateOverdueInvoices extends Command
 {
@@ -47,6 +47,7 @@ class UpdateOverdueInvoices extends Command
 
         if ($overdueInvoices->isEmpty()) {
             $this->info('No overdue invoices found.');
+
             return 0;
         }
 
@@ -59,6 +60,7 @@ class UpdateOverdueInvoices extends Command
         }
 
         $this->info('All overdue invoices have been updated.');
+
         return 0;
     }
 }

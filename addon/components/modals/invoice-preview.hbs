@@ -7,12 +7,7 @@
             </div>
         {{else if @options.html}}
             {{! Rendered invoice HTML in a sandboxed iframe }}
-            <iframe
-                class="border-0 w-full shadow-sm h-40rem"
-                srcdoc={{@options.html}}
-                title={{@options.title}}
-                sandbox="allow-same-origin"
-            ></iframe>
+            <iframe class="border-0 w-full shadow-sm h-40rem" srcdoc={{@options.html}} title={{@options.title}} sandbox="allow-same-origin"></iframe>
         {{else}}
             {{! No content / error state }}
             <div class="flex items-center justify-center h-40rem text-gray-400 dark:text-gray-500 text-sm">

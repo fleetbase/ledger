@@ -38,23 +38,12 @@
 
             {{! Amount input }}
             <InputGroup @name="Amount" @helpText="Amount to transfer.">
-                <MoneyInput
-                    class="w-full"
-                    @value={{@options.amount}}
-                    @currency={{wallet.currency}}
-                    @onChange={{@options.setAmount}}
-                />
+                <MoneyInput class="w-full" @value={{@options.amount}} @currency={{wallet.currency}} @onChange={{@options.setAmount}} />
             </InputGroup>
 
             {{! Description input }}
             <InputGroup @name="Description" @helpText="Optional note for this transfer.">
-                <Input
-                    @value={{@options.description}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="Internal transfer"
-                    {{on "input" @options.setDescription}}
-                />
+                <Input @value={{@options.description}} @type="text" class="w-full form-input" placeholder="Internal transfer" {{on "input" @options.setDescription}} />
             </InputGroup>
         {{/let}}
     </div>

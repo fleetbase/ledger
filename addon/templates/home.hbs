@@ -1,10 +1,5 @@
 <Layout::Section::Body class="overflow-y-scroll h-full">
-    <Dashboard
-        @defaultDashboardId="ledger"
-        @defaultDashboardName="Ledger Dashboard"
-        @extension="ledger"
-        class="flex items-center justify-between p-2"
-    />
+    <Dashboard @defaultDashboardId="ledger" @defaultDashboardName="Ledger Dashboard" @extension="ledger" class="flex items-center justify-between p-2" />
     <Spacer @height="300px" />
     {{outlet}}
 </Layout::Section::Body>

@@ -1,13 +1,6 @@
 <Layout::Section::Header @title="Trial Balance" @actionsWrapperClass="flex flex-row items-center space-x-2">
     <div class="flex flex-row items-center space-x-2">
-        <DatePicker
-            @value={{this.as_of}}
-            @onSelect={{this.onDateChanged}}
-            @autoClose={{true}}
-            @buttons={{array "clear"}}
-            @placeholder="As of date"
-            class="w-44 form-input form-input-sm"
-        />
+        <DatePicker @value={{this.as_of}} @onSelect={{this.onDateChanged}} @autoClose={{true}} @buttons={{array "clear"}} @placeholder="As of date" class="w-44 form-input form-input-sm" />
         <Button @size="sm" @type="default" @icon="refresh" @helpText="Refresh" {{on "click" this.reload}} />
     </div>
 </Layout::Section::Header>

@@ -53,7 +53,7 @@
     <div class="border-t-2 border-gray-400 pt-4">
         <div class="flex justify-between items-center">
             <span class="text-base font-bold text-gray-900 dark:text-white">Net Income</span>
-            <span class="text-base font-bold {{if @data.profitable "text-green-600" "text-red-600"}}">
+            <span class="text-base font-bold {{if @data.profitable 'text-green-600' 'text-red-600'}}">
                 {{format-currency @data.net_income @data.currency}}
             </span>
         </div>

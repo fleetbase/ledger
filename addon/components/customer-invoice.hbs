@@ -19,14 +19,14 @@
                 <p class="text-sm">Loading invoice…</p>
             </div>
 
-        {{! ── Error state ────────────────────────────────────────────────────── }}
+            {{! ── Error state ────────────────────────────────────────────────────── }}
         {{else if this.error}}
             <div class="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-8 text-center">
                 <FaIcon @icon="triangle-exclamation" @size="2x" class="text-red-400 mb-4" />
                 <p class="text-red-700 dark:text-red-300 font-medium">{{this.error}}</p>
             </div>
 
-        {{! ── Invoice loaded ─────────────────────────────────────────────────── }}
+            {{! ── Invoice loaded ─────────────────────────────────────────────────── }}
         {{else if this.invoice}}
 
             {{! ── Header card ──────────────────────────────────────────────── }}
@@ -57,7 +57,8 @@
                         <p class="text-gray-700 dark:text-gray-300">{{format-date-fns this.invoice.date "yyyy-MM-dd"}}</p>
                         {{#if this.invoice.due_date}}
                             <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">
-                                Due: {{format-date-fns this.invoice.due_date "yyyy-MM-dd"}}
+                                Due:
+                                {{format-date-fns this.invoice.due_date "yyyy-MM-dd"}}
                             </p>
                         {{/if}}
                     </div>
@@ -109,7 +110,7 @@
                     {{/if}}
                     <div class="flex justify-between font-bold text-base text-gray-900 dark:text-white border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
                         <span>Balance Due</span>
-                        <span class="{{if this.isPaid "text-green-600 dark:text-green-400"}}">
+                        <span class="{{if this.isPaid 'text-green-600 dark:text-green-400'}}">
                             {{format-currency this.invoice.balance this.invoice.currency}}
                         </span>
                     </div>
@@ -129,11 +130,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="px-8 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                         <h2 class="font-semibold text-gray-800 dark:text-gray-100">Pay This Invoice</h2>
-                        <button
-                            type="button"
-                            class="text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:underline focus:outline-none"
-                            {{on "click" this.togglePaymentForm}}
-                        >
+                        <button type="button" class="text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:underline focus:outline-none" {{on "click" this.togglePaymentForm}}>
                             {{if this.showPaymentForm "Cancel" "Pay Now"}}
                         </button>
                     </div>
@@ -159,9 +156,11 @@
                                             <button
                                                 type="button"
                                                 class="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-colors
-                                                    {{if (eq this.selectedGatewayId gateway.id)
-                                                        "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300"
-                                                        "border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-indigo-300"}}"
+                                                    {{if
+                                                        (eq this.selectedGatewayId gateway.id)
+                                                        'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                                                        'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-indigo-300'
+                                                    }}"
                                                 {{on "click" (fn this.selectGateway gateway.id)}}
                                             >
                                                 <FaIcon @icon="credit-card" class="text-gray-400" />
@@ -215,7 +214,7 @@
                     {{/if}}
                 </div>
 
-            {{! ── Paid state ───────────────────────────────────────────────── }}
+                {{! ── Paid state ───────────────────────────────────────────────── }}
             {{else if this.isPaid}}
                 <div class="rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-8 flex items-center gap-5">
                     <FaIcon @icon="circle-check" @size="2x" class="text-green-500 shrink-0" />
@@ -227,13 +226,14 @@
                     </div>
                 </div>
 
-            {{! ── Void / cancelled state ───────────────────────────────────── }}
+                {{! ── Void / cancelled state ───────────────────────────────────── }}
             {{else if this.isVoid}}
                 <div class="rounded-2xl bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-8 flex items-center gap-5">
                     <FaIcon @icon="ban" @size="2x" class="text-gray-400 shrink-0" />
                     <div>
                         <p class="font-semibold text-gray-700 dark:text-gray-200 text-lg capitalize">
-                            Invoice {{this.invoice.status}}
+                            Invoice
+                            {{this.invoice.status}}
                         </p>
                         <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
                             This invoice is no longer active and cannot accept payments.
@@ -244,7 +244,8 @@
 
             {{! ── Footer ──────────────────────────────────────────────────── }}
             <p class="text-center text-xs text-gray-400 dark:text-gray-600 mt-8">
-                Powered by <span class="font-medium">Fleetbase Ledger</span>
+                Powered by
+                <span class="font-medium">Fleetbase Ledger</span>
             </p>
 
         {{/if}}

@@ -48,7 +48,9 @@
                 <div class="field-name">Card</div>
                 <div class="field-value">
                     {{#if @resource.payment_method_brand}}
-                        {{@resource.payment_method_brand}} ···· {{@resource.payment_method_last4}}
+                        {{@resource.payment_method_brand}}
+                        ····
+                        {{@resource.payment_method_last4}}
                     {{else}}
                         {{n-a null}}
                     {{/if}}

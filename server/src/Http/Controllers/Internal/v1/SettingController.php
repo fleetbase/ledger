@@ -82,14 +82,14 @@ class SettingController extends Controller
     public function saveInvoiceSettings(Request $request): JsonResponse
     {
         $request->validate([
-            'invoiceSettings'                        => 'required|array',
-            'invoiceSettings.invoice_prefix'         => 'nullable|string|max:20',
-            'invoiceSettings.default_currency'       => 'nullable|string|size:3',
-            'invoiceSettings.payment_terms_days'     => 'nullable|integer|min:0|max:365',
-            'invoiceSettings.due_date_offset_days'   => 'nullable|integer|min:0|max:365',
-            'invoiceSettings.default_notes'          => 'nullable|string|max:2000',
-            'invoiceSettings.default_terms'          => 'nullable|string|max:2000',
-            'invoiceSettings.auto_send_on_creation'   => 'nullable|boolean',
+            'invoiceSettings'                          => 'required|array',
+            'invoiceSettings.invoice_prefix'           => 'nullable|string|max:20',
+            'invoiceSettings.default_currency'         => 'nullable|string|size:3',
+            'invoiceSettings.payment_terms_days'       => 'nullable|integer|min:0|max:365',
+            'invoiceSettings.due_date_offset_days'     => 'nullable|integer|min:0|max:365',
+            'invoiceSettings.default_notes'            => 'nullable|string|max:2000',
+            'invoiceSettings.default_terms'            => 'nullable|string|max:2000',
+            'invoiceSettings.auto_send_on_creation'    => 'nullable|boolean',
             'invoiceSettings.default_template_uuid'    => 'nullable|string',
         ]);
 

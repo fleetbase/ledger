@@ -32,9 +32,9 @@ class InvoiceService
      * `order_uuid` and to the customer via the order's customer polymorphic
      * relationship.
      *
-     * @param Order  $order        The Fleet-Ops order to invoice.
-     * @param array  $options      Optional overrides (currency, due_date, notes, etc.).
-     * @param object|null $purchaseRate  The PurchaseRate model instance, if available.
+     * @param Order       $order        the Fleet-Ops order to invoice
+     * @param array       $options      Optional overrides (currency, due_date, notes, etc.).
+     * @param object|null $purchaseRate The PurchaseRate model instance, if available.
      *                                  When supplied, line items are built from the
      *                                  service quote breakdown rather than order meta.
      */

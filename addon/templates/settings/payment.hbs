@@ -16,10 +16,7 @@
 
             {{! ── Default Gateway ─────────────────────────────────────────────── }}
             <ContentPanel @title="Default Payment Gateway" @open={{true}} @wrapperClass="bordered-classic">
-                <InputGroup
-                    @name="Default Gateway"
-                    @helpText="The gateway used for all invoice payments unless overridden on the individual invoice. Only active gateways are listed."
-                >
+                <InputGroup @name="Default Gateway" @helpText="The gateway used for all invoice payments unless overridden on the individual invoice. Only active gateways are listed.">
                     <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                         <PowerSelect
                             @options={{this.availableGateways}}
@@ -38,8 +35,10 @@
                     </div>
                     {{#if this.selectedGateway}}
                         <div class="mt-1 text-[11px] text-gray-500">
-                            Selected: <span class="font-medium">{{this.selectedGateway.name}}</span>
-                            &mdash; <span class="capitalize">{{this.selectedGateway.environment}}</span>
+                            Selected:
+                            <span class="font-medium">{{this.selectedGateway.name}}</span>
+                            &mdash;
+                            <span class="capitalize">{{this.selectedGateway.environment}}</span>
                         </div>
                     {{/if}}
                     {{#unless this.availableGateways.length}}

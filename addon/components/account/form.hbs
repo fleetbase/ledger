@@ -9,23 +9,11 @@
             </div>
 
             <InputGroup @name="Account Name" @wrapperClass="col-span-2">
-                <Input
-                    @value={{@resource.name}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="e.g. Cash and Cash Equivalents"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.name}} @type="text" class="w-full form-input" placeholder="e.g. Cash and Cash Equivalents" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Account Code">
-                <Input
-                    @value={{@resource.code}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="e.g. 1000"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.code}} @type="text" class="w-full form-input" placeholder="e.g. 1000" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Account Type">
@@ -47,7 +35,43 @@
             <InputGroup @name="Currency">
                 <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                     <PowerSelect
-                        @options={{array "USD" "EUR" "GBP" "AED" "SAR" "QAR" "KWD" "BHD" "OMR" "JOD" "EGP" "NGN" "KES" "GHS" "ZAR" "INR" "PKR" "BDT" "MYR" "SGD" "IDR" "PHP" "THB" "CNY" "JPY" "KRW" "AUD" "CAD" "NZD" "CHF" "SEK" "NOK" "DKK" "BRL" "MXN"}}
+                        @options={{array
+                            "USD"
+                            "EUR"
+                            "GBP"
+                            "AED"
+                            "SAR"
+                            "QAR"
+                            "KWD"
+                            "BHD"
+                            "OMR"
+                            "JOD"
+                            "EGP"
+                            "NGN"
+                            "KES"
+                            "GHS"
+                            "ZAR"
+                            "INR"
+                            "PKR"
+                            "BDT"
+                            "MYR"
+                            "SGD"
+                            "IDR"
+                            "PHP"
+                            "THB"
+                            "CNY"
+                            "JPY"
+                            "KRW"
+                            "AUD"
+                            "CAD"
+                            "NZD"
+                            "CHF"
+                            "SEK"
+                            "NOK"
+                            "DKK"
+                            "BRL"
+                            "MXN"
+                        }}
                         @selected={{@resource.currency}}
                         @onChange={{fn (mut @resource.currency)}}
                         @placeholder="Select currency"
@@ -82,13 +106,7 @@
             </div>
 
             <InputGroup @name="Description" @wrapperClass="col-span-2">
-                <Textarea
-                    @value={{@resource.description}}
-                    class="w-full form-input"
-                    rows="3"
-                    placeholder="Optional description of this account..."
-                    disabled={{cannot-write @resource}}
-                />
+                <Textarea @value={{@resource.description}} class="w-full form-input" rows="3" placeholder="Optional description of this account..." disabled={{cannot-write @resource}} />
             </InputGroup>
 
         </div>

@@ -11,7 +11,6 @@ use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class GatewayController extends LedgerResourceController
 {

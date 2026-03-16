@@ -1,13 +1,6 @@
 <Layout::Section::Header @title="Balance Sheet" @actionsWrapperClass="flex flex-row items-center space-x-2">
     <div class="flex flex-row items-center space-x-2">
-        <DatePicker
-            @value={{this.as_of}}
-            @onSelect={{this.onDateChanged}}
-            @autoClose={{true}}
-            @buttons={{array "clear"}}
-            @placeholder="As of date"
-            class="w-44 form-input form-input-sm"
-        />
+        <DatePicker @value={{this.as_of}} @onSelect={{this.onDateChanged}} @autoClose={{true}} @buttons={{array "clear"}} @placeholder="As of date" class="w-44 form-input form-input-sm" />
         <Button @size="sm" @type="default" @icon="refresh" @helpText="Refresh" {{on "click" this.reload}} />
     </div>
 </Layout::Section::Header>
@@ -25,11 +18,14 @@
                 </div>
                 <Badge @color={{if this.data.balanced "green" "red"}}>{{if this.data.balanced "Balanced" "Unbalanced"}}</Badge>
             </div>
-            {{#each (array
-                (hash label="Assets" items=this.data.assets total=this.data.total_assets)
-                (hash label="Liabilities" items=this.data.liabilities total=this.data.total_liabilities)
-                (hash label="Equity" items=this.data.equity total=this.data.total_equity)
-            ) as |section|}}
+            {{#each
+                (array
+                    (hash label="Assets" items=this.data.assets total=this.data.total_assets)
+                    (hash label="Liabilities" items=this.data.liabilities total=this.data.total_liabilities)
+                    (hash label="Equity" items=this.data.equity total=this.data.total_equity)
+                )
+                as |section|
+            }}
                 <div class="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                     <div class="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                         <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{section.label}}</h3>

@@ -34,12 +34,7 @@
 
             {{! Currency }}
             <InputGroup @name="Currency">
-                <CurrencySelect
-                    @currency={{this.currency}}
-                    @onCurrencyChange={{this.onCurrencyChange}}
-                    @triggerClass="w-full form-select form-input"
-                    @disabled={{cannot-write @resource}}
-                />
+                <CurrencySelect @currency={{this.currency}} @onCurrencyChange={{this.onCurrencyChange}} @triggerClass="w-full form-select form-input" @disabled={{cannot-write @resource}} />
             </InputGroup>
 
             {{! Template }}
@@ -120,15 +115,9 @@
         </div>
     </ContentPanel>
 
-     {{! ── LINE ITEMS ──────────────────────────────────────────────────────── }}
+    {{! ── LINE ITEMS ──────────────────────────────────────────────────────── }}
     <ContentPanel @title="Line Items" @open={{true}} @wrapperClass="bordered-top">
-        <Invoice::LineItems
-            @items={{this.initialItems}}
-            @invoice={{@resource}}
-            @currency={{this.currency}}
-            @disabled={{cannot-write @resource}}
-            @registerRef={{this.registerLineItemsRef}}
-        />
+        <Invoice::LineItems @items={{this.initialItems}} @invoice={{@resource}} @currency={{this.currency}} @disabled={{cannot-write @resource}} @registerRef={{this.registerLineItemsRef}} />
     </ContentPanel>
 
     {{! ── NOTES & TERMS ───────────────────────────────────────────────────── }}
@@ -146,13 +135,7 @@
             </InputGroup>
 
             <InputGroup @name="Terms">
-                <Textarea
-                    @value={{@resource.terms}}
-                    class="w-full form-input"
-                    rows="3"
-                    placeholder="Payment terms, e.g. Net 30…"
-                    disabled={{cannot-write @resource}}
-                />
+                <Textarea @value={{@resource.terms}} class="w-full form-input" rows="3" placeholder="Payment terms, e.g. Net 30…" disabled={{cannot-write @resource}} />
             </InputGroup>
 
         </div>

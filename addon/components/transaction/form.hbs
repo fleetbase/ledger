@@ -59,7 +59,43 @@
             <InputGroup @name="Currency">
                 <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                     <PowerSelect
-                        @options={{array "USD" "EUR" "GBP" "AED" "SAR" "QAR" "KWD" "BHD" "OMR" "JOD" "EGP" "NGN" "KES" "GHS" "ZAR" "INR" "PKR" "BDT" "MYR" "SGD" "IDR" "PHP" "THB" "CNY" "JPY" "KRW" "AUD" "CAD" "NZD" "CHF" "SEK" "NOK" "DKK" "BRL" "MXN"}}
+                        @options={{array
+                            "USD"
+                            "EUR"
+                            "GBP"
+                            "AED"
+                            "SAR"
+                            "QAR"
+                            "KWD"
+                            "BHD"
+                            "OMR"
+                            "JOD"
+                            "EGP"
+                            "NGN"
+                            "KES"
+                            "GHS"
+                            "ZAR"
+                            "INR"
+                            "PKR"
+                            "BDT"
+                            "MYR"
+                            "SGD"
+                            "IDR"
+                            "PHP"
+                            "THB"
+                            "CNY"
+                            "JPY"
+                            "KRW"
+                            "AUD"
+                            "CAD"
+                            "NZD"
+                            "CHF"
+                            "SEK"
+                            "NOK"
+                            "DKK"
+                            "BRL"
+                            "MXN"
+                        }}
                         @selected={{@resource.currency}}
                         @onChange={{fn (mut @resource.currency)}}
                         @placeholder="Select currency"
@@ -78,43 +114,19 @@
             </div>
 
             <InputGroup @name="Amount">
-                <Input
-                    @value={{@resource.amount}}
-                    @type="number"
-                    class="w-full form-input"
-                    placeholder="0.00"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.amount}} @type="number" class="w-full form-input" placeholder="0.00" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Fee Amount">
-                <Input
-                    @value={{@resource.fee_amount}}
-                    @type="number"
-                    class="w-full form-input"
-                    placeholder="0.00"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.fee_amount}} @type="number" class="w-full form-input" placeholder="0.00" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Tax Amount">
-                <Input
-                    @value={{@resource.tax_amount}}
-                    @type="number"
-                    class="w-full form-input"
-                    placeholder="0.00"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.tax_amount}} @type="number" class="w-full form-input" placeholder="0.00" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Net Amount">
-                <Input
-                    @value={{@resource.net_amount}}
-                    @type="number"
-                    class="w-full form-input"
-                    placeholder="0.00"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.net_amount}} @type="number" class="w-full form-input" placeholder="0.00" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             {{! Gateway & Payment }}
@@ -123,23 +135,11 @@
             </div>
 
             <InputGroup @name="Gateway">
-                <Input
-                    @value={{@resource.gateway}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="e.g. stripe"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.gateway}} @type="text" class="w-full form-input" placeholder="e.g. stripe" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Gateway Transaction ID">
-                <Input
-                    @value={{@resource.gateway_transaction_id}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="Gateway transaction reference"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.gateway_transaction_id}} @type="text" class="w-full form-input" placeholder="Gateway transaction reference" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Payment Method">
@@ -159,13 +159,7 @@
             </InputGroup>
 
             <InputGroup @name="Reference">
-                <Input
-                    @value={{@resource.reference}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="External reference"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.reference}} @type="text" class="w-full form-input" placeholder="External reference" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             {{! Description & Notes }}
@@ -174,23 +168,11 @@
             </div>
 
             <InputGroup @name="Description" @wrapperClass="col-span-2">
-                <Input
-                    @value={{@resource.description}}
-                    @type="text"
-                    class="w-full form-input"
-                    placeholder="Short description of this transaction"
-                    disabled={{cannot-write @resource}}
-                />
+                <Input @value={{@resource.description}} @type="text" class="w-full form-input" placeholder="Short description of this transaction" disabled={{cannot-write @resource}} />
             </InputGroup>
 
             <InputGroup @name="Notes" @wrapperClass="col-span-2">
-                <Textarea
-                    @value={{@resource.notes}}
-                    class="w-full form-input"
-                    rows="3"
-                    placeholder="Internal notes..."
-                    disabled={{cannot-write @resource}}
-                />
+                <Textarea @value={{@resource.notes}} class="w-full form-input" rows="3" placeholder="Internal notes..." disabled={{cannot-write @resource}} />
             </InputGroup>
 
         </div>

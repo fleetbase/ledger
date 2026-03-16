@@ -95,10 +95,12 @@ export default {
                 title: 'Invoice',
                 route: 'operations.orders.index.details.virtual',
                 component: new ExtensionComponent('@fleetbase/ledger-engine', 'order-invoice'),
-                icon: 'file-alt',
+                icon: 'file-invoice-dollar',
                 slug: 'invoice',
             })
         );
+        console.log('[menuService]', menuService);
+        console.log(menuService.getMenuItems('fleet-ops:component:order:details'));
 
         // Register dashboard and widgets
         this.registerWidgets(widgetService);

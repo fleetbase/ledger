@@ -10,7 +10,7 @@
         {{#each @bucketSummary as |bucket|}}
             <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
                 <p class="text-xs text-gray-500 mb-1">{{bucket.label}}</p>
-                <p class="text-sm font-bold {{if (gt bucket.total 0) "text-red-600" "text-gray-400"}}">{{format-currency bucket.total @companyCurrency}}</p>
+                <p class="text-sm font-bold {{if (gt bucket.total 0) 'text-red-600' 'text-gray-400'}}">{{format-currency bucket.total @companyCurrency}}</p>
             </div>
         {{/each}}
     </div>
@@ -33,7 +33,7 @@
                     <td class="py-2 text-gray-700 dark:text-gray-300 text-xs">{{or row.customer.name "—"}}</td>
                     <td class="py-2 text-gray-600 text-xs">{{format-date-fns row.due_date "MMM d, yyyy"}}</td>
                     <td class="py-2 text-right font-medium text-xs text-red-600">{{format-currency row.balance (or row.currency @companyCurrency)}}</td>
-                    <td class="py-2 text-right text-xs {{if (gt row.days_overdue 60) "text-red-600 font-semibold" "text-gray-600"}}">{{row.days_overdue}}</td>
+                    <td class="py-2 text-right text-xs {{if (gt row.days_overdue 60) 'text-red-600 font-semibold' 'text-gray-600'}}">{{row.days_overdue}}</td>
                     <td class="py-2 text-xs">
                         <Badge @color={{if (gt row.days_overdue 60) "red" (if (gt row.days_overdue 30) "yellow" "gray")}}>{{row.bucketLabel}}</Badge>
                     </td>

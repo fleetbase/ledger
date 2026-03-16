@@ -160,10 +160,6 @@ export default class SettingsInvoiceController extends Controller {
 
     get selectedTemplate() {
         if (!this.default_template_uuid) return null;
-        return (
-            this.availableTemplates.find(
-                (t) => t.uuid === this.default_template_uuid || t.public_id === this.default_template_uuid || t.id === this.default_template_uuid
-            ) ?? null
-        );
+        return this.availableTemplates.find((t) => t.uuid === this.default_template_uuid || t.public_id === this.default_template_uuid || t.id === this.default_template_uuid) ?? null;
     }
 }

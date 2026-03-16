@@ -1,13 +1,6 @@
 <Layout::Section::Header @title="AR Aging" @actionsWrapperClass="flex flex-row items-center space-x-2">
     <div class="flex flex-row items-center space-x-2">
-        <DatePicker
-            @value={{this.as_of}}
-            @onSelect={{this.onDateChanged}}
-            @autoClose={{true}}
-            @buttons={{array "clear"}}
-            @placeholder="As of date"
-            class="w-44 form-input form-input-sm"
-        />
+        <DatePicker @value={{this.as_of}} @onSelect={{this.onDateChanged}} @autoClose={{true}} @buttons={{array "clear"}} @placeholder="As of date" class="w-44 form-input form-input-sm" />
         <Button @size="sm" @type="default" @icon="refresh" @helpText="Refresh" {{on "click" this.reload}} />
     </div>
 </Layout::Section::Header>
@@ -35,7 +28,10 @@
                 {{#each this.bucketSummary as |bucket|}}
                     <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-900">
                         <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{bucket.label}}</p>
-                        <p class="text-base font-bold {{if (gt bucket.total 0) "text-red-600 dark:text-red-400" "text-gray-900 dark:text-white"}}">{{format-currency bucket.total this.companyCurrency}}</p>
+                        <p class="text-base font-bold {{if (gt bucket.total 0) 'text-red-600 dark:text-red-400' 'text-gray-900 dark:text-white'}}">{{format-currency
+                                bucket.total
+                                this.companyCurrency
+                            }}</p>
                     </div>
                 {{/each}}
             </div>

@@ -83,7 +83,7 @@
             <div class="border-t-2 border-gray-400 dark:border-gray-700 pt-4">
                 <div class="flex justify-between items-center py-1">
                     <span class="text-base font-bold text-gray-900 dark:text-white">Net Income</span>
-                    <span class="text-base font-bold {{if this.data.profitable "text-green-600 dark:text-green-400" "text-red-600 dark:text-red-400"}}">
+                    <span class="text-base font-bold {{if this.data.profitable 'text-green-600 dark:text-green-400' 'text-red-600 dark:text-red-400'}}">
                         {{format-currency this.data.net_income this.companyCurrency}}
                     </span>
                 </div>

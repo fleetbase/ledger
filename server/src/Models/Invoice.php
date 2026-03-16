@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Ledger\Models;
 
+use Carbon\Carbon;
 use Fleetbase\Casts\Json;
 use Fleetbase\Casts\Money;
 use Fleetbase\Casts\PolymorphicType;
@@ -17,7 +18,6 @@ use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
 use Fleetbase\Traits\SendsWebhooks;
 use Fleetbase\Traits\TracksApiCredential;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;

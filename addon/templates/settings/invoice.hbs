@@ -16,25 +16,14 @@
 
             {{! ── Numbering ──────────────────────────────────────────────────── }}
             <ContentPanel @title="Invoice Numbering" @open={{true}} @wrapperClass="bordered-classic">
-                <InputGroup
-                    @name="Invoice Number Prefix"
-                    @helpText="This prefix is prepended to every new invoice number, e.g. 'INV-000001'."
-                >
-                    <Input
-                        @value={{this.invoice_prefix}}
-                        @type="text"
-                        class="w-full form-input"
-                        placeholder="INV"
-                    />
+                <InputGroup @name="Invoice Number Prefix" @helpText="This prefix is prepended to every new invoice number, e.g. 'INV-000001'.">
+                    <Input @value={{this.invoice_prefix}} @type="text" class="w-full form-input" placeholder="INV" />
                 </InputGroup>
             </ContentPanel>
 
             {{! ── Currency & Payment Terms ────────────────────────────────────── }}
             <ContentPanel @title="Currency & Payment Terms" @open={{true}} @wrapperClass="bordered-classic">
-                <InputGroup
-                    @name="Default Currency"
-                    @helpText="The currency applied to new invoices unless overridden on the invoice itself."
-                >
+                <InputGroup @name="Default Currency" @helpText="The currency applied to new invoices unless overridden on the invoice itself.">
                     <CurrencySelect
                         @currency={{this.effectiveCurrency}}
                         @currencyData={{this.selectedCurrency}}
@@ -48,10 +37,7 @@
                     {{/unless}}
                 </InputGroup>
 
-                <InputGroup
-                    @name="Default Payment Terms"
-                    @helpText="Number of days after the invoice date that payment is due."
-                >
+                <InputGroup @name="Default Payment Terms" @helpText="Number of days after the invoice date that payment is due.">
                     <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                         <PowerSelect
                             @options={{this.paymentTermsOptions}}
@@ -69,28 +55,12 @@
 
             {{! ── Default Text ─────────────────────────────────────────────────── }}
             <ContentPanel @title="Default Invoice Text" @open={{true}} @wrapperClass="bordered-classic">
-                <InputGroup
-                    @name="Default Notes"
-                    @helpText="These notes appear at the bottom of every new invoice. You can override them per invoice."
-                >
-                    <Textarea
-                        @value={{this.default_notes}}
-                        class="w-full form-input"
-                        rows="3"
-                        placeholder="e.g. Thank you for your business!"
-                    />
+                <InputGroup @name="Default Notes" @helpText="These notes appear at the bottom of every new invoice. You can override them per invoice.">
+                    <Textarea @value={{this.default_notes}} class="w-full form-input" rows="3" placeholder="e.g. Thank you for your business!" />
                 </InputGroup>
 
-                <InputGroup
-                    @name="Default Terms & Conditions"
-                    @helpText="Standard terms pre-filled on every new invoice."
-                >
-                    <Textarea
-                        @value={{this.default_terms}}
-                        class="w-full form-input"
-                        rows="3"
-                        placeholder="e.g. Payment is due within 30 days of the invoice date."
-                    />
+                <InputGroup @name="Default Terms & Conditions" @helpText="Standard terms pre-filled on every new invoice.">
+                    <Textarea @value={{this.default_terms}} class="w-full form-input" rows="3" placeholder="e.g. Payment is due within 30 days of the invoice date." />
                 </InputGroup>
             </ContentPanel>
 
@@ -115,7 +85,8 @@
                     </div>
                     {{#if this.selectedTemplate}}
                         <div class="mt-1 text-[11px] text-gray-500">
-                            Selected: <span class="font-medium">{{this.selectedTemplate.name}}</span>
+                            Selected:
+                            <span class="font-medium">{{this.selectedTemplate.name}}</span>
                         </div>
                     {{/if}}
                     {{#unless this.availableTemplates.length}}
