@@ -11,6 +11,7 @@ use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class GatewayController extends LedgerResourceController
 {
@@ -126,8 +127,11 @@ class GatewayController extends LedgerResourceController
 
     /**
      * List gateway transactions for a specific gateway.
+     *
+     * Returns a paginated list of GatewayTransaction records for the given gateway.
+     * The tab in the UI is labelled "Transactions" (previously mislabelled "Webhooks").
      */
-    public function transactions(Request $request, string $id): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+    public function transactions(Request $request, string $id): JsonResponse
     {
         $gateway = Gateway::where('company_uuid', session('company'))
             ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
@@ -139,6 +143,6 @@ class GatewayController extends LedgerResourceController
             ->orderBy('created_at', 'desc')
             ->paginate($request->integer('per_page', 25));
 
-        return GatewayTransactionResource::collection($transactions);
+        return response()->json(GatewayTransactionResource::collection($transactions));
     }
 }

@@ -27,36 +27,51 @@ class InvoiceService
     /**
      * Create an invoice from a FleetOps order.
      *
-     * Generates a draft invoice with line items derived from the order's payload
-     * (entities/items, delivery fee, service fees, etc.). The invoice is linked
-     * to the order via `order_uuid` and to the customer via the order's customer
-     * polymorphic relationship.
+     * Generates a draft invoice with line items derived from the order's purchase
+     * rate / service quote breakdown. The invoice is linked to the order via
+     * `order_uuid` and to the customer via the order's customer polymorphic
+     * relationship.
+     *
+     * @param Order  $order        The Fleet-Ops order to invoice.
+     * @param array  $options      Optional overrides (currency, due_date, notes, etc.).
+     * @param object|null $purchaseRate  The PurchaseRate model instance, if available.
+     *                                  When supplied, line items are built from the
+     *                                  service quote breakdown rather than order meta.
      */
-    public function createFromOrder(Order $order, array $options = []): Invoice
+    public function createFromOrder(Order $order, array $options = [], ?object $purchaseRate = null): Invoice
     {
-        return DB::transaction(function () use ($order, $options) {
+        return DB::transaction(function () use ($order, $options, $purchaseRate) {
             // Resolve currency from options, order meta, or company default
             $currency = $options['currency']
                 ?? $order->getMeta('currency')
                 ?? 'USD';
 
-            // Create the invoice header
+            // Create the invoice header.
+            // NOTE: do NOT pass 'number' here — the Invoice::boot() creating hook
+            // reads the company's invoice_prefix from settings and calls
+            // generateNumber($prefix) automatically. Passing a pre-generated number
+            // would bypass the prefix setting entirely.
             $invoice = Invoice::create([
                 'company_uuid'  => $order->company_uuid,
                 'customer_uuid' => $order->customer_uuid,
                 'customer_type' => $order->customer_type,
                 'order_uuid'    => $order->uuid,
-                'number'        => $options['number'] ?? Invoice::generateNumber(),
+                'number'        => $options['number'] ?? null,
                 'date'          => $options['date'] ?? now(),
-                'due_date'      => $options['due_date'] ?? now()->addDays(30),
+                'due_date'      => $options['due_date'] ?? null,
                 'currency'      => $currency,
                 'status'        => 'draft',
                 'notes'         => $options['notes'] ?? null,
                 'terms'         => $options['terms'] ?? null,
             ]);
 
-            // Create line items from the order's payload
-            $this->createItemsFromOrder($invoice, $order);
+            // Create line items — prefer purchase rate / service quote breakdown,
+            // fall back to order payload entities and meta.
+            if ($purchaseRate) {
+                $this->createItemsFromPurchaseRate($invoice, $purchaseRate, $order);
+            } else {
+                $this->createItemsFromOrder($invoice, $order);
+            }
 
             // Calculate and persist subtotal, tax, and total
             $invoice->calculateTotals();
@@ -177,6 +192,78 @@ class InvoiceService
                 'tax_rate'     => 0,
                 'tax_amount'   => 0,
             ]);
+        }
+    }
+
+    /**
+     * Create invoice line items from a Fleet-Ops PurchaseRate / ServiceQuote.
+     *
+     * Resolution order:
+     *   1. ServiceQuote items (base fee, distance fee, COD fee, etc.) — each
+     *      ServiceQuoteItem becomes its own line item with the correct amount.
+     *   2. Fallback — a single summary line item using serviceQuote->amount when
+     *      no structured items are available.
+     *
+     * All amounts are already stored in the smallest currency unit (cents) by
+     * Fleet-Ops, so no conversion is needed.
+     */
+    protected function createItemsFromPurchaseRate(Invoice $invoice, object $purchaseRate, Order $order): void
+    {
+        // Ensure the serviceQuote and its items are loaded.
+        if (!$purchaseRate->relationLoaded('serviceQuote')) {
+            $purchaseRate->load('serviceQuote.items');
+        } elseif ($purchaseRate->serviceQuote && !$purchaseRate->serviceQuote->relationLoaded('items')) {
+            $purchaseRate->serviceQuote->load('items');
+        }
+
+        $serviceQuote = $purchaseRate->serviceQuote;
+        $itemsCreated = 0;
+
+        // --- Strategy 1: ServiceQuote line items ---
+        if ($serviceQuote && $serviceQuote->items && $serviceQuote->items->isNotEmpty()) {
+            foreach ($serviceQuote->items as $item) {
+                // ServiceQuoteItem stores amount in cents (smallest currency unit).
+                $amount = (int) $item->amount;
+
+                InvoiceItem::create([
+                    'invoice_uuid' => $invoice->uuid,
+                    'description'  => $item->details ?? $item->code ?? 'Service charge',
+                    'quantity'     => 1,
+                    'unit_price'   => $amount,
+                    'amount'       => $amount,
+                    'tax_rate'     => 0,
+                    'tax_amount'   => 0,
+                ]);
+
+                $itemsCreated++;
+            }
+        }
+
+        // --- Strategy 2: ServiceQuote total as a single summary line ---
+        // Used when the quote has no individual items (e.g. flat-rate quotes).
+        if ($itemsCreated === 0 && $serviceQuote) {
+            // serviceQuote->amount is the virtual attribute that reads from
+            // the serviceQuote's own `amount` column — already in cents.
+            $total = (int) ($serviceQuote->amount ?? 0);
+
+            InvoiceItem::create([
+                'invoice_uuid' => $invoice->uuid,
+                'description'  => "Delivery service — Order {$order->public_id}",
+                'quantity'     => 1,
+                'unit_price'   => $total,
+                'amount'       => $total,
+                'tax_rate'     => 0,
+                'tax_amount'   => 0,
+            ]);
+
+            $itemsCreated++;
+        }
+
+        // --- Strategy 3: Absolute fallback ---
+        // If neither the quote nor its items could be resolved, fall back to the
+        // generic order-based item creation so the invoice is never empty.
+        if ($itemsCreated === 0) {
+            $this->createItemsFromOrder($invoice, $order);
         }
     }
 

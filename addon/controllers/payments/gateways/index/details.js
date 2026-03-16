@@ -13,7 +13,7 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
     get tabs() {
         return [
             { label: 'Overview', route: 'payments.gateways.index.details.index' },
-            { label: 'Webhooks', route: 'payments.gateways.index.details.webhooks' },
+            { label: 'Transactions', route: 'payments.gateways.index.details.webhooks' },
         ];
     }
 

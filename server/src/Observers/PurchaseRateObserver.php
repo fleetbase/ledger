@@ -77,7 +77,7 @@ class PurchaseRateObserver
                 'due_date'         => $dueDate,
                 'transaction_uuid' => $purchaseRate->transaction_uuid,
                 'notes'            => "Auto-generated from Fleet-Ops order {$order->public_id}",
-            ]);
+            ], $purchaseRate);
 
             Log::channel('ledger')->info('[Ledger] PurchaseRateObserver: invoice created for order.', [
                 'invoice_uuid'       => $invoice->uuid,
