@@ -84,6 +84,22 @@ export default {
             })
         );
 
+        // ── Fleet-Ops order details tab: Invoice ──────────────────────────────
+        // Injects an "Invoice" tab into the Fleet-Ops order details panel.
+        // The tab renders the order-invoice component which fetches and displays
+        // the Ledger invoice associated with the order, including line items and
+        // payment summary.
+        menuService.registerMenuItem(
+            'fleet-ops:component:order:details',
+            new MenuItem({
+                title: 'Invoice',
+                route: 'operations.orders.index.details.virtual',
+                component: new ExtensionComponent('@fleetbase/ledger-engine', 'order-invoice'),
+                icon: 'file-alt',
+                slug: 'invoice',
+            })
+        );
+
         // Register dashboard and widgets
         this.registerWidgets(widgetService);
     },

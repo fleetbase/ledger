@@ -1,0 +1,212 @@
+<div class="order-invoice-panel" ...attributes>
+
+    {{! ── LOADING STATE ───────────────────────────────────────────────────────── }}
+    {{#if this.loadInvoice.isRunning}}
+        <div class="flex items-center justify-center py-12">
+            <Spinner />
+        </div>
+
+    {{! ── NO INVOICE FOUND ────────────────────────────────────────────────────── }}
+    {{else if (not this.invoice)}}
+        <div class="flex flex-col items-center justify-center py-12 text-center text-gray-400 dark:text-gray-500">
+            <FaIcon @icon="file-invoice" class="text-3xl mb-3 opacity-40" />
+            <p class="text-sm font-medium">No invoice found for this order.</p>
+            <p class="text-xs mt-1 opacity-70">An invoice is generated automatically when a service rate is purchased.</p>
+        </div>
+
+    {{! ── INVOICE PANEL ───────────────────────────────────────────────────────── }}
+    {{else}}
+
+        {{! ── HEADER: number + status + actions ─────────────────────────────── }}
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-2">
+                <FaIcon @icon="file-invoice-dollar" class="text-gray-400 dark:text-gray-500" />
+                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100 font-mono">
+                    {{this.invoice.number}}
+                </span>
+                <Badge
+                    @status={{this.invoice.status}}
+                    @color={{this.invoice.statusBadgeColor}}
+                    class="capitalize text-[10px]"
+                >
+                    {{titleize this.invoice.status}}
+                </Badge>
+            </div>
+            <div class="flex items-center gap-2">
+                {{#if this.invoiceUrl}}
+                    <a
+                        href={{this.invoiceUrl}}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                    >
+                        <FaIcon @icon="arrow-up-right-from-square" class="text-[10px]" />
+                        View
+                    </a>
+                {{/if}}
+                <Button
+                    @type="default"
+                    @size="xs"
+                    @icon="arrow-up-right-from-square"
+                    @onClick={{this.openInLedger}}
+                    @helpText="Open full invoice in Ledger"
+                >
+                    Open in Ledger
+                </Button>
+            </div>
+        </div>
+
+        {{! ── INVOICE INFORMATION ────────────────────────────────────────────── }}
+        <ContentPanel @title="Invoice Information" @open={{true}} @wrapperClass="bordered-top">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
+
+                <div class="field-info-container">
+                    <div class="field-name">Invoice Number</div>
+                    <div class="field-value font-mono">{{n-a this.invoice.number}}</div>
+                </div>
+
+                <div class="field-info-container">
+                    <div class="field-name">Status</div>
+                    <div class="field-value">
+                        <Badge @status={{this.invoice.status}} @color={{this.invoice.statusBadgeColor}}>
+                            {{titleize this.invoice.status}}
+                        </Badge>
+                    </div>
+                </div>
+
+                <div class="field-info-container">
+                    <div class="field-name">Invoice Date</div>
+                    <div class="field-value">{{n-a this.invoice.issuedAt}}</div>
+                </div>
+
+                <div class="field-info-container">
+                    <div class="field-name">Due Date</div>
+                    <div class="field-value {{if this.invoice.isOverdue 'text-red-600 font-semibold'}}">
+                        {{n-a this.invoice.dueDate}}
+                        {{#if this.invoice.isOverdue}}
+                            <span class="ml-1 text-red-500 text-[10px] uppercase font-bold">Overdue</span>
+                        {{/if}}
+                    </div>
+                </div>
+
+                <div class="field-info-container">
+                    <div class="field-name">Currency</div>
+                    <div class="field-value uppercase">{{n-a this.invoice.currency}}</div>
+                </div>
+
+                {{#if this.invoice.paidAt}}
+                    <div class="field-info-container">
+                        <div class="field-name">Paid At</div>
+                        <div class="field-value text-green-600">{{this.invoice.paidAt}}</div>
+                    </div>
+                {{/if}}
+
+            </div>
+        </ContentPanel>
+
+        {{! ── LINE ITEMS ─────────────────────────────────────────────────────── }}
+        <ContentPanel @title="Line Items" @open={{true}} @wrapperClass="bordered-top">
+            {{#if this.invoice.items.length}}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="border-b border-gray-200 dark:border-gray-700 text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+                                <th class="py-2 pr-2 text-left">Description</th>
+                                <th class="py-2 px-2 text-right w-12">Qty</th>
+                                <th class="py-2 px-2 text-right w-32">Unit Price</th>
+                                <th class="py-2 px-2 text-right w-16">Tax %</th>
+                                <th class="py-2 pl-2 text-right w-32">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each this.invoice.items as |item|}}
+                                <tr class="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                                    <td class="py-2 pr-2 text-gray-700 dark:text-gray-300">
+                                        {{n-a item.description}}
+                                    </td>
+                                    <td class="py-2 px-2 text-right text-gray-600 dark:text-gray-400">
+                                        {{item.quantity}}
+                                    </td>
+                                    <td class="py-2 px-2 text-right text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                        {{format-currency item.unit_price this.invoice.currency}}
+                                    </td>
+                                    <td class="py-2 px-2 text-right text-gray-600 dark:text-gray-400">
+                                        {{#if item.tax_rate}}{{item.tax_rate}}%{{else}}—{{/if}}
+                                    </td>
+                                    <td class="py-2 pl-2 text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                        {{format-currency item.amount this.invoice.currency}}
+                                    </td>
+                                </tr>
+                            {{/each}}
+                        </tbody>
+                        <tfoot class="border-t border-gray-200 dark:border-gray-700">
+                            <tr class="text-xs text-gray-500">
+                                <td colspan="4" class="pt-2 text-right pr-2 text-[11px] uppercase tracking-wide font-semibold">Subtotal</td>
+                                <td class="pt-2 pl-2 text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                    {{format-currency this.invoice.subtotal this.invoice.currency}}
+                                </td>
+                            </tr>
+                            {{#if this.invoice.tax}}
+                                <tr class="text-xs text-gray-500">
+                                    <td colspan="4" class="pt-1 text-right pr-2 text-[11px] uppercase tracking-wide font-semibold">Tax</td>
+                                    <td class="pt-1 pl-2 text-right font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                        {{format-currency this.invoice.tax this.invoice.currency}}
+                                    </td>
+                                </tr>
+                            {{/if}}
+                            <tr class="text-xs">
+                                <td colspan="4" class="pt-1 pb-2 text-right pr-2 text-[11px] uppercase tracking-wide font-bold text-gray-800 dark:text-gray-100">Total</td>
+                                <td class="pt-1 pb-2 pl-2 text-right font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                                    {{format-currency this.invoice.total this.invoice.currency}}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {{else}}
+                <div class="text-xs text-gray-400 italic py-2">No line items recorded.</div>
+            {{/if}}
+        </ContentPanel>
+
+        {{! ── PAYMENT SUMMARY ────────────────────────────────────────────────── }}
+        <ContentPanel @title="Payment Summary" @open={{true}} @wrapperClass="bordered-top">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
+
+                <div class="field-info-container">
+                    <div class="field-name">Total Amount</div>
+                    <div class="field-value font-semibold">
+                        {{format-currency this.invoice.total this.invoice.currency}}
+                    </div>
+                </div>
+
+                <div class="field-info-container">
+                    <div class="field-name">Amount Paid</div>
+                    <div class="field-value text-green-600 font-semibold">
+                        {{format-currency this.invoice.amount_paid this.invoice.currency}}
+                    </div>
+                </div>
+
+                <div class="field-info-container">
+                    <div class="field-name">Balance Due</div>
+                    <div class="field-value font-bold {{if this.invoice.isOverdue 'text-red-600' 'text-gray-800 dark:text-gray-100'}}">
+                        {{format-currency this.invoice.balance this.invoice.currency}}
+                    </div>
+                </div>
+
+            </div>
+        </ContentPanel>
+
+        {{! ── NOTES ──────────────────────────────────────────────────────────── }}
+        {{#if this.invoice.notes}}
+            <ContentPanel @title="Notes" @open={{true}} @wrapperClass="bordered-top">
+                <div class="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                    {{this.invoice.notes}}
+                </div>
+            </ContentPanel>
+        {{/if}}
+
+        <Spacer @height="200px" />
+
+    {{/if}}
+
+</div>
