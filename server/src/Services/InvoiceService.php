@@ -52,17 +52,25 @@ class InvoiceService
             // generateNumber($prefix) automatically. Passing a pre-generated number
             // would bypass the prefix setting entirely.
             $invoice = Invoice::create([
-                'company_uuid'  => $order->company_uuid,
-                'customer_uuid' => $order->customer_uuid,
-                'customer_type' => $order->customer_type,
-                'order_uuid'    => $order->uuid,
-                'number'        => $options['number'] ?? null,
-                'date'          => $options['date'] ?? now(),
-                'due_date'      => $options['due_date'] ?? null,
-                'currency'      => $currency,
-                'status'        => 'draft',
-                'notes'         => $options['notes'] ?? null,
-                'terms'         => $options['terms'] ?? null,
+                'company_uuid'     => $order->company_uuid,
+                'customer_uuid'    => $order->customer_uuid,
+                'customer_type'    => $order->customer_type,
+                'order_uuid'       => $order->uuid,
+                // transaction_uuid links this invoice to the Fleet-Ops purchase
+                // rate transaction so it appears in the invoice's Transactions tab.
+                // PurchaseRateObserver passes this via $options after Fleet-Ops has
+                // already created the Transaction record on the purchase rate.
+                'transaction_uuid' => $options['transaction_uuid'] ?? null,
+                // template_uuid: the boot hook will apply the company's default
+                // template from Invoice Settings when this is left null.
+                'template_uuid'    => $options['template_uuid'] ?? null,
+                'number'           => $options['number'] ?? null,
+                'date'             => $options['date'] ?? now(),
+                'due_date'         => $options['due_date'] ?? null,
+                'currency'         => $currency,
+                'status'           => 'draft',
+                'notes'            => $options['notes'] ?? null,
+                'terms'            => $options['terms'] ?? null,
             ]);
 
             // Create line items — prefer purchase rate / service quote breakdown,

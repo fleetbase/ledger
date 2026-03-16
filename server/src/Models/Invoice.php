@@ -169,17 +169,18 @@ class Invoice extends Model
                 $settings = [];
             }
 
-            $prefix        = data_get($settings, 'invoice_prefix', 'INV');
+            $prefix            = data_get($settings, 'invoice_prefix', 'INV');
             // Use null (not 30) as the fallback so we only apply an offset when
             // the user has explicitly saved one in Invoice Settings. A missing or
             // null value means "no default due date" — we never want to silently
             // pre-fill a date the user never asked for.
-            $dueDateOffset = isset($settings['due_date_offset_days'])
+            $dueDateOffset     = isset($settings['due_date_offset_days'])
                 ? (int) $settings['due_date_offset_days']
                 : null;
-            $defCurrency   = data_get($settings, 'default_currency');
-            $defNotes      = data_get($settings, 'default_notes');
-            $defTerms      = data_get($settings, 'default_terms');
+            $defCurrency       = data_get($settings, 'default_currency');
+            $defNotes          = data_get($settings, 'default_notes');
+            $defTerms          = data_get($settings, 'default_terms');
+            $defTemplateUuid   = data_get($settings, 'default_template_uuid');
 
             // ── Invoice number ─────────────────────────────────────────────────
             // Always auto-generate when the caller has not explicitly provided one.
@@ -211,6 +212,14 @@ class Invoice extends Model
             }
             if (empty($invoice->terms) && !empty($defTerms)) {
                 $invoice->terms = $defTerms;
+            }
+
+            // ── Default template ───────────────────────────────────────────────
+            // Apply the company's default invoice template when the caller has not
+            // explicitly set one. This ensures auto-generated invoices (e.g. from
+            // Fleet-Ops purchase rates) are rendered with the correct branding.
+            if (empty($invoice->template_uuid) && !empty($defTemplateUuid)) {
+                $invoice->template_uuid = $defTemplateUuid;
             }
         });
     }

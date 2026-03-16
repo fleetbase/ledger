@@ -94,6 +94,40 @@
                 </InputGroup>
             </ContentPanel>
 
+            {{! ── Default Template ─────────────────────────────────────────────── }}
+            <ContentPanel @title="Default Invoice Template" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup
+                    @name="Default Template"
+                    @helpText="The invoice template applied to all new invoices, including those auto-generated from Fleet-Ops orders. Leave blank to use the system default."
+                >
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.availableTemplates}}
+                            @selected={{this.selectedTemplate}}
+                            @onChange={{this.onSelectDefaultTemplate}}
+                            @placeholder="Select an invoice template"
+                            @triggerClass="form-select form-input"
+                            @allowClear={{true}}
+                            as |template|
+                        >
+                            <div class="text-sm">{{template.name}}</div>
+                        </PowerSelect>
+                    </div>
+                    {{#if this.selectedTemplate}}
+                        <div class="mt-1 text-[11px] text-gray-500">
+                            Selected: <span class="font-medium">{{this.selectedTemplate.name}}</span>
+                        </div>
+                    {{/if}}
+                    {{#unless this.availableTemplates.length}}
+                        <div class="mt-1 text-[11px] text-amber-600">
+                            No invoice templates found.
+                            <LinkTo @route="billing.invoice-templates.index.new" class="underline">Create a template</LinkTo>
+                            to enable custom invoice branding.
+                        </div>
+                    {{/unless}}
+                </InputGroup>
+            </ContentPanel>
+
             {{! ── Automation ───────────────────────────────────────────────────── }}
             <ContentPanel @title="Automation" @open={{true}} @wrapperClass="bordered-classic">
                 <InputGroup @name="Auto-Send on Creation">

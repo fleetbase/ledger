@@ -9,6 +9,7 @@ export default class SettingsInvoiceController extends Controller {
     @service fetch;
     @service notifications;
     @service currentUser;
+    @service store;
 
     // ── Tracked settings fields ───────────────────────────────────────────────
     @tracked invoice_prefix = 'INV';
@@ -18,6 +19,11 @@ export default class SettingsInvoiceController extends Controller {
     @tracked default_notes = '';
     @tracked default_terms = '';
     @tracked auto_send_on_creation = false;
+    @tracked default_template_uuid = null;
+    @tracked default_template = null;
+
+    // ── Template list for the selector ────────────────────────────────────────
+    @tracked availableTemplates = [];
 
     // ── Static options ────────────────────────────────────────────────────────
     currencies = getCurrency();
@@ -35,6 +41,7 @@ export default class SettingsInvoiceController extends Controller {
 
     constructor() {
         super(...arguments);
+        this.loadTemplates.perform();
         this.getSettings.perform();
     }
 
@@ -68,6 +75,18 @@ export default class SettingsInvoiceController extends Controller {
 
     // ── Tasks ─────────────────────────────────────────────────────────────────
 
+    @task *loadTemplates() {
+        try {
+            const templates = yield this.store.query('ledger-invoice-template', {
+                limit: 100,
+                sort: 'name',
+            });
+            this.availableTemplates = templates.toArray();
+        } catch {
+            this.availableTemplates = [];
+        }
+    }
+
     @task *getSettings() {
         try {
             const { invoiceSettings } = yield this.fetch.get('settings/invoice-settings', {}, { namespace: 'ledger/int/v1' });
@@ -80,6 +99,8 @@ export default class SettingsInvoiceController extends Controller {
                 this.default_notes = invoiceSettings.default_notes ?? '';
                 this.default_terms = invoiceSettings.default_terms ?? '';
                 this.auto_send_on_creation = invoiceSettings.auto_send_on_creation ?? false;
+                this.default_template_uuid = invoiceSettings.default_template_uuid ?? null;
+                this.default_template = invoiceSettings.default_template ?? null;
             }
         } catch (error) {
             this.notifications.serverError(error);
@@ -101,6 +122,7 @@ export default class SettingsInvoiceController extends Controller {
                         default_notes: this.default_notes,
                         default_terms: this.default_terms,
                         auto_send_on_creation: this.auto_send_on_creation,
+                        default_template_uuid: this.default_template_uuid,
                     },
                 },
                 { namespace: 'ledger/int/v1' }
@@ -122,5 +144,26 @@ export default class SettingsInvoiceController extends Controller {
     @action onSelectPaymentTerms(option) {
         this.payment_terms_days = option.value;
         this.due_date_offset_days = option.value;
+    }
+
+    @action onSelectDefaultTemplate(template) {
+        if (template) {
+            this.default_template_uuid = template.uuid || template.public_id || template.id;
+            this.default_template = template;
+        } else {
+            this.default_template_uuid = null;
+            this.default_template = null;
+        }
+    }
+
+    // ── Computed helpers ──────────────────────────────────────────────────────
+
+    get selectedTemplate() {
+        if (!this.default_template_uuid) return null;
+        return (
+            this.availableTemplates.find(
+                (t) => t.uuid === this.default_template_uuid || t.public_id === this.default_template_uuid || t.id === this.default_template_uuid
+            ) ?? null
+        );
     }
 }

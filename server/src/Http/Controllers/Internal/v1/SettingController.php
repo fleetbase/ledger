@@ -4,6 +4,7 @@ namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Ledger\Models\Gateway;
+use Fleetbase\Ledger\Models\InvoiceTemplate;
 use Fleetbase\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,13 +34,14 @@ class SettingController extends Controller
     public function getInvoiceSettings(): JsonResponse
     {
         $defaults = [
-            'invoice_prefix'          => 'INV',
-            'default_currency'        => 'USD',
-            'payment_terms_days'      => 30,
-            'due_date_offset_days'    => 30,
-            'default_notes'           => '',
-            'default_terms'           => '',
-            'auto_send_on_creation'   => false,
+            'invoice_prefix'           => 'INV',
+            'default_currency'         => 'USD',
+            'payment_terms_days'       => 30,
+            'due_date_offset_days'     => 30,
+            'default_notes'            => '',
+            'default_terms'            => '',
+            'auto_send_on_creation'    => false,
+            'default_template_uuid'    => null,
         ];
 
         $settings = Setting::lookupCompany('ledger.invoice-settings', $defaults);
@@ -49,6 +51,26 @@ class SettingController extends Controller
             $settings = array_merge($defaults, $settings);
         } else {
             $settings = $defaults;
+        }
+
+        // Attach the template name/public_id for display purposes
+        $settings['default_template'] = null;
+        if (!empty($settings['default_template_uuid'])) {
+            $template = InvoiceTemplate::where('company_uuid', session('company'))
+                ->where(function ($q) use ($settings) {
+                    $q->where('uuid', $settings['default_template_uuid'])
+                      ->orWhere('public_id', $settings['default_template_uuid']);
+                })
+                ->select(['uuid', 'public_id', 'name'])
+                ->first();
+
+            if ($template) {
+                $settings['default_template'] = [
+                    'uuid'      => $template->uuid,
+                    'public_id' => $template->public_id,
+                    'name'      => $template->name,
+                ];
+            }
         }
 
         return response()->json(['invoiceSettings' => $settings]);
@@ -67,10 +89,27 @@ class SettingController extends Controller
             'invoiceSettings.due_date_offset_days'   => 'nullable|integer|min:0|max:365',
             'invoiceSettings.default_notes'          => 'nullable|string|max:2000',
             'invoiceSettings.default_terms'          => 'nullable|string|max:2000',
-            'invoiceSettings.auto_send_on_creation'  => 'nullable|boolean',
+            'invoiceSettings.auto_send_on_creation'   => 'nullable|boolean',
+            'invoiceSettings.default_template_uuid'    => 'nullable|string',
         ]);
 
+        // Validate that the template UUID belongs to this company (if provided)
         $invoiceSettings = $request->input('invoiceSettings', []);
+        if (!empty($invoiceSettings['default_template_uuid'])) {
+            $template = InvoiceTemplate::where('company_uuid', session('company'))
+                ->where(function ($q) use ($invoiceSettings) {
+                    $q->where('uuid', $invoiceSettings['default_template_uuid'])
+                      ->orWhere('public_id', $invoiceSettings['default_template_uuid']);
+                })
+                ->first();
+
+            if (!$template) {
+                return response()->json(['error' => 'The specified default invoice template was not found.'], 422);
+            }
+
+            // Normalise to UUID
+            $invoiceSettings['default_template_uuid'] = $template->uuid;
+        }
 
         // Merge with existing settings to preserve any keys not sent in this request
         $current = Setting::lookupCompany('ledger.invoice-settings', []);
