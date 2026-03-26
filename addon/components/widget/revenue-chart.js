@@ -2,7 +2,6 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { task } from 'ember-concurrency';
-import { format } from 'date-fns';
 
 export default class WidgetRevenueChartComponent extends Component {
     @service fetch;
@@ -10,7 +9,7 @@ export default class WidgetRevenueChartComponent extends Component {
     @tracked data = [];
 
     get companyCurrency() {
-        return this.currentUser.getCompany()?.currency ?? 'USD';
+        return this.currentUser.company?.currency ?? this.currentUser.whoisData?.currency?.code ?? 'USD';
     }
 
     constructor() {
@@ -29,7 +28,7 @@ export default class WidgetRevenueChartComponent extends Component {
             const maxAmount = trend.reduce((max, row) => Math.max(max, row.daily_revenue ?? 0), 0);
 
             this.data = trend.map((row) => ({
-                date: format(row.date, 'yyyy-MM-DD'),
+                date: row.date,
                 amount: row.daily_revenue ?? 0,
                 // Percentage of the tallest bar; guard against division-by-zero.
                 pct: maxAmount > 0 ? Math.round(((row.daily_revenue ?? 0) / maxAmount) * 100) : 0,

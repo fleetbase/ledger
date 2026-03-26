@@ -9,7 +9,7 @@ export default class WidgetArAgingComponent extends Component {
     @tracked buckets = null;
 
     get companyCurrency() {
-        return this.currentUser.getCompany()?.currency ?? 'USD';
+        return this.currentUser.company?.currency ?? this.currentUser.whoisData?.currency?.code ?? 'USD';
     }
 
     constructor() {

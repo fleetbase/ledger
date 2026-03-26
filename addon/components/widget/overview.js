@@ -9,7 +9,7 @@ export default class WidgetOverviewComponent extends Component {
     @tracked data = null;
 
     get companyCurrency() {
-        return this.currentUser.getCompany()?.currency ?? 'USD';
+        return this.currentUser.company?.currency ?? this.currentUser.whoisData?.currency?.code ?? 'USD';
     }
 
     constructor() {

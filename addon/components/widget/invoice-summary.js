@@ -9,7 +9,7 @@ export default class WidgetInvoiceSummaryComponent extends Component {
     @tracked counts = null;
 
     get companyCurrency() {
-        return this.currentUser.getCompany()?.currency ?? 'USD';
+        return this.currentUser.company?.currency ?? this.currentUser.whoisData?.currency?.code ?? 'USD';
     }
 
     constructor() {

@@ -56,6 +56,8 @@ export default {
             ],
         });
 
+        console.log('[menuService]', menuService);
+
         // ── Public customer invoice view ───────────────────────────────────────
         // Registers the customer-facing invoice view to the 'engine:ledger'
         // registry so it is accessible at /ledger/invoice/<public_id> without
@@ -99,8 +101,6 @@ export default {
                 slug: 'invoice',
             })
         );
-        console.log('[menuService]', menuService);
-        console.log(menuService.getMenuItems('fleet-ops:component:order:details'));
 
         // Register dashboard and widgets
         this.registerWidgets(widgetService);
@@ -125,7 +125,7 @@ export default {
                 description: 'Daily revenue trend chart for the current period.',
                 icon: 'chart-line',
                 component: new ExtensionComponent('@fleetbase/ledger-engine', 'widget/revenue-chart'),
-                grid_options: { w: 8, h: 6, minW: 6, minH: 5 },
+                grid_options: { w: 8, h: 7, minW: 6, minH: 6 },
                 options: { title: 'Revenue Chart' },
                 default: true,
             }),
@@ -158,7 +158,7 @@ export default {
                 description: 'Live feed of the most recent double-entry journal entries in the ledger.',
                 icon: 'book',
                 component: new ExtensionComponent('@fleetbase/ledger-engine', 'widget/activity-feed'),
-                grid_options: { w: 8, h: 10, minW: 6, minH: 8 },
+                grid_options: { w: 8, h: 11, minW: 6, minH: 8 },
                 options: { title: 'Recent Journal Entries' },
                 default: true,
             }),

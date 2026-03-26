@@ -9,7 +9,7 @@
             <div class="space-y-1">
                 {{#each this.data as |day|}}
                     <div class="flex items-center gap-2 text-sm">
-                        <span class="w-20 text-gray-500 text-xs">{{day.date}}</span>
+                        <span class="w-20 text-gray-500 text-xs">{{format-date-fns day.date "yyyy-MM-dd"}}</span>
                         <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-2">
                             <div class="bg-blue-500 h-2 rounded-full" style={{html-safe (concat "width: " day.pct "%")}}></div>
                         </div>
