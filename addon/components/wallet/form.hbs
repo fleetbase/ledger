@@ -1,0 +1,143 @@
+<div class="form-wrapper" ...attributes>
+    {{! WALLET DETAILS }}
+    <ContentPanel @title="Wallet Details" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
+
+            {{! Identification }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
+                Wallet Information
+            </div>
+
+            <InputGroup @name="Wallet Name" @wrapperClass="col-span-2">
+                <Input @value={{@resource.name}} @type="text" class="w-full form-input" placeholder="e.g. Main Wallet" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Type">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "driver" "customer" "company" "system"}}
+                        @selected={{@resource.type}}
+                        @onChange={{fn (mut @resource.type)}}
+                        @placeholder="Select wallet type"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Currency">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array
+                            "USD"
+                            "EUR"
+                            "GBP"
+                            "AED"
+                            "SAR"
+                            "QAR"
+                            "KWD"
+                            "BHD"
+                            "OMR"
+                            "JOD"
+                            "EGP"
+                            "NGN"
+                            "KES"
+                            "GHS"
+                            "ZAR"
+                            "INR"
+                            "PKR"
+                            "BDT"
+                            "MYR"
+                            "SGD"
+                            "IDR"
+                            "PHP"
+                            "THB"
+                            "CNY"
+                            "JPY"
+                            "KRW"
+                            "AUD"
+                            "CAD"
+                            "NZD"
+                            "CHF"
+                            "SEK"
+                            "NOK"
+                            "DKK"
+                            "BRL"
+                            "MXN"
+                        }}
+                        @selected={{@resource.currency}}
+                        @onChange={{fn (mut @resource.currency)}}
+                        @placeholder="Select currency"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Status">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "active" "inactive" "frozen" "suspended"}}
+                        @selected={{@resource.status}}
+                        @onChange={{fn (mut @resource.status)}}
+                        @placeholder="Select status"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            {{! Owner }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Owner
+            </div>
+
+            <InputGroup @name="Owner UUID" @wrapperClass="col-span-2">
+                <Input @value={{@resource.owner_uuid}} @type="text" class="w-full form-input" placeholder="Owner UUID" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Owner Type">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "contact" "vendor" "user" "driver"}}
+                        @selected={{@resource.owner_type}}
+                        @onChange={{fn (mut @resource.owner_type)}}
+                        @placeholder="Select owner type"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            {{! Settings }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Settings
+            </div>
+
+            <InputGroup @name="Frozen" @wrapperClass="col-span-2">
+                <Toggle
+                    @isToggled={{@resource.is_frozen}}
+                    @label="Freeze this wallet"
+                    @helpText="Frozen wallets cannot send or receive funds."
+                    @onToggle={{fn (mut @resource.is_frozen)}}
+                    @disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    <Spacer @height="100px" />
+</div>

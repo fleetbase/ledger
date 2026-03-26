@@ -1,0 +1,145 @@
+<div class="invoice-form" ...attributes>
+
+    {{! ── INVOICE DETAILS ─────────────────────────────────────────────────── }}
+    <ContentPanel @title="Invoice Details" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
+
+            {{! Invoice Number — auto-generated on create; read-only on edit }}
+            <InputGroup @name="Invoice Number">
+                <Input
+                    @value={{@resource.number}}
+                    @type="text"
+                    class="w-full form-input"
+                    placeholder="Auto-generated if left blank"
+                    disabled={{or (cannot-write @resource) (not @resource.isNew)}}
+                />
+            </InputGroup>
+
+            {{! Status }}
+            <InputGroup @name="Status">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "draft" "sent" "viewed" "partial" "paid" "overdue" "cancelled"}}
+                        @selected={{@resource.status}}
+                        @onChange={{fn (mut @resource.status)}}
+                        @placeholder="Select status"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            {{! Currency }}
+            <InputGroup @name="Currency">
+                <CurrencySelect @currency={{this.currency}} @onCurrencyChange={{this.onCurrencyChange}} @triggerClass="w-full form-select form-input" @disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            {{! Template }}
+            <InputGroup @name="Invoice Template">
+                <ModelSelect
+                    @modelName="template"
+                    @selectedModel={{@resource.template}}
+                    @placeholder="Select a template (optional)"
+                    @triggerClass="form-select form-input"
+                    @infiniteScroll={{false}}
+                    @renderInPlace={{true}}
+                    @allowClear={{true}}
+                    @disabled={{cannot-write @resource}}
+                    @onChange={{this.onTemplateChange}}
+                    as |model|
+                >
+                    <div class="flex items-center gap-2">
+                        <FaIcon @icon="file-invoice" class="text-gray-400" />
+                        <span>{{model.name}}</span>
+                    </div>
+                </ModelSelect>
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    {{! ── CUSTOMER ────────────────────────────────────────────────────────── }}
+    <ContentPanel @title="Customer" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 no-input-group-padding text-xs">
+
+            <InputGroup @name="Customer">
+                <ModelSelect
+                    @modelName="customer"
+                    @selectedModel={{@resource.customer}}
+                    @placeholder="Search contacts or vendors…"
+                    @triggerClass="form-select form-input"
+                    @infiniteScroll={{false}}
+                    @renderInPlace={{true}}
+                    @allowClear={{true}}
+                    @disabled={{cannot-write @resource}}
+                    @onChange={{this.onCustomerChange}}
+                    as |model|
+                >
+                    <div class="flex items-center gap-2">
+                        <FaIcon @icon={{if model.isVendor "warehouse" "user"}} class="text-gray-400" />
+                        <span class="uppercase">{{model.name}}</span>
+                    </div>
+                </ModelSelect>
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    {{! ── DATES ───────────────────────────────────────────────────────────── }}
+    <ContentPanel @title="Dates" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
+
+            <InputGroup @name="Invoice Date">
+                <DatePicker
+                    @value={{or (format-date-fns @resource.date "yyyy-MM-dd") null}}
+                    @onChange={{fn (mut @resource.date)}}
+                    @placeholder="yyyy-mm-dd"
+                    class="w-full"
+                    disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+
+            <InputGroup @name="Due Date">
+                <DatePicker
+                    @value={{or (format-date-fns @resource.due_date "yyyy-MM-dd") null}}
+                    @onChange={{fn (mut @resource.due_date)}}
+                    @placeholder="yyyy-mm-dd"
+                    class="w-full"
+                    disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    {{! ── LINE ITEMS ──────────────────────────────────────────────────────── }}
+    <ContentPanel @title="Line Items" @open={{true}} @wrapperClass="bordered-top">
+        <Invoice::LineItems @items={{this.initialItems}} @invoice={{@resource}} @currency={{this.currency}} @disabled={{cannot-write @resource}} @registerRef={{this.registerLineItemsRef}} />
+    </ContentPanel>
+
+    {{! ── NOTES & TERMS ───────────────────────────────────────────────────── }}
+    <ContentPanel @title="Notes & Terms" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 no-input-group-padding text-xs">
+
+            <InputGroup @name="Notes">
+                <Textarea
+                    @value={{@resource.notes}}
+                    class="w-full form-input"
+                    rows="3"
+                    placeholder="Add any notes or payment instructions for the customer…"
+                    disabled={{cannot-write @resource}}
+                />
+            </InputGroup>
+
+            <InputGroup @name="Terms">
+                <Textarea @value={{@resource.terms}} class="w-full form-input" rows="3" placeholder="Payment terms, e.g. Net 30…" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    <Spacer @height="100px" />
+</div>

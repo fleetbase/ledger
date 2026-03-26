@@ -1,0 +1,25 @@
+<div ...attributes>
+    {{#if this.loadLedger.isRunning}}
+        <div class="flex items-center justify-center py-8">
+            <Spinner />
+        </div>
+    {{else}}
+        {{#if this.summary}}
+            <div class="grid grid-cols-3 gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
+                    <p class="text-xs text-gray-500 mb-1">Total Debits</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{format-currency this.summary.total_debits @resource.currency}}</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
+                    <p class="text-xs text-gray-500 mb-1">Total Credits</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{format-currency this.summary.total_credits @resource.currency}}</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 text-center">
+                    <p class="text-xs text-gray-500 mb-1">Net Balance</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{format-currency this.summary.net_balance @resource.currency}}</p>
+                </div>
+            </div>
+        {{/if}}
+        <Table @rows={{this.entries}} @columns={{this.columns}} />
+    {{/if}}
+</div>

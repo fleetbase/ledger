@@ -1,0 +1,22 @@
+<div class="flex flex-col" ...attributes>
+    <div class="flex flex-row items-center justify-between px-4 py-2 border border-b-0 dark:border-gray-700 border-gray-200 dark:bg-gray-800 bg-gray-50 rounded-t-lg shadow-sm">
+        <span class="text-base font-bold text-black dark:text-gray-100">Top Wallets</span>
+    </div>
+    <div class="border dark:border-gray-700 border-gray-200 rounded-b-lg shadow-sm p-4 space-y-2 bg-white dark:bg-gray-900">
+        {{#if this.loadData.isRunning}}
+            <div class="flex items-center justify-center py-6"><Spinner /></div>
+        {{else if this.wallets.length}}
+            {{#each this.wallets as |wallet index|}}
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="w-5 text-center text-gray-400 font-mono text-xs">{{add index 1}}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-gray-800 dark:text-gray-200 truncate">{{n-a (or wallet.subject.name wallet.name wallet.wallet_public_id)}}</p>
+                    </div>
+                    <span class="font-semibold text-green-600 flex-shrink-0">{{format-currency wallet.balance (or wallet.currency this.companyCurrency)}}</span>
+                </div>
+            {{/each}}
+        {{else}}
+            <div class="text-center text-gray-400 py-4 text-sm">No wallet data.</div>
+        {{/if}}
+    </div>
+</div>

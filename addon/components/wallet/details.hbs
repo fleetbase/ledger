@@ -1,0 +1,97 @@
+<div class="details-wrapper" ...attributes>
+    {{! WALLET DETAILS }}
+    <ContentPanel @title="Wallet Details" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
+
+            <div class="col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
+                Wallet Information
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Wallet Name</div>
+                <div class="field-value">{{n-a @resource.name}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Type</div>
+                <div class="field-value">{{n-a (humanize @resource.type)}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Currency</div>
+                <div class="field-value uppercase">{{n-a @resource.currency}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Status</div>
+                <div class="field-value">
+                    {{#if @resource.status}}
+                        <Badge @status={{@resource.status}} />
+                    {{else}}
+                        —
+                    {{/if}}
+                </div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Frozen</div>
+                <div class="field-value">{{if @resource.is_frozen "Yes" "No"}}</div>
+            </div>
+
+            <div class="col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Balance
+            </div>
+
+            <div class="field-info-container col-span-2">
+                <div class="field-name">Current Balance</div>
+                <div class="field-value text-lg font-bold text-gray-900 dark:text-white">{{format-currency @resource.balance @resource.currency}}</div>
+            </div>
+
+            <div class="col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Owner Details
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Owner</div>
+                <div class="field-value">{{n-a @resource.ownerName}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Owner Type</div>
+                <div class="field-value">{{n-a (humanize @resource.type)}}</div>
+            </div>
+
+            {{! Show email/phone only for user-type wallets }}
+            {{#if (eq @resource.type "user")}}
+                <div class="field-info-container">
+                    <div class="field-name">Email / Phone</div>
+                    <div class="field-value">{{n-a @resource.ownerContact}}</div>
+                </div>
+            {{/if}}
+
+        </div>
+    </ContentPanel>
+
+    {{! RECORD INFO }}
+    <ContentPanel @title="Record Info" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
+
+            <div class="field-info-container">
+                <div class="field-name">Internal ID</div>
+                <div class="field-value font-mono">{{n-a @resource.public_id}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Created</div>
+                <div class="field-value">{{n-a @resource.createdAt}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Last Updated</div>
+                <div class="field-value">{{n-a @resource.updatedAt}}</div>
+            </div>
+
+        </div>
+    </ContentPanel>
+    <Spacer @height="200px" />
+</div>

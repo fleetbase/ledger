@@ -1,0 +1,15 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        {{#if @options.isLoading}}
+            <div class="flex items-center justify-center h-40rem">
+                <Spinner class="w-8 h-8 text-gray-400" />
+            </div>
+        {{else if @options.html}}
+            <iframe class="border-0 w-full shadow-sm h-40rem" srcdoc={{@options.html}} title={{@options.title}} sandbox="allow-same-origin"></iframe>
+        {{else}}
+            <div class="flex items-center justify-center h-40rem text-gray-400 dark:text-gray-500 text-sm">
+                {{t "ledger.modals.template-preview.no-content"}}
+            </div>
+        {{/if}}
+    </div>
+</Modal::Default>

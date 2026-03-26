@@ -1,0 +1,9 @@
+<div ...attributes>
+    {{#if this.loadTransactions.isRunning}}
+        <div class="flex items-center justify-center py-8">
+            <Spinner />
+        </div>
+    {{else}}
+        <Table @rows={{this.transactions}} @columns={{this.columns}} />
+    {{/if}}
+</div>

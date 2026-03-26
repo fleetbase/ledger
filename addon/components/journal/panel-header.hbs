@@ -1,0 +1,30 @@
+<div class="px-4 py-2" ...attributes>
+    <div class="flex flex-1 flex-row items-start justify-between">
+        <div class="flex flex-col">
+            <h1 class="text-gray-900 dark:text-white font-semibold text-lg">{{n-a @resource.number}}</h1>
+            <div class="flex flex-row items-center space-x-2 mt-0.5">
+                <Badge @status="info" @hideStatusDot={{true}}>{{titleize @resource.type}}</Badge>
+                {{#if @resource.is_system_entry}}
+                    <Badge @color="blue">System</Badge>
+                {{/if}}
+            </div>
+        </div>
+        <div class="next-view-header-right f-child-items-start">
+            <Layout::Resource::Panel::HeaderActions
+                @resource={{@resource}}
+                @saveTask={{@saveTask}}
+                @saveOptions={{@saveOptions}}
+                @saveDisabled={{@saveDisabled}}
+                @pojoResource={{@pojoResource}}
+                @authSchema={{@authSchema}}
+                @actionButtons={{@actionButtons}}
+                @onPressCancel={{@onPressCancel}}
+            >
+                <div class="flex flex-col items-end mr-2">
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">{{format-currency @resource.amount @resource.currency}}</span>
+                    <span class="text-xs text-gray-500">{{n-a @resource.entryDate}}</span>
+                </div>
+            </Layout::Resource::Panel::HeaderActions>
+        </div>
+    </div>
+</div>

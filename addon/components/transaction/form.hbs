@@ -1,0 +1,182 @@
+<div class="form-wrapper" ...attributes>
+    {{! TRANSACTION DETAILS }}
+    <ContentPanel @title="Transaction Details" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
+
+            {{! Core Fields }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
+                Core Information
+            </div>
+
+            <InputGroup @name="Type">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "wallet_deposit" "wallet_withdrawal" "wallet_transfer" "gateway_charge" "gateway_refund" "gateway_payout" "adjustment" "earning" "fee"}}
+                        @selected={{@resource.type}}
+                        @onChange={{fn (mut @resource.type)}}
+                        @placeholder="Select type"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Direction">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "credit" "debit"}}
+                        @selected={{@resource.direction}}
+                        @onChange={{fn (mut @resource.direction)}}
+                        @placeholder="Select direction"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Status">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "pending" "succeeded" "failed" "refunded" "voided" "reversed" "expired"}}
+                        @selected={{@resource.status}}
+                        @onChange={{fn (mut @resource.status)}}
+                        @placeholder="Select status"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Currency">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array
+                            "USD"
+                            "EUR"
+                            "GBP"
+                            "AED"
+                            "SAR"
+                            "QAR"
+                            "KWD"
+                            "BHD"
+                            "OMR"
+                            "JOD"
+                            "EGP"
+                            "NGN"
+                            "KES"
+                            "GHS"
+                            "ZAR"
+                            "INR"
+                            "PKR"
+                            "BDT"
+                            "MYR"
+                            "SGD"
+                            "IDR"
+                            "PHP"
+                            "THB"
+                            "CNY"
+                            "JPY"
+                            "KRW"
+                            "AUD"
+                            "CAD"
+                            "NZD"
+                            "CHF"
+                            "SEK"
+                            "NOK"
+                            "DKK"
+                            "BRL"
+                            "MXN"
+                        }}
+                        @selected={{@resource.currency}}
+                        @onChange={{fn (mut @resource.currency)}}
+                        @placeholder="Select currency"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            {{! Amounts }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Amounts
+            </div>
+
+            <InputGroup @name="Amount">
+                <Input @value={{@resource.amount}} @type="number" class="w-full form-input" placeholder="0.00" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Fee Amount">
+                <Input @value={{@resource.fee_amount}} @type="number" class="w-full form-input" placeholder="0.00" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Tax Amount">
+                <Input @value={{@resource.tax_amount}} @type="number" class="w-full form-input" placeholder="0.00" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Net Amount">
+                <Input @value={{@resource.net_amount}} @type="number" class="w-full form-input" placeholder="0.00" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            {{! Gateway & Payment }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Gateway & Payment
+            </div>
+
+            <InputGroup @name="Gateway">
+                <Input @value={{@resource.gateway}} @type="text" class="w-full form-input" placeholder="e.g. stripe" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Gateway Transaction ID">
+                <Input @value={{@resource.gateway_transaction_id}} @type="text" class="w-full form-input" placeholder="Gateway transaction reference" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Payment Method">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "card" "bank_transfer" "wallet" "cash"}}
+                        @selected={{@resource.payment_method}}
+                        @onChange={{fn (mut @resource.payment_method)}}
+                        @placeholder="Select payment method"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Reference">
+                <Input @value={{@resource.reference}} @type="text" class="w-full form-input" placeholder="External reference" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            {{! Description & Notes }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Description & Notes
+            </div>
+
+            <InputGroup @name="Description" @wrapperClass="col-span-2">
+                <Input @value={{@resource.description}} @type="text" class="w-full form-input" placeholder="Short description of this transaction" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Notes" @wrapperClass="col-span-2">
+                <Textarea @value={{@resource.notes}} class="w-full form-input" rows="3" placeholder="Internal notes..." disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    <Spacer @height="100px" />
+</div>

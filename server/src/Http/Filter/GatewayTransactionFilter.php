@@ -1,0 +1,59 @@
+<?php
+
+namespace Fleetbase\Ledger\Http\Filter;
+
+use Fleetbase\Http\Filter\Filter;
+
+class GatewayTransactionFilter extends Filter
+{
+    public function queryForInternal(): void
+    {
+        $this->builder
+            ->where('company_uuid', $this->session->get('company'))
+            ->with(['gateway']);
+    }
+
+    public function queryForPublic(): void
+    {
+        $this->builder->where('company_uuid', $this->session->get('company'));
+    }
+
+    public function query(?string $searchQuery): void
+    {
+        $this->builder->where(function ($q) use ($searchQuery) {
+            $q->searchWhere('gateway_transaction_id', $searchQuery)
+              ->orWhere('description', 'like', "%{$searchQuery}%")
+              ->orWhere('public_id', 'like', "%{$searchQuery}%");
+        });
+    }
+
+    public function type(?string $type): void
+    {
+        $this->builder->where('type', $type);
+    }
+
+    public function status(?string $status): void
+    {
+        $this->builder->where('status', $status);
+    }
+
+    public function gateway(?string $gateway): void
+    {
+        $this->builder->where('gateway_uuid', $gateway);
+    }
+
+    public function publicId(?string $publicId): void
+    {
+        $this->builder->searchWhere('public_id', $publicId);
+    }
+
+    public function createdAt($createdAt): void
+    {
+        $createdAt = \Fleetbase\Support\Utils::dateRange($createdAt);
+        if (is_array($createdAt)) {
+            $this->builder->whereBetween('created_at', $createdAt);
+        } else {
+            $this->builder->whereDate('created_at', $createdAt);
+        }
+    }
+}

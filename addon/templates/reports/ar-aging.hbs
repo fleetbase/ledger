@@ -1,0 +1,78 @@
+<Layout::Section::Header @title="AR Aging" @actionsWrapperClass="flex flex-row items-center space-x-2">
+    <div class="flex flex-row items-center space-x-2">
+        <DatePicker @value={{this.as_of}} @onSelect={{this.onDateChanged}} @autoClose={{true}} @buttons={{array "clear"}} @placeholder="As of date" class="w-44 form-input form-input-sm" />
+        <Button @size="sm" @type="default" @icon="refresh" @helpText="Refresh" {{on "click" this.reload}} />
+    </div>
+</Layout::Section::Header>
+<Layout::Section::Body class="overflow-y-auto h-full">
+    <div class="p-6">
+        {{#if this.loadReport.isRunning}}
+            <div class="flex items-center justify-center py-20"><Spinner /></div>
+        {{else if this.data}}
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Accounts Receivable Aging</h2>
+                    {{#if this.data.as_of_date}}
+                        <p class="text-sm text-gray-500 mt-0.5">As of {{format-date-fns this.data.as_of_date "MMMM d, yyyy"}}</p>
+                    {{/if}}
+                </div>
+                {{#if this.data.grand_total}}
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500 uppercase tracking-wide">Total Outstanding</p>
+                        <p class="text-lg font-bold text-gray-900 dark:text-white">{{format-currency this.data.grand_total this.companyCurrency}}</p>
+                    </div>
+                {{/if}}
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-5">
+                {{#each this.bucketSummary as |bucket|}}
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-900">
+                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{bucket.label}}</p>
+                        <p class="text-base font-bold {{if (gt bucket.total 0) 'text-red-600 dark:text-red-400' 'text-gray-900 dark:text-white'}}">{{format-currency
+                                bucket.total
+                                this.companyCurrency
+                            }}</p>
+                    </div>
+                {{/each}}
+            </div>
+
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <div class="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Outstanding Invoices</h3>
+                </div>
+                <table class="w-full text-sm overflow-hidden">
+                    <thead>
+                        <tr class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invoice</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Due Date</th>
+                            <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bucket</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each this.allInvoices as |invoice|}}
+                            <tr class="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <td class="px-4 py-2 font-mono text-xs text-gray-600 dark:text-gray-400">{{invoice.number}}</td>
+                                <td class="px-4 py-2 text-gray-700 dark:text-gray-300">{{or invoice.customer.name "—"}}</td>
+                                <td class="px-4 py-2 text-gray-500">{{format-date-fns invoice.due_date "MMM d, yyyy"}}</td>
+                                <td class="px-4 py-2 text-right font-medium text-gray-900 dark:text-white">{{format-currency invoice.balance (or invoice.currency this.companyCurrency)}}</td>
+                                <td class="px-4 py-2 text-center">
+                                    <Badge @color={{if (eq invoice.daysRange "0") "green" (if (eq invoice.daysRange "1-30") "yellow" "red")}}>
+                                        {{invoice.bucketLabel}}
+                                    </Badge>
+                                </td>
+                            </tr>
+                        {{else}}
+                            <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400 text-sm">No outstanding receivables</td></tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        {{else}}
+            <div class="flex flex-col items-center justify-center py-20 text-gray-400">
+                <p class="text-sm">No report data available. Select a date and refresh.</p>
+            </div>
+        {{/if}}
+    </div>
+</Layout::Section::Body>

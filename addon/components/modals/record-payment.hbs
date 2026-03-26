@@ -1,0 +1,45 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        {{#let @options.invoice as |invoice|}}
+            {{! Invoice summary header }}
+            <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="flex flex-col">
+                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{n-a invoice.number}}</span>
+                    <span class="text-xs text-gray-500">{{n-a invoice.customerName}}</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-sm font-bold text-gray-900 dark:text-white">
+                        {{format-currency invoice.total invoice.currency}}
+                    </span>
+                    <span class="text-xs text-gray-500">
+                        Balance:
+                        {{format-currency invoice.balance invoice.currency}}
+                    </span>
+                </div>
+            </div>
+
+            {{! Amount }}
+            <InputGroup @name="Amount" @helpText="Amount received. Defaults to the full outstanding balance.">
+                <MoneyInput class="w-full" @value={{@options.amount}} @currency={{invoice.currency}} @onChange={{@options.setAmount}} />
+            </InputGroup>
+
+            {{! Payment method }}
+            <InputGroup @name="Payment Method" @helpText="How the payment was received.">
+                <Select
+                    class="w-full"
+                    @value={{@options.paymentMethod}}
+                    @options={{@options.paymentMethodOptions}}
+                    @optionLabel="label"
+                    @optionValue="value"
+                    @onChange={{@options.setPaymentMethod}}
+                    @placeholder="Select payment method..."
+                />
+            </InputGroup>
+
+            {{! Reference / note }}
+            <InputGroup @name="Reference" @helpText="Optional reference number or note for this payment.">
+                <Input @value={{@options.reference}} @type="text" class="w-full form-input" placeholder="e.g. bank transfer ref, cheque number" {{on "input" @options.setReference}} />
+            </InputGroup>
+        {{/let}}
+    </div>
+</Modal::Default>

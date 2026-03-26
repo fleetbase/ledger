@@ -1,0 +1,13 @@
+<Layout::Resource::Panel
+    @resource={{@model}}
+    @controller={{this}}
+    @headerTitle="Edit Invoice {{@model.number}}"
+    @actionButtons={{this.actionButtons}}
+    @saveTask={{this.save}}
+    @onPressCancel={{this.cancel}}
+    @onOverlayReady={{fn (mut this.overlay)}}
+    @width="900px"
+>
+    <Invoice::Form @resource={{@model}} @controller={{this}} @registerRef={{this.registerFormRef}} />
+    <Spacer @height="200px" />
+</Layout::Resource::Panel>

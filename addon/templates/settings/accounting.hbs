@@ -1,0 +1,154 @@
+<Layout::Section::Header @title="Accounting Settings">
+    <Button
+        @type="primary"
+        @size="sm"
+        @icon="save"
+        @text="Save Changes"
+        @onClick={{perform this.saveSettings}}
+        @disabled={{this.saveSettings.isRunning}}
+        @isLoading={{or this.saveSettings.isRunning this.getSettings.isRunning}}
+    />
+</Layout::Section::Header>
+
+<Layout::Section::Body class="overflow-y-scroll h-full">
+    <div class="container mx-auto h-screen">
+        <div class="max-w-3xl my-10 mx-auto space-y-6">
+
+            {{! ── Base Currency & Fiscal Year ────────────────────────────────────── }}
+            <ContentPanel @title="Currency & Fiscal Year" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup @name="Base Currency" @helpText="The reporting currency for all financial statements and the chart of accounts.">
+                    <CurrencySelect
+                        @currency={{this.effectiveCurrency}}
+                        @currencyData={{this.selectedCurrency}}
+                        @onCurrencyChange={{this.onSelectCurrency}}
+                        @triggerClass="form-select form-input"
+                        @placeholder={{concat "Default: " this.companyCurrency}}
+                        @allowClear={{true}}
+                    />
+                    {{#unless this.base_currency}}
+                        <p class="text-xs text-gray-400 mt-1">Using organisation default ({{this.companyCurrency}}). Select a currency above to override.</p>
+                    {{/unless}}
+                </InputGroup>
+
+                <InputGroup @name="Fiscal Year Start Month" @helpText="The month in which your organisation's fiscal year begins. Affects period-based financial reports.">
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.fiscalYearMonthOptions}}
+                            @selected={{find-by "value" this.fiscal_year_start_month this.fiscalYearMonthOptions}}
+                            @onChange={{this.onSelectFiscalYearMonth}}
+                            @placeholder="Select start month"
+                            @triggerClass="form-select form-input"
+                            as |opt|
+                        >
+                            <div class="text-sm">{{opt.label}}</div>
+                        </PowerSelect>
+                    </div>
+                </InputGroup>
+            </ContentPanel>
+
+            {{! ── Default Accounts ────────────────────────────────────────────────── }}
+            <ContentPanel @title="Default Accounts" @open={{true}} @wrapperClass="bordered-classic">
+                <div class="text-xs text-gray-500 mb-3">
+                    These accounts are used automatically when posting transactions unless a specific account is selected on the transaction itself.
+                </div>
+
+                <InputGroup @name="Default Revenue Account" @helpText="Applied to income line items on invoices and sales transactions.">
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.revenueAccounts}}
+                            @selected={{this.selectedRevenueAccount}}
+                            @onChange={{this.onSelectRevenueAccount}}
+                            @placeholder="Select revenue account"
+                            @triggerClass="form-select form-input"
+                            @allowClear={{true}}
+                            as |account|
+                        >
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="font-medium">{{account.name}}</span>
+                                {{#if account.code}}
+                                    <span class="text-gray-400 text-xs ml-2 font-mono">{{account.code}}</span>
+                                {{/if}}
+                            </div>
+                        </PowerSelect>
+                    </div>
+                </InputGroup>
+
+                <InputGroup @name="Default Expense Account" @helpText="Applied to cost and expense line items on bills and purchase transactions.">
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.expenseAccounts}}
+                            @selected={{this.selectedExpenseAccount}}
+                            @onChange={{this.onSelectExpenseAccount}}
+                            @placeholder="Select expense account"
+                            @triggerClass="form-select form-input"
+                            @allowClear={{true}}
+                            as |account|
+                        >
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="font-medium">{{account.name}}</span>
+                                {{#if account.code}}
+                                    <span class="text-gray-400 text-xs ml-2 font-mono">{{account.code}}</span>
+                                {{/if}}
+                            </div>
+                        </PowerSelect>
+                    </div>
+                </InputGroup>
+
+                <InputGroup @name="Default Accounts Receivable (AR) Account" @helpText="The asset account that tracks money owed to your organisation from customers.">
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.arAccounts}}
+                            @selected={{this.selectedArAccount}}
+                            @onChange={{this.onSelectArAccount}}
+                            @placeholder="Select AR account"
+                            @triggerClass="form-select form-input"
+                            @allowClear={{true}}
+                            as |account|
+                        >
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="font-medium">{{account.name}}</span>
+                                {{#if account.code}}
+                                    <span class="text-gray-400 text-xs ml-2 font-mono">{{account.code}}</span>
+                                {{/if}}
+                            </div>
+                        </PowerSelect>
+                    </div>
+                </InputGroup>
+
+                <InputGroup @name="Default Accounts Payable (AP) Account" @helpText="The liability account that tracks money your organisation owes to vendors.">
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.apAccounts}}
+                            @selected={{this.selectedApAccount}}
+                            @onChange={{this.onSelectApAccount}}
+                            @placeholder="Select AP account"
+                            @triggerClass="form-select form-input"
+                            @allowClear={{true}}
+                            as |account|
+                        >
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="font-medium">{{account.name}}</span>
+                                {{#if account.code}}
+                                    <span class="text-gray-400 text-xs ml-2 font-mono">{{account.code}}</span>
+                                {{/if}}
+                            </div>
+                        </PowerSelect>
+                    </div>
+                </InputGroup>
+            </ContentPanel>
+
+            {{! ── Journal Entry Behaviour ────────────────────────────────────────────── }}
+            <ContentPanel @title="Journal Entry Behaviour" @open={{true}} @wrapperClass="bordered-classic">
+                <InputGroup @name="Auto-Post Journal Entries">
+                    <Toggle
+                        @isToggled={{this.auto_post_journal_entries}}
+                        @label="Automatically post journal entries to the general ledger when created, without requiring manual approval."
+                        @onToggle={{fn (mut this.auto_post_journal_entries)}}
+                    />
+                </InputGroup>
+            </ContentPanel>
+
+        </div>
+    </div>
+    <Spacer @height="600px" />
+</Layout::Section::Body>

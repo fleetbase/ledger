@@ -1,0 +1,179 @@
+<div class="form-wrapper" ...attributes>
+    {{! GATEWAY DETAILS }}
+    <ContentPanel @title="Gateway Details" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
+
+            {{! Identification }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
+                Identification
+            </div>
+
+            <InputGroup @name="Gateway Name" @wrapperClass="col-span-2">
+                <Input @value={{@resource.name}} @type="text" class="w-full form-input" placeholder="e.g. Stripe Production" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Code">
+                <Input @value={{@resource.code}} @type="text" class="w-full form-input" placeholder="e.g. stripe_prod" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Driver">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{this.availableDrivers}}
+                        @selected={{find-by "code" @resource.driver this.availableDrivers}}
+                        @onChange={{this.selectDriver}}
+                        @placeholder="Select payment driver"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |driver|
+                    >
+                        <div class="text-sm">
+                            <div class="font-semibold normalize-in-trigger">{{driver.name}}</div>
+                            <div class="hide-from-trigger text-gray-500">{{driver.description}}</div>
+                        </div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            {{! If a driver is selected, show its capabilities }}
+            {{#if @resource.driver}}
+                {{#let (find-by "code" @resource.driver this.availableDrivers) as |driver|}}
+                    {{#if driver.capabilities}}
+                        <div class="col-span-1 lg:col-span-2 flex flex-wrap gap-1 mt-1">
+                            {{#each driver.capabilities as |cap|}}
+                                <Badge @color="blue" @size="xs">{{cap}}</Badge>
+                            {{/each}}
+                        </div>
+                    {{/if}}
+                {{/let}}
+            {{/if}}
+
+            {{! Environment & Settings }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                Environment & Settings
+            </div>
+
+            <InputGroup @name="Environment">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "sandbox" "live"}}
+                        @selected={{@resource.environment}}
+                        @onChange={{fn (mut @resource.environment)}}
+                        @placeholder="Select environment"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Status">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{array "active" "inactive"}}
+                        @selected={{@resource.status}}
+                        @onChange={{fn (mut @resource.status)}}
+                        @placeholder="Select status"
+                        @triggerClass="form-select form-input"
+                        @disabled={{cannot-write @resource}}
+                        as |option|
+                    >
+                        <div class="capitalize text-sm">{{option}}</div>
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            <InputGroup @name="Description" @wrapperClass="col-span-2">
+                <Textarea @value={{@resource.description}} class="w-full form-input" rows="2" placeholder="Optional description of this gateway..." disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            {{! URLs }}
+            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
+                URLs
+            </div>
+
+            <InputGroup @name="Return URL" @helpText="The URL the customer is redirected to after a successful payment." @wrapperClass="col-span-2">
+                <Input @value={{@resource.return_url}} @type="url" class="w-full form-input" placeholder="https://yourapp.com/payment/success" disabled={{cannot-write @resource}} />
+            </InputGroup>
+
+            <InputGroup @name="Webhook / Callback URL" @helpText="The URL the gateway will POST payment events to. Register this in your gateway dashboard." @wrapperClass="col-span-2">
+                <Input @value={{@resource.webhook_url}} @type="url" class="w-full form-input" placeholder="https://yourapp.com/ledger/webhooks/stripe" disabled={{cannot-write @resource}} />
+                {{#if @resource.system_webhook_url}}
+                    <div class="mt-1 text-[11px] text-gray-500">
+                        System webhook URL:
+                        <span class="font-mono select-all">{{@resource.system_webhook_url}}</span>
+                    </div>
+                {{/if}}
+            </InputGroup>
+
+        </div>
+    </ContentPanel>
+
+    {{! DYNAMIC CONFIGURATION }}
+    {{#if this.configSchema.length}}
+        <ContentPanel @title="Configuration" @open={{true}} @wrapperClass="bordered-top">
+            <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
+                <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
+                    {{@resource.driver}}
+                    Configuration
+                </div>
+
+                {{#each this.configSchema as |field|}}
+                    {{#if (eq field.type "text")}}
+                        <InputGroup @name={{field.label}} @helpText={{field.description}}>
+                            <Input
+                                @value={{get this.configValues field.key}}
+                                @type="text"
+                                class="w-full form-input"
+                                placeholder={{or field.placeholder field.label}}
+                                {{on "input" (fn this.updateConfigField field.key)}}
+                                disabled={{cannot-write @resource}}
+                            />
+                        </InputGroup>
+                    {{else if (eq field.type "password")}}
+                        <InputGroup @name={{field.label}} @helpText={{field.description}}>
+                            <Input
+                                @value={{get this.configValues field.key}}
+                                @type="password"
+                                class="w-full form-input"
+                                placeholder={{or field.placeholder field.label}}
+                                {{on "input" (fn this.updateConfigField field.key)}}
+                                disabled={{cannot-write @resource}}
+                            />
+                        </InputGroup>
+                    {{else if (eq field.type "select")}}
+                        <InputGroup @name={{field.label}} @helpText={{field.description}}>
+                            <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                                <PowerSelect
+                                    @options={{field.options}}
+                                    @selected={{find-by "value" (get this.configValues field.key) field.options}}
+                                    @onChange={{fn this.updateConfigField field.key}}
+                                    @placeholder="Select option"
+                                    @triggerClass="form-select form-input"
+                                    @disabled={{cannot-write @resource}}
+                                    as |opt|
+                                >
+                                    <div class="text-sm">{{opt.label}}</div>
+                                </PowerSelect>
+                            </div>
+                        </InputGroup>
+                    {{else if (eq field.type "boolean")}}
+                        <InputGroup @name={{field.label}} @wrapperClass="col-span-2">
+                            <Toggle
+                                @isToggled={{get this.configValues field.key}}
+                                @label={{field.label}}
+                                @helpText={{field.description}}
+                                @onToggle={{fn this.updateConfigField field.key}}
+                                @disabled={{cannot-write @resource}}
+                            />
+                        </InputGroup>
+                    {{/if}}
+                {{/each}}
+            </div>
+        </ContentPanel>
+    {{/if}}
+
+    <Spacer @height="100px" />
+</div>

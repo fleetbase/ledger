@@ -1,0 +1,38 @@
+<EmberWormhole @to="sidebar-menu-items">
+    <Layout::Sidebar::Item @route="console.ledger.home" @icon="chart-simple">Dashboard</Layout::Sidebar::Item>
+
+    <Layout::Sidebar::Panel @open={{true}} @title="Billing">
+        <Layout::Sidebar::Item @route="console.ledger.billing.invoices.index" @icon="file-invoice-dollar">Invoices</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.billing.invoice-templates.index" @icon="file-code">Invoice Templates</Layout::Sidebar::Item>
+    </Layout::Sidebar::Panel>
+
+    <Layout::Sidebar::Panel @open={{true}} @title="Payments">
+        <Layout::Sidebar::Item @route="console.ledger.payments.transactions.index" @icon="money-bill-transfer">Transactions</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.payments.wallets.index" @icon="wallet">Wallets</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.payments.gateways.index" @icon="credit-card">Gateways</Layout::Sidebar::Item>
+    </Layout::Sidebar::Panel>
+
+    <Layout::Sidebar::Panel @open={{true}} @title="Accounting">
+        <Layout::Sidebar::Item @route="console.ledger.accounting.accounts.index" @icon="sitemap">Chart of Accounts</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.accounting.journal.index" @icon="book">Journal Entries</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.accounting.general-ledger" @icon="scroll">General Ledger</Layout::Sidebar::Item>
+    </Layout::Sidebar::Panel>
+
+    <Layout::Sidebar::Panel @open={{true}} @title="Reports">
+        <Layout::Sidebar::Item @route="console.ledger.reports.income-statement" @icon="chart-line">Income Statement</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.reports.balance-sheet" @icon="scale-balanced">Balance Sheet</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.reports.trial-balance" @icon="list-check">Trial Balance</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.reports.cash-flow" @icon="water">Cash Flow</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.reports.ar-aging" @icon="clock">AR Aging</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.reports.wallet-summary" @icon="wallet">Wallet Summary</Layout::Sidebar::Item>
+    </Layout::Sidebar::Panel>
+
+    <Layout::Sidebar::Panel @open={{true}} @title="Settings">
+        <Layout::Sidebar::Item @route="console.ledger.settings.invoice" @icon="file-invoice">Invoice Settings</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.settings.payment" @icon="gear">Payment Settings</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.ledger.settings.accounting" @icon="calculator">Accounting Settings</Layout::Sidebar::Item>
+    </Layout::Sidebar::Panel>
+</EmberWormhole>
+<Layout::Section::Container>
+    {{outlet}}
+</Layout::Section::Container>

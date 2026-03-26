@@ -1,0 +1,10 @@
+<EmberWormhole @to="ledger-template-builder-outlet">
+    <TemplateBuilder
+        @template={{this.template}}
+        @contextSchemas={{this.contextSchemas}}
+        @isSaving={{this.save.isRunning}}
+        @onSave={{perform this.save}}
+        @onPreview={{this.invoiceTemplateActions.preview}}
+        @onClose={{this.close}}
+    />
+</EmberWormhole>

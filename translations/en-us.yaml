@@ -1,2 +1,107 @@
 ledger:
   extension-name: Ledger
+
+common:
+  ledger: Ledger
+  overview: Overview
+  transactions: Transactions
+
+resource:
+  account: Account
+  accounts: Accounts
+  invoice: Invoice
+  invoices: Invoices
+  invoice-template: Invoice Template
+  invoice-templates: Invoice Templates
+  journal: Journal Entry
+  journal-entries: Journal Entries
+  transaction: Transaction
+  transactions: Transactions
+  wallet: Wallet
+  wallets: Wallets
+  gateway: Gateway
+  gateways: Gateways
+  wallet-transaction: Wallet Transaction
+  wallet-transactions: Wallet Transactions
+
+column:
+  id: ID
+  number: Number
+  name: Name
+  code: Code
+  type: Type
+  status: Status
+  direction: Direction
+  description: Description
+  date: Date
+  created-at: Created
+  updated-at: Updated
+  amount: Amount
+  balance: Balance
+  balance-after: Balance After
+  total: Total
+  net-amount: Net Amount
+  fee: Fee
+  tax: Tax
+  currency: Currency
+  gateway: Gateway
+  payment-method: Payment Method
+  reference: Reference
+  memo: Memo
+  period: Period
+  settled-at: Settled At
+  failure-reason: Failure Reason
+  due-date: Due Date
+  issued-at: Issued At
+  invoice-date: Invoice Date
+  customer: Customer
+  debit-account: Debit Account
+  credit-account: Credit Account
+  source: Source
+  driver: Driver
+  environment: Environment
+  default: Default
+  owner: Owner
+  payer: Payer
+  payee: Payee
+  frozen: Frozen
+  orientation: Orientation
+
+menu:
+  dashboard: Dashboard
+  billing: Billing
+  invoices: Invoices
+  payments: Payments
+  wallets: Wallets
+  gateways: Gateways
+  accounting: Accounting
+  chart-of-accounts: Chart of Accounts
+  journal-entries: Journal Entries
+  general-ledger: General Ledger
+  reports: Reports
+  income-statement: Income Statement
+  balance-sheet: Balance Sheet
+  trial-balance: Trial Balance
+  cash-flow: Cash Flow
+  ar-aging: AR Aging
+  wallet-summary: Wallet Summary
+  settings: Settings
+  invoice-settings: Invoice Settings
+  payment-settings: Payment Settings
+  accounting-settings: Accounting Settings
+
+invoice:
+  no-transactions: No transactions recorded for this invoice.
+  actions:
+    preview-invoice: "Preview Invoice #{number}"
+    preview-invoice-fallback: Preview Invoice
+    download-pdf: Download PDF
+    record-payment: Record Payment
+    record-payment-title: "Record Payment — {number}"
+    copy-payment-link: Copy Payment Link
+    copy-invoice-url: Copy Invoice URL
+    payment-link-copied: Invoice URL copied to clipboard.
+    payment-link-copy-failed: Failed to copy invoice URL. Please copy it manually.
+    send: Send Invoice
+    void: Void Invoice
+    edit: Edit Invoice

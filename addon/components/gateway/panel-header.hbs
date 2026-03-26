@@ -1,0 +1,27 @@
+<div class="px-4 py-2" ...attributes>
+    <div class="flex flex-1 flex-row items-start justify-between">
+        <div class="flex flex-col">
+            <h1 class="text-gray-900 dark:text-white font-semibold text-lg">{{n-a @resource.name}}</h1>
+            <div class="flex flex-row items-center space-x-2 mt-0.5">
+                <Badge @status="info" @hideStatusDot={{true}}>{{titleize @resource.driver}}</Badge>
+                <Badge @color={{if (eq @resource.environment "live") "success" "warning"}}>{{titleize @resource.environment}}</Badge>
+            </div>
+        </div>
+        <div class="next-view-header-right f-child-items-start">
+            <Layout::Resource::Panel::HeaderActions
+                @resource={{@resource}}
+                @saveTask={{@saveTask}}
+                @saveOptions={{@saveOptions}}
+                @saveDisabled={{@saveDisabled}}
+                @pojoResource={{@pojoResource}}
+                @authSchema={{@authSchema}}
+                @actionButtons={{@actionButtons}}
+                @onPressCancel={{@onPressCancel}}
+            >
+                <div class="flex flex-col items-end mr-2">
+                    <Badge @status={{@resource.status}}>{{titleize @resource.status}}</Badge>
+                </div>
+            </Layout::Resource::Panel::HeaderActions>
+        </div>
+    </div>
+</div>

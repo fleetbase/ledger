@@ -1,0 +1,114 @@
+<div class="details-wrapper" ...attributes>
+    {{! GATEWAY DETAILS }}
+    <ContentPanel @title="Gateway Details" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
+
+            <div class="col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
+                Gateway Information
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Name</div>
+                <div class="field-value">{{n-a @resource.name}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Code</div>
+                <div class="field-value font-mono">{{n-a @resource.code}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Driver</div>
+                <div class="field-value">{{n-a (titleize @resource.driver)}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Type</div>
+                <div class="field-value capitalize">{{n-a @resource.type}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Environment</div>
+                <div class="field-value">
+                    <Badge @color={{if (eq @resource.environment "live") "success" "warning"}} class="capitalize">{{n-a @resource.environment}}</Badge>
+                </div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Status</div>
+                <div class="field-value">
+                    <Badge @status={{@resource.status}}>{{titleize @resource.status}}</Badge>
+                </div>
+            </div>
+
+            {{#if @resource.description}}
+                <div class="field-info-container col-span-2">
+                    <div class="field-name">Description</div>
+                    <div class="field-value">{{@resource.description}}</div>
+                </div>
+            {{/if}}
+
+        </div>
+    </ContentPanel>
+
+    {{! INTEGRATION }}
+    <ContentPanel @title="Integration" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 gap-2 text-xs dark:text-gray-100">
+
+            {{! System-generated webhook URL — always shown, full absolute URL from backend }}
+            {{#if @resource.system_webhook_url}}
+                <div class="field-info-container">
+                    <div class="field-name">Webhook URL</div>
+                    <div class="field-value font-mono break-all flex items-center gap-2">
+                        <span class="flex-1 select-all">{{@resource.system_webhook_url}}</span>
+                        <ClickToCopy @value={{@resource.system_webhook_url}} @buttonText="Copy" />
+                    </div>
+                    <div class="text-[11px] text-gray-500 mt-1">
+                        Register this URL in your payment gateway dashboard to receive webhook events.
+                    </div>
+                </div>
+            {{else if @resource.webhook_url}}
+                {{! Fallback: show the stored webhook_url if no system URL is available }}
+                <div class="field-info-container">
+                    <div class="field-name">Webhook URL</div>
+                    <div class="field-value font-mono break-all">{{@resource.webhook_url}}</div>
+                </div>
+            {{/if}}
+
+            {{#if @resource.capabilities}}
+                <div class="field-info-container">
+                    <div class="field-name">Capabilities</div>
+                    <div class="field-value flex flex-wrap gap-1 mt-1">
+                        {{#each @resource.capabilities as |cap|}}
+                            <Badge @color="blue">{{cap}}</Badge>
+                        {{/each}}
+                    </div>
+                </div>
+            {{/if}}
+
+        </div>
+    </ContentPanel>
+
+    {{! RECORD INFO }}
+    <ContentPanel @title="Record Info" @open={{true}} @wrapperClass="bordered-top">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
+
+            <div class="field-info-container">
+                <div class="field-name">Internal ID</div>
+                <div class="field-value font-mono">{{n-a @resource.public_id}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Created</div>
+                <div class="field-value">{{n-a @resource.createdAt}}</div>
+            </div>
+
+            <div class="field-info-container">
+                <div class="field-name">Last Updated</div>
+                <div class="field-value">{{n-a @resource.updatedAt}}</div>
+            </div>
+
+        </div>
+    </ContentPanel>
+    <Spacer @height="200px" />
+</div>

@@ -1,0 +1,27 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        {{#let @options.wallet as |wallet|}}
+            {{! Wallet context header }}
+            <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="flex flex-col">
+                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{n-a wallet.name}}</span>
+                    <span class="text-xs text-gray-500">{{n-a wallet.subject.name}}</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-sm font-bold text-gray-900 dark:text-white">{{format-currency wallet.balance wallet.currency}}</span>
+                    <span class="text-xs text-gray-500">Current Balance</span>
+                </div>
+            </div>
+
+            {{! Amount input }}
+            <InputGroup @name="Amount" @helpText="Amount to add to this wallet.">
+                <MoneyInput class="w-full" @value={{@options.amount}} @currency={{wallet.currency}} @onChange={{@options.setAmount}} />
+            </InputGroup>
+
+            {{! Description input }}
+            <InputGroup @name="Description" @helpText="Optional note for this transaction.">
+                <Input @value={{@options.description}} @type="text" class="w-full form-input" placeholder="Manual top-up" {{on "input" @options.setDescription}} />
+            </InputGroup>
+        {{/let}}
+    </div>
+</Modal::Default>

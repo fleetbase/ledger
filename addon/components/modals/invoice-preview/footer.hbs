@@ -1,0 +1,11 @@
+<div class="modal-footer-actions flex items-center justify-between w-full">
+    {{! Left side: Print + Download PDF (only when HTML is loaded) }}
+    <div class="flex items-center gap-2">
+        {{#if @options.html}}
+            <Button @icon="print" @text={{t "common.print"}} @type="default" @size="md" @onClick={{@options.onPrint}} />
+            <Button @icon="file-pdf" @text={{t "invoice.actions.download-pdf"}} @type="default" @size="md" @isLoading={{@options.isPdfLoading}} @onClick={{@options.onDownloadPdf}} />
+        {{/if}}
+    </div>
+    {{! Right side: Done button }}
+    <Button @text={{t "common.done"}} @type="primary" @size="md" @onClick={{@confirm}} />
+</div>

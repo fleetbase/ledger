@@ -1,0 +1,254 @@
+{{! Public customer invoice view
+    URL: {console_url}/invoice?id=<invoice-public_id>
+    Registered to auth:login registry with slug='invoice'.
+    Rendered by the host console's top-level virtual route. }}
+
+<div class="customer-invoice-page min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4 relative">
+
+    {{! Back to console }}
+    <div class="absolute left-0 top-0 p-4">
+        <Button @text="Back to Console" @icon="arrow-left" @onClick={{this.transitionToConsole}} @size="xs" />
+    </div>
+
+    <div class="max-w-3xl mx-auto pt-10">
+
+        {{! ── Loading state ─────────────────────────────────────────────────── }}
+        {{#if this.loadInvoice.isRunning}}
+            <div class="flex flex-col items-center justify-center py-24 text-gray-500 dark:text-gray-400">
+                <FaIcon @icon="spinner" @spin={{true}} @size="2x" class="mb-4" />
+                <p class="text-sm">Loading invoice…</p>
+            </div>
+
+            {{! ── Error state ────────────────────────────────────────────────────── }}
+        {{else if this.error}}
+            <div class="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-8 text-center">
+                <FaIcon @icon="triangle-exclamation" @size="2x" class="text-red-400 mb-4" />
+                <p class="text-red-700 dark:text-red-300 font-medium">{{this.error}}</p>
+            </div>
+
+            {{! ── Invoice loaded ─────────────────────────────────────────────────── }}
+        {{else if this.invoice}}
+
+            {{! ── Header card ──────────────────────────────────────────────── }}
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+
+                {{! Branding bar }}
+                <div class="bg-indigo-600 px-8 py-5 flex items-center justify-between">
+                    <div>
+                        <p class="text-indigo-200 text-xs uppercase tracking-widest font-semibold mb-1">Invoice</p>
+                        <h1 class="text-white text-2xl font-bold">{{this.invoice.number}}</h1>
+                    </div>
+                    <Badge @status={{this.invoice.status}} />
+                </div>
+
+                {{! Invoice meta }}
+                <div class="px-8 py-6 grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                    <div>
+                        <p class="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wide mb-1">Bill To</p>
+                        <p class="font-semibold text-gray-800 dark:text-gray-100">
+                            {{or this.invoice.customer.name "—"}}
+                        </p>
+                        {{#if this.invoice.customer.email}}
+                            <p class="text-gray-500 dark:text-gray-400 text-xs">{{this.invoice.customer.email}}</p>
+                        {{/if}}
+                    </div>
+                    <div class="text-right">
+                        <p class="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wide mb-1">Invoice Date</p>
+                        <p class="text-gray-700 dark:text-gray-300">{{format-date-fns this.invoice.date "yyyy-MM-dd"}}</p>
+                        {{#if this.invoice.due_date}}
+                            <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">
+                                Due:
+                                {{format-date-fns this.invoice.due_date "yyyy-MM-dd"}}
+                            </p>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{! Line items table }}
+                {{#if this.invoice.items.length}}
+                    <div class="border-t border-gray-100 dark:border-gray-700 px-8 py-4">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wide border-b border-gray-100 dark:border-gray-700">
+                                    <th class="text-left pb-2 font-medium">Description</th>
+                                    <th class="text-right pb-2 font-medium">Qty</th>
+                                    <th class="text-right pb-2 font-medium">Unit Price</th>
+                                    <th class="text-right pb-2 font-medium">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each this.invoice.items as |item|}}
+                                    <tr class="border-b border-gray-50 dark:border-gray-700/50">
+                                        <td class="py-2 text-gray-700 dark:text-gray-300">
+                                            {{or item.description item.name "—"}}
+                                        </td>
+                                        <td class="py-2 text-right text-gray-600 dark:text-gray-400">{{item.quantity}}</td>
+                                        <td class="py-2 text-right text-gray-600 dark:text-gray-400">
+                                            {{format-currency item.unit_price this.invoice.currency}}
+                                        </td>
+                                        <td class="py-2 text-right font-medium text-gray-800 dark:text-gray-100">
+                                            {{format-currency item.amount this.invoice.currency}}
+                                        </td>
+                                    </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                {{/if}}
+
+                {{! Totals }}
+                <div class="border-t border-gray-100 dark:border-gray-700 px-8 py-5 space-y-2 text-sm">
+                    <div class="flex justify-between text-gray-500 dark:text-gray-400">
+                        <span>Subtotal</span>
+                        <span>{{format-currency this.invoice.total_amount this.invoice.currency}}</span>
+                    </div>
+                    {{#if this.invoice.amount_paid}}
+                        <div class="flex justify-between text-green-600 dark:text-green-400">
+                            <span>Amount Paid</span>
+                            <span>−{{format-currency this.invoice.amount_paid this.invoice.currency}}</span>
+                        </div>
+                    {{/if}}
+                    <div class="flex justify-between font-bold text-base text-gray-900 dark:text-white border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                        <span>Balance Due</span>
+                        <span class="{{if this.isPaid 'text-green-600 dark:text-green-400'}}">
+                            {{format-currency this.invoice.balance this.invoice.currency}}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {{! ── Success message ──────────────────────────────────────────── }}
+            {{#if this.successMessage}}
+                <div class="rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-6 flex items-start gap-4 mb-6">
+                    <FaIcon @icon="circle-check" class="text-green-500 mt-0.5 shrink-0" />
+                    <p class="text-green-700 dark:text-green-300 font-medium">{{this.successMessage}}</p>
+                </div>
+            {{/if}}
+
+            {{! ── Payment section ──────────────────────────────────────────── }}
+            {{#if this.canAcceptPayment}}
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-8 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                        <h2 class="font-semibold text-gray-800 dark:text-gray-100">Pay This Invoice</h2>
+                        <button type="button" class="text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:underline focus:outline-none" {{on "click" this.togglePaymentForm}}>
+                            {{if this.showPaymentForm "Cancel" "Pay Now"}}
+                        </button>
+                    </div>
+
+                    {{#if this.showPaymentForm}}
+                        <div class="px-8 py-6 space-y-5">
+
+                            {{! Inline error }}
+                            {{#if this.error}}
+                                <div class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                                    {{this.error}}
+                                </div>
+                            {{/if}}
+
+                            {{! Gateway selector }}
+                            {{#if this.hasGateways}}
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                                        Payment Method
+                                    </label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        {{#each this.gateways as |gateway|}}
+                                            <button
+                                                type="button"
+                                                class="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-colors
+                                                    {{if
+                                                        (eq this.selectedGatewayId gateway.id)
+                                                        'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                                                        'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-indigo-300'
+                                                    }}"
+                                                {{on "click" (fn this.selectGateway gateway.id)}}
+                                            >
+                                                <FaIcon @icon="credit-card" class="text-gray-400" />
+                                                {{gateway.name}}
+                                            </button>
+                                        {{/each}}
+                                    </div>
+                                </div>
+                            {{/if}}
+
+                            {{! Reference field }}
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                                    Reference / Note (optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="e.g. Bank transfer ref #12345"
+                                    value={{this.paymentReference}}
+                                    {{on "input" this.updateReference}}
+                                />
+                            </div>
+
+                            {{! Redirecting to Stripe overlay }}
+                            {{#if this.isRedirectingToCheckout}}
+                                <div class="flex flex-col items-center justify-center py-6 gap-3 text-indigo-600 dark:text-indigo-400">
+                                    <FaIcon @icon="spinner" @spin={{true}} @size="lg" />
+                                    <p class="text-sm font-medium">Redirecting to secure payment page…</p>
+                                </div>
+                            {{else}}
+                                {{! Submit }}
+                                <div class="flex items-center justify-between pt-2">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                        Amount due:
+                                        <span class="font-semibold text-gray-800 dark:text-gray-100">
+                                            {{format-currency this.invoice.balance this.invoice.currency}}
+                                        </span>
+                                    </p>
+                                    <Button
+                                        @type="primary"
+                                        @icon={{if this.submitPayment.isRunning "spinner" "lock"}}
+                                        @iconSpin={{this.submitPayment.isRunning}}
+                                        @text={{if this.submitPayment.isRunning "Processing…" (if this.isStripeGateway "Pay with Stripe" "Confirm Payment")}}
+                                        @disabled={{this.submitPayment.isRunning}}
+                                        @onClick={{perform this.submitPayment}}
+                                    />
+                                </div>
+                            {{/if}}
+                        </div>
+                    {{/if}}
+                </div>
+
+                {{! ── Paid state ───────────────────────────────────────────────── }}
+            {{else if this.isPaid}}
+                <div class="rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 p-8 flex items-center gap-5">
+                    <FaIcon @icon="circle-check" @size="2x" class="text-green-500 shrink-0" />
+                    <div>
+                        <p class="font-semibold text-green-800 dark:text-green-200 text-lg">Invoice Paid</p>
+                        <p class="text-green-600 dark:text-green-400 text-sm mt-1">
+                            This invoice has been fully paid. Thank you for your payment.
+                        </p>
+                    </div>
+                </div>
+
+                {{! ── Void / cancelled state ───────────────────────────────────── }}
+            {{else if this.isVoid}}
+                <div class="rounded-2xl bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-8 flex items-center gap-5">
+                    <FaIcon @icon="ban" @size="2x" class="text-gray-400 shrink-0" />
+                    <div>
+                        <p class="font-semibold text-gray-700 dark:text-gray-200 text-lg capitalize">
+                            Invoice
+                            {{this.invoice.status}}
+                        </p>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                            This invoice is no longer active and cannot accept payments.
+                        </p>
+                    </div>
+                </div>
+            {{/if}}
+
+            {{! ── Footer ──────────────────────────────────────────────────── }}
+            <p class="text-center text-xs text-gray-400 dark:text-gray-600 mt-8">
+                Powered by
+                <span class="font-medium">Fleetbase Ledger</span>
+            </p>
+
+        {{/if}}
+
+    </div>
+</div>
