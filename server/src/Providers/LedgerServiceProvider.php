@@ -83,6 +83,10 @@ class LedgerServiceProvider extends CoreServiceProvider
         $this->app->singleton(\Fleetbase\Ledger\Services\GlAutoAssignmentService::class);
         $this->app->singleton(\Fleetbase\Ledger\Services\GlExportService::class);
         $this->app->singleton(\Fleetbase\Ledger\Services\CarrierInvoiceAuditService::class);
+
+        $this->app->singleton(\Fleetbase\Ledger\Services\InvoiceNumberGenerator::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\ClientInvoiceGeneratorService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\BatchInvoiceService::class);
     }
 
     /**

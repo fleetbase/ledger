@@ -232,6 +232,41 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                     $router->put('{id}', 'CarrierInvoiceAuditRuleController@updateRecord');
                                     $router->delete('{id}', 'CarrierInvoiceAuditRuleController@deleteRecord');
                                 });
+
+                                // ----------------------------------------------------------------
+                                // Service Agreements
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'service-agreements'], function () use ($router) {
+                                    $router->get('/', 'ServiceAgreementController@queryRecord');
+                                    $router->get('{id}', 'ServiceAgreementController@findRecord');
+                                    $router->post('/', 'ServiceAgreementController@createRecord');
+                                    $router->put('{id}', 'ServiceAgreementController@updateRecord');
+                                    $router->delete('{id}', 'ServiceAgreementController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Charge Templates
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'charge-templates'], function () use ($router) {
+                                    $router->get('/', 'ChargeTemplateController@queryRecord');
+                                    $router->get('{id}', 'ChargeTemplateController@findRecord');
+                                    $router->post('/', 'ChargeTemplateController@createRecord');
+                                    $router->put('{id}', 'ChargeTemplateController@updateRecord');
+                                    $router->delete('{id}', 'ChargeTemplateController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Client Invoices
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'client-invoices'], function () use ($router) {
+                                    $router->get('/', 'ClientInvoiceController@queryRecord');
+                                    $router->get('{id}', 'ClientInvoiceController@findRecord');
+                                    $router->post('/', 'ClientInvoiceController@createRecord');
+                                    $router->put('{id}', 'ClientInvoiceController@updateRecord');
+                                    $router->delete('{id}', 'ClientInvoiceController@deleteRecord');
+                                    $router->post('generate', 'ClientInvoiceController@generate');
+                                    $router->post('batch-generate', 'ClientInvoiceController@batchGenerate');
+                                });
                             }
                         );
                     }
