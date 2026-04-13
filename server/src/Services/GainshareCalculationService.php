@@ -67,6 +67,18 @@ class GainshareCalculationService
             return null; // No rule or not per-shipment basis
         }
 
+        // --- Benchmark source routing ---
+        // Branch based on which benchmark source the rule is configured to use.
+        $benchmarkSource = $rule->benchmark_source ?? GainshareRule::BENCHMARK_COST;
+
+        if ($benchmarkSource === GainshareRule::BENCHMARK_RATE_CONTRACT) {
+            // Rate contract benchmarking is not yet implemented (BUILD-10).
+            // Return null safely — do not produce fake values.
+            return null;
+        }
+
+        // All paths below use cost_benchmark source (current, fully implemented).
+
         // --- Deduplication guard ---
         // Prevent duplicate executions for the same shipment+rule combination.
         // If one already exists, update it rather than creating a duplicate.
@@ -74,7 +86,7 @@ class GainshareCalculationService
             ->where('gainshare_rule_uuid', $rule->uuid)
             ->first();
 
-        // --- Find benchmark ---
+        // --- Find benchmark from CostBenchmark ---
 
         $origin = $shipment->stops()->where('type', 'pickup')->first();
         $dest = $shipment->stops()->where('type', 'delivery')->orderBy('sequence', 'desc')->first();
@@ -280,5 +292,28 @@ class GainshareCalculationService
                 }), 2)
                 : null,
         ];
+    }
+
+    /**
+     * Resolve benchmark from a rate contract for gainshare comparison.
+     *
+     * TODO (BUILD-10): Implement this method when the rating engine is built.
+     * - Will use RateContract with rate_usage = 'cost_management_benchmark'
+     * - Will resolve the contracted rate for the shipment's lane/mode/equipment
+     * - Will return a flat expected_total after applying the contract's rate tables
+     * - Must handle FAK, fuel surcharge, and discount tables from the rate contract
+     *
+     * Until implemented, this method returns null and gainshare rules with
+     * benchmark_source = 'rate_contract' are safely skipped.
+     *
+     * @param Shipment      $shipment The shipment to resolve benchmark for
+     * @param GainshareRule $rule     The gainshare rule (carries service_agreement context)
+     * @return float|null The flat expected total, or null until rating engine is available
+     */
+    protected function getBenchmarkFromRateContract(Shipment $shipment, GainshareRule $rule): ?float
+    {
+        // Future: resolve benchmark using rating engine (BUILD-10)
+        // Will use rate_usage = cost_management_benchmark
+        return null;
     }
 }

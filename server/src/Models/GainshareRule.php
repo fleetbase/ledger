@@ -13,11 +13,20 @@ class GainshareRule extends Model
 {
     use HasUuid, HasPublicId, HasApiModelBehavior, SoftDeletes;
 
+    /**
+     * Benchmark source constants.
+     * cost_benchmark: uses CostBenchmark model (current, fully implemented)
+     * rate_contract: uses RateContract from BUILD-10 (future, not yet implemented)
+     */
+    public const BENCHMARK_COST          = 'cost_benchmark';
+    public const BENCHMARK_RATE_CONTRACT = 'rate_contract';
+
     protected $table = 'gainshare_rules';
     protected $publicIdType = 'gs_rule';
 
     protected $fillable = [
         'company_uuid', 'service_agreement_uuid', 'calculation_basis',
+        'benchmark_source',
         'split_percentage_company', 'split_percentage_client',
         'minimum_savings_threshold', 'is_active', 'meta',
     ];
