@@ -16,12 +16,24 @@ class GainshareExecution extends Model
     protected $table = 'gainshare_executions';
     protected $publicIdType = 'gs_exec';
 
+    /**
+     * Result type classifications:
+     * - savings: positive savings above threshold, shares calculated
+     * - loss: actual cost exceeded benchmark, shares = 0
+     * - break_even: actual cost equals benchmark, shares = 0
+     * - below_threshold: positive savings but below minimum threshold, shares = 0
+     */
+    public const RESULT_SAVINGS         = 'savings';
+    public const RESULT_LOSS            = 'loss';
+    public const RESULT_BREAK_EVEN      = 'break_even';
+    public const RESULT_BELOW_THRESHOLD = 'below_threshold';
+
     protected $fillable = [
         'company_uuid', 'gainshare_rule_uuid',
         'shipment_uuid', 'carrier_invoice_uuid', 'client_invoice_uuid',
         'cost_benchmark_uuid',
         'benchmark_total', 'actual_total', 'savings',
-        'company_share', 'client_share',
+        'company_share', 'client_share', 'result_type',
         'status', 'period_start', 'period_end', 'meta',
     ];
 
