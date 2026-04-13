@@ -79,6 +79,9 @@ class LedgerServiceProvider extends CoreServiceProvider
         $this->app->singleton(PaymentService::class, function ($app) {
             return new PaymentService($app->make(PaymentGatewayManager::class));
         });
+
+        $this->app->singleton(\Fleetbase\Ledger\Services\GlAutoAssignmentService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\GlExportService::class);
     }
 
     /**

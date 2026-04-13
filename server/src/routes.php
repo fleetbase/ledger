@@ -179,6 +179,35 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 $router->get('reports/cash-flow', 'ReportController@cashFlow');
                                 $router->get('reports/ar-aging', 'ReportController@arAging');
                                 $router->get('reports/wallet-summary', 'ReportController@walletSummary');
+
+                                // ----------------------------------------------------------------
+                                // GL Assignment Rules
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gl-assignment-rules'], function () use ($router) {
+                                    $router->get('/', 'GlAssignmentRuleController@queryRecord');
+                                    $router->get('{id}', 'GlAssignmentRuleController@findRecord');
+                                    $router->post('/', 'GlAssignmentRuleController@createRecord');
+                                    $router->put('{id}', 'GlAssignmentRuleController@updateRecord');
+                                    $router->delete('{id}', 'GlAssignmentRuleController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // GL Assignments
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gl-assignments'], function () use ($router) {
+                                    $router->get('/', 'GlAssignmentController@queryRecord');
+                                    $router->post('/', 'GlAssignmentController@createRecord');
+                                    $router->delete('{id}', 'GlAssignmentController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // GL Exports
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gl-exports'], function () use ($router) {
+                                    $router->get('/', 'GlExportBatchController@queryRecord');
+                                    $router->post('generate', 'GlExportBatchController@generate');
+                                    $router->get('{id}/download', 'GlExportBatchController@download');
+                                });
                             }
                         );
                     }
