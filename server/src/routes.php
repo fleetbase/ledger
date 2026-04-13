@@ -267,6 +267,37 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                     $router->post('generate', 'ClientInvoiceController@generate');
                                     $router->post('batch-generate', 'ClientInvoiceController@batchGenerate');
                                 });
+
+                                // ----------------------------------------------------------------
+                                // Cost Benchmarks
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'cost-benchmarks'], function () use ($router) {
+                                    $router->get('/', 'CostBenchmarkController@queryRecord');
+                                    $router->get('{id}', 'CostBenchmarkController@findRecord');
+                                    $router->post('/', 'CostBenchmarkController@createRecord');
+                                    $router->put('{id}', 'CostBenchmarkController@updateRecord');
+                                    $router->delete('{id}', 'CostBenchmarkController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Gainshare Rules
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gainshare-rules'], function () use ($router) {
+                                    $router->get('/', 'GainshareRuleController@queryRecord');
+                                    $router->get('{id}', 'GainshareRuleController@findRecord');
+                                    $router->post('/', 'GainshareRuleController@createRecord');
+                                    $router->put('{id}', 'GainshareRuleController@updateRecord');
+                                    $router->delete('{id}', 'GainshareRuleController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Gainshare Executions
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gainshare'], function () use ($router) {
+                                    $router->get('/', 'GainshareController@queryRecord');
+                                    $router->get('summary', 'GainshareController@summary');
+                                    $router->get('{id}', 'GainshareController@findRecord');
+                                });
                             }
                         );
                     }
