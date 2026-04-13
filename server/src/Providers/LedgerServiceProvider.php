@@ -82,6 +82,7 @@ class LedgerServiceProvider extends CoreServiceProvider
 
         $this->app->singleton(\Fleetbase\Ledger\Services\GlAutoAssignmentService::class);
         $this->app->singleton(\Fleetbase\Ledger\Services\GlExportService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\CarrierInvoiceAuditService::class);
     }
 
     /**
@@ -106,6 +107,18 @@ class LedgerServiceProvider extends CoreServiceProvider
         // designing invoice templates. The TemplateRenderService also uses this
         // registry at render time to resolve {namespace.field} placeholders.
         $this->registerInvoiceTemplateContext();
+
+        // GL auto-assignment on carrier invoice approval
+        \Illuminate\Support\Facades\Event::listen(
+            \Fleetbase\Ledger\Events\CarrierInvoiceApproved::class,
+            function ($event) {
+                $invoice = $event->carrierInvoice;
+                if ($invoice->approved_amount) {
+                    app(\Fleetbase\Ledger\Services\GlAutoAssignmentService::class)
+                        ->assignForRecord($invoice, 'carrier_invoice', $invoice->approved_amount);
+                }
+            }
+        );
 
         // Register Artisan commands
         if ($this->app->runningInConsole()) {

@@ -208,6 +208,30 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                     $router->post('generate', 'GlExportBatchController@generate');
                                     $router->get('{id}/download', 'GlExportBatchController@download');
                                 });
+
+                                // ----------------------------------------------------------------
+                                // Carrier Invoices
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'carrier-invoices'], function () use ($router) {
+                                    $router->get('/', 'CarrierInvoiceController@queryRecord');
+                                    $router->get('{id}', 'CarrierInvoiceController@findRecord');
+                                    $router->post('/', 'CarrierInvoiceController@createRecord');
+                                    $router->put('{id}', 'CarrierInvoiceController@updateRecord');
+                                    $router->delete('{id}', 'CarrierInvoiceController@deleteRecord');
+                                    $router->post('{id}/audit', 'CarrierInvoiceController@audit');
+                                    $router->post('{id}/resolve', 'CarrierInvoiceController@resolve');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Carrier Invoice Audit Rules
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'carrier-invoice-audit-rules'], function () use ($router) {
+                                    $router->get('/', 'CarrierInvoiceAuditRuleController@queryRecord');
+                                    $router->get('{id}', 'CarrierInvoiceAuditRuleController@findRecord');
+                                    $router->post('/', 'CarrierInvoiceAuditRuleController@createRecord');
+                                    $router->put('{id}', 'CarrierInvoiceAuditRuleController@updateRecord');
+                                    $router->delete('{id}', 'CarrierInvoiceAuditRuleController@deleteRecord');
+                                });
                             }
                         );
                     }
