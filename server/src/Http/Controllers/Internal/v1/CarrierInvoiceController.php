@@ -37,4 +37,58 @@ class CarrierInvoiceController extends FleetbaseController
 
         return response()->json(['data' => $resolved->load('items')]);
     }
+
+    /**
+     * POST /carrier-invoices/batch-approve
+     * Body: { "invoice_uuids": ["..."], "notes": "optional" }
+     *
+     * Bulk-approve audited invoices using the existing resolve() flow with
+     * resolution='pay_invoiced'. Each invoice is resolved individually so
+     * existing event-driven side effects (GL assignment, gainshare) fire
+     * normally per invoice.
+     */
+    public function batchApprove(Request $request)
+    {
+        $validated = $request->validate([
+            'invoice_uuids' => 'required|array|min:1',
+            'notes'         => 'nullable|string|max:5000',
+        ]);
+
+        $service = app(CarrierInvoiceAuditService::class);
+        $approved = [];
+        $skipped  = [];
+
+        foreach ($validated['invoice_uuids'] as $uuid) {
+            $invoice = CarrierInvoice::where('uuid', $uuid)
+                ->where('company_uuid', session('company'))
+                ->first();
+
+            if (!$invoice) {
+                $skipped[] = ['uuid' => $uuid, 'reason' => 'not_found'];
+                continue;
+            }
+
+            // Only approve invoices in audit-ready states
+            if (!in_array($invoice->status, ['audited', 'in_review'])) {
+                $skipped[] = ['uuid' => $uuid, 'reason' => "status_{$invoice->status}_not_eligible"];
+                continue;
+            }
+
+            try {
+                $service->resolve($invoice, 'pay_invoiced', null, $validated['notes'] ?? null);
+                $approved[] = $uuid;
+            } catch (\Throwable $e) {
+                $skipped[] = ['uuid' => $uuid, 'reason' => substr($e->getMessage(), 0, 200)];
+            }
+        }
+
+        return response()->json([
+            'data' => [
+                'approved'       => $approved,
+                'approved_count' => count($approved),
+                'skipped'        => $skipped,
+                'skipped_count'  => count($skipped),
+            ],
+        ]);
+    }
 }

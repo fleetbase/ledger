@@ -220,6 +220,7 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                     $router->delete('{id}', 'CarrierInvoiceController@deleteRecord');
                                     $router->post('{id}/audit', 'CarrierInvoiceController@audit');
                                     $router->post('{id}/resolve', 'CarrierInvoiceController@resolve');
+                                    $router->post('batch-approve', 'CarrierInvoiceController@batchApprove');
                                 });
 
                                 // ----------------------------------------------------------------
