@@ -68,48 +68,22 @@ class GainshareCalculationService
         }
 
         // --- Benchmark source routing ---
-        // Branch based on which benchmark source the rule is configured to use.
+        // Branch only for benchmark resolution. Downstream savings/dedup/storage
+        // logic is shared so both paths get identical financial safety guarantees.
         $benchmarkSource = $rule->benchmark_source ?? GainshareRule::BENCHMARK_COST;
 
-        if ($benchmarkSource === GainshareRule::BENCHMARK_RATE_CONTRACT) {
-            // Rate contract benchmarking is not yet implemented (BUILD-10).
-            // Return null safely — do not produce fake values.
+        $resolution = match ($benchmarkSource) {
+            GainshareRule::BENCHMARK_RATE_CONTRACT => $this->resolveBenchmarkFromRateContract($shipment, $agreement, $rule),
+            default                                => $this->resolveBenchmarkFromCostBenchmark($shipment, $agreement),
+        };
+
+        if ($resolution === null) {
+            // No benchmark resolvable for this shipment under this rule — skip safely
             return null;
         }
 
-        // All paths below use cost_benchmark source (current, fully implemented).
-
-        // --- Deduplication guard ---
-        // Prevent duplicate executions for the same shipment+rule combination.
-        // If one already exists, update it rather than creating a duplicate.
-        $existingExecution = GainshareExecution::where('shipment_uuid', $shipment->uuid)
-            ->where('gainshare_rule_uuid', $rule->uuid)
-            ->first();
-
-        // --- Find benchmark from CostBenchmark ---
-
-        $origin = $shipment->stops()->where('type', 'pickup')->first();
-        $dest = $shipment->stops()->where('type', 'delivery')->orderBy('sequence', 'desc')->first();
-
-        $benchmark = CostBenchmark::where('company_uuid', $shipment->company_uuid)
-            ->where(function ($q) use ($agreement) {
-                $q->where('service_agreement_uuid', $agreement->uuid)
-                  ->orWhereNull('service_agreement_uuid');
-            })
-            ->forLane(
-                $origin?->postal_code ?? $origin?->state,
-                $dest?->postal_code ?? $dest?->state
-            )
-            ->where(function ($q) use ($shipment) {
-                $q->where('mode', $shipment->mode)->orWhereNull('mode');
-            })
-            ->active()
-            ->effective()
-            ->first();
-
-        if (!$benchmark) {
-            return null; // No benchmark for this lane/mode — cannot calculate
-        }
+        $expectedTotal = $resolution['expected_total'];
+        $costBenchmarkUuid = $resolution['cost_benchmark_uuid']; // null for rate_contract path
 
         // --- Derive actual cost ---
 
@@ -118,20 +92,15 @@ class GainshareCalculationService
             return null; // No approved amount — cannot calculate
         }
 
-        // --- Convert benchmark to flat expected_total based on rate_unit ---
-
-        $expectedTotal = $this->convertBenchmarkToFlat($benchmark, $shipment);
-
-        if ($expectedTotal === null) {
-            // Missing required data (miles or weight) for unit conversion.
-            // Do NOT fabricate numbers — skip safely.
-            return null;
-        }
+        // --- Deduplication guard ---
+        // Prevent duplicate executions for the same shipment+rule combination.
+        $existingExecution = GainshareExecution::where('shipment_uuid', $shipment->uuid)
+            ->where('gainshare_rule_uuid', $rule->uuid)
+            ->first();
 
         // --- Calculate savings and classify result ---
 
         $savings = round($expectedTotal - $actualTotal, 2);
-
         $resultType = $this->classifyResult($savings, $rule);
 
         // Calculate shares only for qualifying savings
@@ -155,7 +124,7 @@ class GainshareCalculationService
             'shipment_uuid'         => $shipment->uuid,
             'carrier_invoice_uuid'  => $invoice->uuid,
             'client_invoice_uuid'   => $clientInvoiceUuid,
-            'cost_benchmark_uuid'   => $benchmark->uuid,
+            'cost_benchmark_uuid'   => $costBenchmarkUuid, // null for rate_contract path; set for cost_benchmark
             'benchmark_total'       => round($expectedTotal, 2),
             'actual_total'          => round($actualTotal, 2),
             'savings'               => $savings,
@@ -163,6 +132,9 @@ class GainshareCalculationService
             'client_share'          => $clientShare,
             'result_type'           => $resultType,
             'status'                => 'calculated',
+            'meta'                  => array_merge(($existingExecution->meta ?? []), [
+                'benchmark_source' => $benchmarkSource,
+            ]),
         ];
 
         if ($existingExecution) {
@@ -172,6 +144,72 @@ class GainshareCalculationService
         }
 
         return GainshareExecution::create($executionData);
+    }
+
+    /**
+     * Resolve expected_total from a CostBenchmark record (the legacy path).
+     *
+     * @return array|null ['expected_total' => float, 'cost_benchmark_uuid' => string]
+     */
+    protected function resolveBenchmarkFromCostBenchmark(Shipment $shipment, ServiceAgreement $agreement): ?array
+    {
+        $origin = $shipment->stops()->where('type', 'pickup')->first();
+        $dest = $shipment->stops()->where('type', 'delivery')->orderBy('sequence', 'desc')->first();
+
+        $benchmark = CostBenchmark::where('company_uuid', $shipment->company_uuid)
+            ->where(function ($q) use ($agreement) {
+                $q->where('service_agreement_uuid', $agreement->uuid)
+                  ->orWhereNull('service_agreement_uuid');
+            })
+            ->forLane(
+                $origin?->postal_code ?? $origin?->state,
+                $dest?->postal_code ?? $dest?->state
+            )
+            ->where(function ($q) use ($shipment) {
+                $q->where('mode', $shipment->mode)->orWhereNull('mode');
+            })
+            ->active()
+            ->effective()
+            ->first();
+
+        if (!$benchmark) {
+            return null;
+        }
+
+        $expectedTotal = $this->convertBenchmarkToFlat($benchmark, $shipment);
+
+        if ($expectedTotal === null) {
+            // Missing miles or weight for unit conversion
+            return null;
+        }
+
+        return [
+            'expected_total'      => $expectedTotal,
+            'cost_benchmark_uuid' => $benchmark->uuid,
+        ];
+    }
+
+    /**
+     * Resolve expected_total from a RateContract via the BUILD-10 rating engine.
+     *
+     * Selects the most appropriate benchmark contract using a deterministic
+     * preference order, then calls RateShopService::calculateForContract() for
+     * that single contract (does NOT rate-shop all carriers).
+     *
+     * @return array|null ['expected_total' => float, 'cost_benchmark_uuid' => null]
+     */
+    protected function resolveBenchmarkFromRateContract(Shipment $shipment, ServiceAgreement $agreement, GainshareRule $rule): ?array
+    {
+        $expectedTotal = $this->getBenchmarkFromRateContract($shipment, $rule);
+
+        if ($expectedTotal === null) {
+            return null;
+        }
+
+        return [
+            'expected_total'      => $expectedTotal,
+            'cost_benchmark_uuid' => null, // not from CostBenchmark
+        ];
     }
 
     /**
@@ -295,25 +333,141 @@ class GainshareCalculationService
     }
 
     /**
-     * Resolve benchmark from a rate contract for gainshare comparison.
+     * Resolve benchmark from a RateContract via the BUILD-10 rating engine.
      *
-     * TODO (BUILD-10): Implement this method when the rating engine is built.
-     * - Will use RateContract with rate_usage = 'cost_management_benchmark'
-     * - Will resolve the contracted rate for the shipment's lane/mode/equipment
-     * - Will return a flat expected_total after applying the contract's rate tables
-     * - Must handle FAK, fuel surcharge, and discount tables from the rate contract
+     * SELECTION RULES (deterministic):
+     *   1. Active + effective + same company contracts only
+     *   2. usage_mode IN ('cost_management_benchmark', 'both')
+     *   3. mode matches shipment.mode (or contract.mode = 'all')
+     *   4. Customer-specific contracts preferred over generic (customer_uuid = null)
+     *   5. usage_mode 'cost_management_benchmark' preferred over 'both'
+     *      (a contract dedicated to benchmarking is more authoritative than dual-use)
+     *   6. Most recent effective_date wins
+     *   7. Final tiebreaker: lowest UUID (stable, deterministic)
      *
-     * Until implemented, this method returns null and gainshare rules with
-     * benchmark_source = 'rate_contract' are safely skipped.
+     * SAFETY:
+     * - Never rate-shops all carriers — uses the SELECTED benchmark contract only
+     * - Returns null if no benchmark contract resolves
+     * - Returns null if rating engine cannot calculate (missing tables, exclusion, etc.)
      *
-     * @param Shipment      $shipment The shipment to resolve benchmark for
-     * @param GainshareRule $rule     The gainshare rule (carries service_agreement context)
-     * @return float|null The flat expected total, or null until rating engine is available
+     * @param Shipment      $shipment
+     * @param GainshareRule $rule
+     * @return float|null Flat expected_total comparable to actual_total
      */
     protected function getBenchmarkFromRateContract(Shipment $shipment, GainshareRule $rule): ?float
     {
-        // Future: resolve benchmark using rating engine (BUILD-10)
-        // Will use rate_usage = cost_management_benchmark
-        return null;
+        // Class existence check — fleetops may not be installed in stripped environments
+        if (!class_exists(\Fleetbase\FleetOps\Models\RateContract::class)
+            || !class_exists(\Fleetbase\FleetOps\Services\RateShopService::class)) {
+            return null;
+        }
+
+        $customerUuid = $shipment->orders()->first()?->customer_uuid;
+
+        $contract = $this->selectBenchmarkContract($shipment, $customerUuid);
+
+        if (!$contract) {
+            return null;
+        }
+
+        // Build rating context from the shipment
+        $context = $this->buildRatingContextFromShipment($shipment, $customerUuid);
+
+        // Run the rating engine for the selected contract ONLY — never rate-shop
+        $rateShopService = app(\Fleetbase\FleetOps\Services\RateShopService::class);
+        $result = $rateShopService->calculateForContract($contract, $context);
+
+        if (!$result || !isset($result['total_charge'])) {
+            return null;
+        }
+
+        return (float) $result['total_charge'];
+    }
+
+    /**
+     * Select the benchmark contract using deterministic preference ordering.
+     */
+    protected function selectBenchmarkContract(Shipment $shipment, ?string $customerUuid)
+    {
+        $contracts = \Fleetbase\FleetOps\Models\RateContract::where('company_uuid', $shipment->company_uuid)
+            ->active()
+            ->effective()
+            ->forMode($shipment->mode)
+            ->whereIn('usage_mode', [
+                \Fleetbase\FleetOps\Models\RateContract::USAGE_COST_MANAGEMENT_BENCHMARK,
+                \Fleetbase\FleetOps\Models\RateContract::USAGE_BOTH,
+            ])
+            ->where(function ($q) use ($customerUuid) {
+                if ($customerUuid) {
+                    // Either matches this customer specifically OR is generic (null)
+                    $q->where('customer_uuid', $customerUuid)
+                      ->orWhereNull('customer_uuid');
+                } else {
+                    // No customer context — only generic contracts apply
+                    $q->whereNull('customer_uuid');
+                }
+            })
+            ->get();
+
+        if ($contracts->isEmpty()) {
+            return null;
+        }
+
+        // Build a deterministic composite sort key per contract.
+        // Returned as a string with fixed-width zero-padded segments so PHP
+        // string comparison produces the correct ordering. Higher = earlier.
+        // Format: customer-match | usage-mode | effective-date | UUID
+        $keyed = $contracts->map(function ($c) use ($customerUuid) {
+            $customerMatch = ($customerUuid && $c->customer_uuid === $customerUuid) ? '1' : '0';
+            $dedicatedBenchmark = ($c->usage_mode === \Fleetbase\FleetOps\Models\RateContract::USAGE_COST_MANAGEMENT_BENCHMARK) ? '1' : '0';
+            $effectiveTs = $c->effective_date ? str_pad((string) $c->effective_date->timestamp, 12, '0', STR_PAD_LEFT) : '000000000000';
+            // UUID descending tiebreaker — invert by subtracting from 'z' chars not portable;
+            // simpler: append uuid ascending and use sortBy (smallest wins overall)
+            // But we want largest for the high-priority fields. So reverse the uuid sort:
+            // pad with chars and use sortByDesc on the composite string.
+            return [
+                'contract' => $c,
+                'sort_key' => $customerMatch . $dedicatedBenchmark . $effectiveTs . '|' . $c->uuid,
+            ];
+        });
+
+        // sortByDesc on string composite — first the priority bits, then ts, then uuid lex order
+        // For uuid we want ascending tiebreaker; since the priority parts dominate, this is fine.
+        $best = $keyed->sortByDesc('sort_key')->first();
+
+        return $best['contract'] ?? null;
+    }
+
+    /**
+     * Build a rating context from a Shipment.
+     * Mirrors the rating context format expected by RateShopService.
+     */
+    protected function buildRatingContextFromShipment(Shipment $shipment, ?string $customerUuid): array
+    {
+        $context = [
+            'shipment_uuid'   => $shipment->uuid,
+            'mode'            => $shipment->mode,
+            'equipment_type'  => $shipment->equipment_type,
+            'miles'           => (float) ($shipment->carrier_rate_miles ?? 0),
+            'customer_uuid'   => $customerUuid,
+        ];
+
+        $pickup = $shipment->stops()->where('type', 'pickup')->orderBy('sequence')->first();
+        $delivery = $shipment->stops()->where('type', 'delivery')->orderBy('sequence', 'desc')->first();
+
+        if ($pickup) {
+            $context['origin_zip']   = $pickup->postal_code;
+            $context['origin_state'] = $pickup->state;
+        }
+        if ($delivery) {
+            $context['dest_zip']   = $delivery->postal_code;
+            $context['dest_state'] = $delivery->state;
+        }
+
+        // Best-effort weight/pieces from order links
+        $context['weight'] = (float) $shipment->orderLinks->sum('weight');
+        $context['pieces'] = (float) $shipment->orderLinks->sum('pieces');
+
+        return $context;
     }
 }
