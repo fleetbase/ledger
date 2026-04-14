@@ -298,6 +298,34 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                     $router->get('summary', 'GainshareController@summary');
                                     $router->get('{id}', 'GainshareController@findRecord');
                                 });
+
+                                // ----------------------------------------------------------------
+                                // Pay Files
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'pay-files'], function () use ($router) {
+                                    $router->get('/', 'PayFileController@queryRecord');
+                                    $router->get('{id}', 'PayFileController@findRecord');
+                                    $router->post('/', 'PayFileController@createRecord');
+                                    $router->put('{id}', 'PayFileController@updateRecord');
+                                    $router->delete('{id}', 'PayFileController@deleteRecord');
+                                    $router->post('generate', 'PayFileController@generate');
+                                    $router->get('{id}/download', 'PayFileController@download');
+                                    $router->post('{id}/mark-sent', 'PayFileController@markSent');
+                                    $router->post('{id}/mark-confirmed', 'PayFileController@markConfirmed');
+                                    $router->post('{id}/cancel', 'PayFileController@cancel');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Pay File Schedules
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'pay-file-schedules'], function () use ($router) {
+                                    $router->get('/', 'PayFileScheduleController@queryRecord');
+                                    $router->get('{id}', 'PayFileScheduleController@findRecord');
+                                    $router->post('/', 'PayFileScheduleController@createRecord');
+                                    $router->put('{id}', 'PayFileScheduleController@updateRecord');
+                                    $router->delete('{id}', 'PayFileScheduleController@deleteRecord');
+                                    $router->post('{id}/run-now', 'PayFileScheduleController@runNow');
+                                });
                             }
                         );
                     }

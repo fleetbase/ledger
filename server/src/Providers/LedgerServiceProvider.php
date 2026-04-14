@@ -88,6 +88,7 @@ class LedgerServiceProvider extends CoreServiceProvider
         $this->app->singleton(\Fleetbase\Ledger\Services\ClientInvoiceGeneratorService::class);
         $this->app->singleton(\Fleetbase\Ledger\Services\BatchInvoiceService::class);
         $this->app->singleton(\Fleetbase\Ledger\Services\GainshareCalculationService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\PayFileGeneratorService::class);
     }
 
     /**
@@ -151,6 +152,7 @@ class LedgerServiceProvider extends CoreServiceProvider
                 \Fleetbase\Ledger\Console\Commands\ProvisionLedgerDefaults::class,
                 \Fleetbase\Ledger\Console\Commands\BackfillTransactionDirection::class,
                 \Fleetbase\Ledger\Console\Commands\UpdateOverdueInvoices::class,
+                \Fleetbase\Ledger\Console\Commands\GenerateScheduledPayFiles::class,
             ]);
         }
     }
