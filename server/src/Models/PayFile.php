@@ -3,6 +3,7 @@
 namespace Fleetbase\Ledger\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\Models\Concerns\ScopedToCompanyContext;
 use Fleetbase\Models\Model;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasComments;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class PayFile extends Model
 {
+    use ScopedToCompanyContext;
     use HasUuid, HasPublicId, HasApiModelBehavior, HasComments, SoftDeletes;
 
     /**

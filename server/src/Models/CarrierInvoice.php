@@ -3,6 +3,7 @@
 namespace Fleetbase\Ledger\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\Models\Concerns\ScopedToCompanyContext;
 use Fleetbase\Models\Model;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasComments;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CarrierInvoice extends Model
 {
+    use ScopedToCompanyContext;
     use HasUuid;
     use HasPublicId;
     use HasApiModelBehavior;

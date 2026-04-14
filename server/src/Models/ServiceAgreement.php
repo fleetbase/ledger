@@ -3,6 +3,7 @@
 namespace Fleetbase\Ledger\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\Models\Concerns\ScopedToCompanyContext;
 use Fleetbase\Models\Model;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasComments;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ServiceAgreement extends Model
 {
+    use ScopedToCompanyContext;
     use HasUuid, HasPublicId, HasApiModelBehavior, HasComments, Searchable, SoftDeletes;
 
     protected $table = 'service_agreements';
