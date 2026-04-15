@@ -7,6 +7,7 @@ use Fleetbase\Ledger\Models\CarrierInvoice;
 use Fleetbase\Ledger\Models\PayFile;
 use Fleetbase\Ledger\Models\PayFileItem;
 use Fleetbase\Models\File;
+use Fleetbase\Support\CompanySettingsResolver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -29,10 +30,11 @@ class PayFileGeneratorService
      */
     public function generate(string $companyUuid, string $format, Carbon $start, Carbon $end): PayFile
     {
-        $invoices = $this->selectEligibleInvoices($companyUuid, $start, $end);
+        $invoices       = $this->selectEligibleInvoices($companyUuid, $start, $end);
+        $paymentMethod  = $this->resolvePaymentMethod($companyUuid);
 
         // Wrap creation + items in a transaction to keep state consistent
-        $payFile = DB::transaction(function () use ($companyUuid, $format, $start, $end, $invoices) {
+        $payFile = DB::transaction(function () use ($companyUuid, $format, $start, $end, $invoices, $paymentMethod) {
             $payFile = PayFile::create([
                 'company_uuid' => $companyUuid,
                 'name'         => "Pay File {$start->format('Y-m-d')} to {$end->format('Y-m-d')}",
@@ -50,7 +52,7 @@ class PayFileGeneratorService
                     'carrier_invoice_uuid' => $invoice->uuid,
                     'vendor_uuid'          => $invoice->vendor_uuid,
                     'amount'               => $invoice->approved_amount,
-                    'payment_method'       => 'ach',
+                    'payment_method'       => $paymentMethod,
                     'reference_number'     => $invoice->invoice_number ?? $invoice->pro_number,
                 ]);
             }
@@ -209,5 +211,19 @@ class PayFileGeneratorService
             PayFile::FORMAT_ACH_NACHA => 'application/octet-stream',
             default                   => 'text/plain',
         };
+    }
+
+    /**
+     * Resolve the default payment_method from CompanySettingsResolver.
+     *
+     * The resolver's built-in default is 'ach' — do not add a redundant
+     * hardcoded fallback here. Callers who want to override should pass
+     * payment_method explicitly upstream; this method only supplies the
+     * default when none was provided.
+     */
+    private function resolvePaymentMethod(string $companyUuid): string
+    {
+        return CompanySettingsResolver::forCompany($companyUuid)
+            ->get('pay_files.default_payment_method');
     }
 }
