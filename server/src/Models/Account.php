@@ -74,6 +74,8 @@ class Account extends Model
         'type',
         'description',
         'is_system_account',
+        'parent_account_uuid',
+        'is_active',
         'balance',
         'currency',
         'status',
@@ -87,6 +89,7 @@ class Account extends Model
      */
     protected $casts = [
         'is_system_account' => 'boolean',
+        'is_active'         => 'boolean',
         'balance'           => 'integer',
         'meta'              => Json::class,
     ];
@@ -194,5 +197,41 @@ class Account extends Model
     public function isExpense(): bool
     {
         return $this->type === 'expense';
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Account::class, 'parent_account_uuid', 'uuid');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Account::class, 'parent_account_uuid', 'uuid');
+    }
+
+    public function glAssignmentRules()
+    {
+        return $this->hasMany(GlAssignmentRule::class, 'gl_account_uuid', 'uuid');
+    }
+
+    public function glAssignments()
+    {
+        return $this->hasMany(GlAssignment::class, 'gl_account_uuid', 'uuid');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function getPathAttribute(): string
+    {
+        $parts = [$this->code ?? $this->name];
+        $current = $this;
+        while ($current->parent) {
+            $current = $current->parent;
+            array_unshift($parts, $current->code ?? $current->name);
+        }
+        return implode(' > ', $parts);
     }
 }

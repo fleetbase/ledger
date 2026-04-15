@@ -179,6 +179,154 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 $router->get('reports/cash-flow', 'ReportController@cashFlow');
                                 $router->get('reports/ar-aging', 'ReportController@arAging');
                                 $router->get('reports/wallet-summary', 'ReportController@walletSummary');
+
+                                // ----------------------------------------------------------------
+                                // GL Assignment Rules
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gl-assignment-rules'], function () use ($router) {
+                                    $router->get('/', 'GlAssignmentRuleController@queryRecord');
+                                    $router->get('{id}', 'GlAssignmentRuleController@findRecord');
+                                    $router->post('/', 'GlAssignmentRuleController@createRecord');
+                                    $router->put('{id}', 'GlAssignmentRuleController@updateRecord');
+                                    $router->delete('{id}', 'GlAssignmentRuleController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // GL Assignments
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gl-assignments'], function () use ($router) {
+                                    $router->get('/', 'GlAssignmentController@queryRecord');
+                                    $router->post('/', 'GlAssignmentController@createRecord');
+                                    $router->delete('{id}', 'GlAssignmentController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // GL Exports
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gl-exports'], function () use ($router) {
+                                    $router->get('/', 'GlExportBatchController@queryRecord');
+                                    $router->post('generate', 'GlExportBatchController@generate');
+                                    $router->get('{id}/download', 'GlExportBatchController@download');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Carrier Invoices
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'carrier-invoices'], function () use ($router) {
+                                    $router->get('/', 'CarrierInvoiceController@queryRecord');
+                                    $router->get('{id}', 'CarrierInvoiceController@findRecord');
+                                    $router->post('/', 'CarrierInvoiceController@createRecord');
+                                    $router->put('{id}', 'CarrierInvoiceController@updateRecord');
+                                    $router->delete('{id}', 'CarrierInvoiceController@deleteRecord');
+                                    $router->post('{id}/audit', 'CarrierInvoiceController@audit');
+                                    $router->post('{id}/resolve', 'CarrierInvoiceController@resolve');
+                                    $router->post('batch-approve', 'CarrierInvoiceController@batchApprove');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Carrier Invoice Audit Rules
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'carrier-invoice-audit-rules'], function () use ($router) {
+                                    $router->get('/', 'CarrierInvoiceAuditRuleController@queryRecord');
+                                    $router->get('{id}', 'CarrierInvoiceAuditRuleController@findRecord');
+                                    $router->post('/', 'CarrierInvoiceAuditRuleController@createRecord');
+                                    $router->put('{id}', 'CarrierInvoiceAuditRuleController@updateRecord');
+                                    $router->delete('{id}', 'CarrierInvoiceAuditRuleController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Service Agreements
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'service-agreements'], function () use ($router) {
+                                    $router->get('/', 'ServiceAgreementController@queryRecord');
+                                    $router->get('{id}', 'ServiceAgreementController@findRecord');
+                                    $router->post('/', 'ServiceAgreementController@createRecord');
+                                    $router->put('{id}', 'ServiceAgreementController@updateRecord');
+                                    $router->delete('{id}', 'ServiceAgreementController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Charge Templates
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'charge-templates'], function () use ($router) {
+                                    $router->get('/', 'ChargeTemplateController@queryRecord');
+                                    $router->get('{id}', 'ChargeTemplateController@findRecord');
+                                    $router->post('/', 'ChargeTemplateController@createRecord');
+                                    $router->put('{id}', 'ChargeTemplateController@updateRecord');
+                                    $router->delete('{id}', 'ChargeTemplateController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Client Invoices
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'client-invoices'], function () use ($router) {
+                                    $router->get('/', 'ClientInvoiceController@queryRecord');
+                                    $router->get('{id}', 'ClientInvoiceController@findRecord');
+                                    $router->post('/', 'ClientInvoiceController@createRecord');
+                                    $router->put('{id}', 'ClientInvoiceController@updateRecord');
+                                    $router->delete('{id}', 'ClientInvoiceController@deleteRecord');
+                                    $router->post('generate', 'ClientInvoiceController@generate');
+                                    $router->post('batch-generate', 'ClientInvoiceController@batchGenerate');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Cost Benchmarks
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'cost-benchmarks'], function () use ($router) {
+                                    $router->get('/', 'CostBenchmarkController@queryRecord');
+                                    $router->get('{id}', 'CostBenchmarkController@findRecord');
+                                    $router->post('/', 'CostBenchmarkController@createRecord');
+                                    $router->put('{id}', 'CostBenchmarkController@updateRecord');
+                                    $router->delete('{id}', 'CostBenchmarkController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Gainshare Rules
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gainshare-rules'], function () use ($router) {
+                                    $router->get('/', 'GainshareRuleController@queryRecord');
+                                    $router->get('{id}', 'GainshareRuleController@findRecord');
+                                    $router->post('/', 'GainshareRuleController@createRecord');
+                                    $router->put('{id}', 'GainshareRuleController@updateRecord');
+                                    $router->delete('{id}', 'GainshareRuleController@deleteRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Gainshare Executions
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'gainshare'], function () use ($router) {
+                                    $router->get('/', 'GainshareController@queryRecord');
+                                    $router->get('summary', 'GainshareController@summary');
+                                    $router->get('{id}', 'GainshareController@findRecord');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Pay Files
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'pay-files'], function () use ($router) {
+                                    $router->get('/', 'PayFileController@queryRecord');
+                                    $router->get('{id}', 'PayFileController@findRecord');
+                                    $router->post('/', 'PayFileController@createRecord');
+                                    $router->put('{id}', 'PayFileController@updateRecord');
+                                    $router->delete('{id}', 'PayFileController@deleteRecord');
+                                    $router->post('generate', 'PayFileController@generate');
+                                    $router->get('{id}/download', 'PayFileController@download');
+                                    $router->post('{id}/mark-sent', 'PayFileController@markSent');
+                                    $router->post('{id}/mark-confirmed', 'PayFileController@markConfirmed');
+                                    $router->post('{id}/cancel', 'PayFileController@cancel');
+                                });
+
+                                // ----------------------------------------------------------------
+                                // Pay File Schedules
+                                // ----------------------------------------------------------------
+                                $router->group(['prefix' => 'pay-file-schedules'], function () use ($router) {
+                                    $router->get('/', 'PayFileScheduleController@queryRecord');
+                                    $router->get('{id}', 'PayFileScheduleController@findRecord');
+                                    $router->post('/', 'PayFileScheduleController@createRecord');
+                                    $router->put('{id}', 'PayFileScheduleController@updateRecord');
+                                    $router->delete('{id}', 'PayFileScheduleController@deleteRecord');
+                                    $router->post('{id}/run-now', 'PayFileScheduleController@runNow');
+                                });
                             }
                         );
                     }

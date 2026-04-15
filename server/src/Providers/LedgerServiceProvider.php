@@ -79,6 +79,16 @@ class LedgerServiceProvider extends CoreServiceProvider
         $this->app->singleton(PaymentService::class, function ($app) {
             return new PaymentService($app->make(PaymentGatewayManager::class));
         });
+
+        $this->app->singleton(\Fleetbase\Ledger\Services\GlAutoAssignmentService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\GlExportService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\CarrierInvoiceAuditService::class);
+
+        $this->app->singleton(\Fleetbase\Ledger\Services\InvoiceNumberGenerator::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\ClientInvoiceGeneratorService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\BatchInvoiceService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\GainshareCalculationService::class);
+        $this->app->singleton(\Fleetbase\Ledger\Services\PayFileGeneratorService::class);
     }
 
     /**
@@ -104,12 +114,45 @@ class LedgerServiceProvider extends CoreServiceProvider
         // registry at render time to resolve {namespace.field} placeholders.
         $this->registerInvoiceTemplateContext();
 
+        // GL auto-assignment on carrier invoice approval
+        \Illuminate\Support\Facades\Event::listen(
+            \Fleetbase\Ledger\Events\CarrierInvoiceApproved::class,
+            function ($event) {
+                $invoice = $event->carrierInvoice;
+                if ($invoice->approved_amount) {
+                    app(\Fleetbase\Ledger\Services\GlAutoAssignmentService::class)
+                        ->assignForRecord($invoice, 'carrier_invoice', $invoice->approved_amount);
+                }
+            }
+        );
+
+        // Gainshare calculation on carrier invoice approval
+        \Illuminate\Support\Facades\Event::listen(
+            \Fleetbase\Ledger\Events\CarrierInvoiceApproved::class,
+            function ($event) {
+                $invoice = $event->carrierInvoice;
+                // Find the shipment linked to this invoice
+                $shipment = $invoice->shipment_uuid
+                    ? \Fleetbase\FleetOps\Models\Shipment::where('uuid', $invoice->shipment_uuid)->first()
+                    : null;
+                // Also check if shipment is linked via carrier_invoice_uuid
+                if (!$shipment) {
+                    $shipment = \Fleetbase\FleetOps\Models\Shipment::where('carrier_invoice_uuid', $invoice->uuid)->first();
+                }
+                if ($shipment) {
+                    app(\Fleetbase\Ledger\Services\GainshareCalculationService::class)
+                        ->calculateForShipment($shipment, $invoice);
+                }
+            }
+        );
+
         // Register Artisan commands
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \Fleetbase\Ledger\Console\Commands\ProvisionLedgerDefaults::class,
                 \Fleetbase\Ledger\Console\Commands\BackfillTransactionDirection::class,
                 \Fleetbase\Ledger\Console\Commands\UpdateOverdueInvoices::class,
+                \Fleetbase\Ledger\Console\Commands\GenerateScheduledPayFiles::class,
             ]);
         }
     }
