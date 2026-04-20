@@ -56,8 +56,6 @@ export default {
             ],
         });
 
-        console.log('[menuService]', menuService);
-
         // ── Public customer invoice view ───────────────────────────────────────
         // Registers the customer-facing invoice view to the 'engine:ledger'
         // registry so it is accessible at /ledger/invoice/<public_id> without
