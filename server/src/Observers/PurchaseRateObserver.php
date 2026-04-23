@@ -3,6 +3,7 @@
 namespace Fleetbase\Ledger\Observers;
 
 use Fleetbase\Ledger\Services\InvoiceService;
+use Fleetbase\Ledger\Models\Invoice;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -56,10 +57,7 @@ class PurchaseRateObserver
                 return;
             }
 
-            // Skip if an invoice already exists for this order (idempotency).
-            if ($this->invoiceAlreadyExists($order->uuid)) {
-                return;
-            }
+            $this->supersedeDraftInvoices($order->uuid);
 
             // Resolve currency: prefer the service quote's currency, fall back to
             // the company's country-derived currency, then USD.
@@ -124,10 +122,14 @@ class PurchaseRateObserver
     }
 
     /**
-     * Check whether a Ledger invoice already exists for the given order UUID.
+     * Void prior draft invoices so the newly created invoice becomes the active revision.
      */
-    private function invoiceAlreadyExists(string $orderUuid): bool
+    private function supersedeDraftInvoices(string $orderUuid): void
     {
-        return \Fleetbase\Ledger\Models\Invoice::where('order_uuid', $orderUuid)->exists();
+        Invoice::where('order_uuid', $orderUuid)
+            ->where('status', 'draft')
+            ->update([
+                'status' => 'void',
+            ]);
     }
 }
