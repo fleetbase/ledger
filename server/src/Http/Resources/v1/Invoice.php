@@ -35,12 +35,14 @@ class Invoice extends FleetbaseResource
                 return $this->setCustomerType($this->transformMorphResource($this->customer));
             }),
             // ── Related records ────────────────────────────────────────────
-            'order_uuid'       => $this->when($isInternal, $this->order_uuid),
-            'order'            => $this->whenLoaded('order'),
-            'transaction_uuid' => $this->when($isInternal, $this->transaction_uuid),
-            'transaction'      => $this->whenLoaded('transaction'),
-            'template_uuid'    => $this->when($isInternal, $this->template_uuid),
-            'template'         => $this->whenLoaded('template'),
+            'order_uuid'            => $this->when($this->order_uuid, $this->order_uuid),
+            'order_public_id'       => $this->when($this->order_uuid, fn () => data_get($this->order, 'public_id')),
+            'order_tracking_number' => $this->when($this->order_uuid, fn () => data_get($this->order, 'trackingNumber.tracking_number')),
+            'order'                 => $this->whenLoaded('order'),
+            'transaction_uuid'      => $this->when($isInternal, $this->transaction_uuid),
+            'transaction'           => $this->whenLoaded('transaction'),
+            'template_uuid'         => $this->when($isInternal, $this->template_uuid),
+            'template'              => $this->whenLoaded('template'),
             // ── Invoice details ────────────────────────────────────────────
             'number'           => $this->number,
             'status'           => $this->status,

@@ -5,11 +5,6 @@
 
 <div class="customer-invoice-page min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4 relative">
 
-    {{! Back to console }}
-    <div class="absolute left-0 top-0 p-4">
-        <Button @text="Back to Console" @icon="arrow-left" @onClick={{this.transitionToConsole}} @size="xs" />
-    </div>
-
     <div class="max-w-3xl mx-auto pt-10">
 
         {{! ── Loading state ─────────────────────────────────────────────────── }}
@@ -205,13 +200,24 @@
                                         @icon={{if this.submitPayment.isRunning "spinner" "lock"}}
                                         @iconSpin={{this.submitPayment.isRunning}}
                                         @text={{if this.submitPayment.isRunning "Processing…" (if this.isStripeGateway "Pay with Stripe" "Confirm Payment")}}
-                                        @disabled={{this.submitPayment.isRunning}}
+                                        @disabled={{or this.submitPayment.isRunning (not this.selectedGatewayId)}}
                                         @onClick={{perform this.submitPayment}}
                                     />
                                 </div>
                             {{/if}}
                         </div>
                     {{/if}}
+                </div>
+
+            {{else if this.cannotAcceptOnlinePayment}}
+                <div class="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-8 flex items-center gap-5">
+                    <FaIcon @icon="credit-card" @size="2x" class="text-gray-400 shrink-0" />
+                    <div>
+                        <p class="font-semibold text-gray-800 dark:text-gray-100 text-lg">Online Payment Unavailable</p>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                            Online payment is not available for this invoice. Please contact the sender for payment instructions.
+                        </p>
+                    </div>
                 </div>
 
                 {{! ── Paid state ───────────────────────────────────────────────── }}

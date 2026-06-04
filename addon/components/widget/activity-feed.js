@@ -7,6 +7,7 @@ export default class WidgetActivityFeedComponent extends Component {
     @service fetch;
     @service currentUser;
     @tracked entries = [];
+    @tracked error = null;
 
     get companyCurrency() {
         return this.currentUser.company?.currency ?? this.currentUser.whoisData?.currency?.code ?? 'USD';
@@ -19,10 +20,12 @@ export default class WidgetActivityFeedComponent extends Component {
 
     @task *loadData() {
         try {
-            const response = yield this.fetch.get('reports/dashboard', {}, { namespace: 'ledger/int/v1' });
-            this.entries = response?.data?.recent_journals ?? [];
-        } catch {
+            const response = yield this.fetch.get('reports/dashboard/activity', {}, { namespace: 'ledger/int/v1' });
+            this.entries = response?.data?.items ?? response?.items ?? [];
+            this.error = null;
+        } catch (error) {
             this.entries = [];
+            this.error = error?.message ?? 'Unable to load activity';
         }
     }
 }

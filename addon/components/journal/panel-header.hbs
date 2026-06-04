@@ -3,7 +3,7 @@
         <div class="flex flex-col">
             <h1 class="text-gray-900 dark:text-white font-semibold text-lg">{{n-a @resource.number}}</h1>
             <div class="flex flex-row items-center space-x-2 mt-0.5">
-                <Badge @status="info" @hideStatusDot={{true}}>{{titleize @resource.type}}</Badge>
+                <Badge @status="info" @hideStatusDot={{true}}>{{titleize (humanize @resource.type)}}</Badge>
                 {{#if @resource.is_system_entry}}
                     <Badge @color="blue">System</Badge>
                 {{/if}}

@@ -2,8 +2,8 @@
 
 namespace Fleetbase\Ledger\Observers;
 
-use Fleetbase\Ledger\Services\InvoiceService;
 use Fleetbase\Ledger\Models\Invoice;
+use Fleetbase\Ledger\Services\InvoiceService;
 use Illuminate\Support\Facades\Log;
 
 /**

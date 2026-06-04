@@ -7,7 +7,9 @@ use Fleetbase\Ledger\Models\Account;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Models\InvoiceItem;
 use Fleetbase\Ledger\Models\Transaction;
+use Fleetbase\Ledger\Notifications\InvoiceSent;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class InvoiceService
 {
@@ -87,6 +89,47 @@ class InvoiceService
 
             return $invoice;
         });
+    }
+
+    /**
+     * Send an invoice to its customer using the standard Ledger sent flow.
+     */
+    public function send(Invoice $invoice): Invoice
+    {
+        $invoice->loadMissing(['customer']);
+
+        if (in_array($invoice->status, ['paid', 'void', 'cancelled'], true)) {
+            throw new \InvalidArgumentException('Invoice cannot be sent in its current status.');
+        }
+
+        $email = $this->customerEmail($invoice);
+        if (!$email) {
+            throw new \InvalidArgumentException('Invoice customer does not have a valid email address.');
+        }
+
+        if ($invoice->status === 'draft') {
+            $invoice->markAsSent();
+        }
+
+        Notification::route('mail', $email)->notify(new InvoiceSent($invoice->fresh(['customer', 'items', 'template'])));
+
+        return $invoice->fresh(['customer', 'items', 'template']);
+    }
+
+    /**
+     * Resolve the best customer email available on the invoice customer model.
+     */
+    protected function customerEmail(Invoice $invoice): ?string
+    {
+        $customer = $invoice->customer;
+        if (!$customer) {
+            return null;
+        }
+
+        return $customer->email
+            ?? $customer->contact_email
+            ?? $customer->billing_email
+            ?? null;
     }
 
     /**
@@ -446,9 +489,12 @@ class InvoiceService
             [
                 'company_uuid' => $invoice->company_uuid,
                 'currency'     => $invoice->currency,
-                'type'         => 'revenue_recognition',
-                'subject_uuid' => $invoice->uuid,
-                'subject_type' => Invoice::class,
+                'journal_type' => 'revenue_recognition',
+                'meta'         => [
+                    'invoice_uuid'  => $invoice->uuid,
+                    'subject_uuid'  => $invoice->uuid,
+                    'subject_type'  => Invoice::class,
+                ],
             ]
         );
     }

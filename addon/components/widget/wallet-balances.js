@@ -6,7 +6,10 @@ import { task } from 'ember-concurrency';
 export default class WidgetWalletBalancesComponent extends Component {
     @service fetch;
     @service currentUser;
+    @service ledgerDashboard;
     @tracked totals = null;
+    @tracked topWallets = [];
+    @tracked error = null;
 
     get companyCurrency() {
         return this.currentUser.company?.currency ?? this.currentUser.whoisData?.currency?.code ?? 'USD';
@@ -14,15 +17,26 @@ export default class WidgetWalletBalancesComponent extends Component {
 
     constructor() {
         super(...arguments);
+        this.unsubscribeDashboard = this.ledgerDashboard.subscribe(() => this.loadData.perform());
         this.loadData.perform();
     }
 
     @task *loadData() {
         try {
-            const response = yield this.fetch.get('reports/dashboard', {}, { namespace: 'ledger/int/v1' });
-            this.totals = response?.data?.kpis?.wallet_totals ?? null;
-        } catch {
+            const response = yield this.fetch.get('reports/dashboard/wallet-balances', this.ledgerDashboard.walletPeriodParams, { namespace: 'ledger/int/v1' });
+            const data = response?.data ?? response;
+            this.totals = data?.totals ?? [];
+            this.topWallets = data?.top_wallets ?? [];
+            this.error = null;
+        } catch (error) {
             this.totals = null;
+            this.topWallets = [];
+            this.error = error?.message ?? 'Unable to load wallet balances';
         }
+    }
+
+    willDestroy() {
+        super.willDestroy(...arguments);
+        this.unsubscribeDashboard?.();
     }
 }

@@ -1,0 +1,33 @@
+<div class="ledger-dashboard-widget flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800" ...attributes>
+    <div class="ledger-widget-header">
+        <div class="min-w-0">
+            <div class="ledger-widget-title">AR Aging Risk</div>
+            <div class="ledger-widget-subtitle">{{or this.data.total_invoices 0}} open invoices</div>
+        </div>
+        <button type="button" class="ledger-icon-button" {{on "click" (perform this.load)}}><FaIcon @icon="rotate" /></button>
+    </div>
+
+    <div class="ledger-widget-body">
+        {{#if this.error}}
+            <div class="ledger-widget-empty">{{this.error}}</div>
+        {{else if this.load.isRunning}}
+            <div class="ledger-widget-empty"><Spinner /></div>
+        {{else if this.buckets.length}}
+            <div class="ledger-animated-list space-y-3">
+                {{#each this.bucketRows as |bucket|}}
+                    <div class="ledger-animated-row">
+                        <div class="mb-1 flex items-center justify-between gap-3 text-xs">
+                            <span class="font-semibold text-gray-700 dark:text-gray-200">{{bucket.label}}</span>
+                            <span class="text-gray-500 dark:text-gray-400">{{bucket.invoice_count}} invoices</span>
+                        </div>
+                        <div class="ledger-progress-track">
+                            <div class="ledger-progress-bar {{bucket.agingClass}}" style={{html-safe (concat "width: " bucket.pct "%")}}></div>
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <div class="ledger-widget-empty">No outstanding receivables.</div>
+        {{/if}}
+    </div>
+</div>

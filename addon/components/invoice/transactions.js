@@ -6,10 +6,9 @@ import { task } from 'ember-concurrency';
 /**
  * Invoice::Transactions component.
  *
- * Displays all ledger-transaction records whose `context_uuid` matches the
- * invoice's UUID.  Uses Ember Data `store.query` so every record is properly
- * normalised, cached, and available as a first-class `LedgerTransactionModel`
- * instance — identical to how the global Payments → Transactions page works.
+ * Displays all ledger-transaction records related to the invoice. The backend
+ * owns the linkage rules so invoice payments, direct invoice transactions, and
+ * legacy context-linked records are all returned consistently.
  *
  * The invoice is passed in as `@invoice` (a `LedgerInvoiceModel` instance).
  * We filter by `context: invoice.uuid` because `InvoiceService::recordPayment`
@@ -21,6 +20,7 @@ import { task } from 'ember-concurrency';
  */
 export default class InvoiceTransactionsComponent extends Component {
     @service store;
+    @service fetch;
     @service intl;
     @service transactionActions;
 
@@ -149,11 +149,6 @@ export default class InvoiceTransactionsComponent extends Component {
 
     /**
      * Query ledger-transaction records scoped to this invoice.
-     *
-     * Filter param `context` maps to `TransactionFilter::context()` which
-     * applies `WHERE context_uuid = ?`.  The invoice UUID is used (not the
-     * integer primary key) because that is what InvoiceService stores in
-     * `context_uuid` when it creates the transaction.
      */
     @task *loadTransactions() {
         const invoice = this.args.invoice;
@@ -165,15 +160,11 @@ export default class InvoiceTransactionsComponent extends Component {
         }
 
         try {
-            const records = yield this.store.query('ledger-transaction', {
-                context: invoice.uuid,
-                sort: '-created_at',
-                limit: 50,
-                page: this.page,
-            });
+            const result = yield this.fetch.get(`invoices/${invoice.id}/transactions`, { sort: '-created_at', limit: 50, page: this.page }, { namespace: 'ledger/int/v1' });
+            const records = (result?.transactions ?? []).map((transaction) => this.store.push(this.store.normalize('ledger-transaction', transaction)));
 
-            this.transactions = records.toArray();
-            this.meta = records.meta ?? null;
+            this.transactions = records;
+            this.meta = result?.meta ?? null;
         } catch {
             this.transactions = [];
             this.meta = null;

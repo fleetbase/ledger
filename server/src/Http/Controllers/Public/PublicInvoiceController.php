@@ -132,12 +132,23 @@ class PublicInvoiceController extends Controller
             ], 422);
         }
 
-        // Resolve the gateway driver
-        try {
-            $driver = $this->gatewayManager->gateway($request->input('gateway_id'));
-        } catch (\Exception $e) {
+        $gateway = Gateway::query()
+            ->where('company_uuid', $invoice->company_uuid)
+            ->where('status', 'active')
+            ->where(function ($query) use ($request) {
+                $gatewayId = $request->input('gateway_id');
+
+                $query->where('uuid', $gatewayId)
+                    ->orWhere('public_id', $gatewayId);
+            })
+            ->first();
+
+        if (!$gateway) {
             return response()->json(['error' => 'Payment gateway not found or unavailable.'], 422);
         }
+
+        $driver = $this->gatewayManager->driver($gateway->driver)
+            ->initialize($gateway->decryptedConfig(), $gateway->is_sandbox);
 
         // ── Stripe: hosted Checkout Session ───────────────────────────────────
         if ($driver instanceof StripeDriver) {

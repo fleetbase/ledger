@@ -137,7 +137,7 @@ class Invoice extends Model
      *
      * @var array
      */
-    protected $with = ['customer', 'items', 'template'];
+    protected $with = ['customer', 'items', 'template', 'order.trackingNumber'];
 
     /**
      * The attributes excluded from the model's JSON form.
