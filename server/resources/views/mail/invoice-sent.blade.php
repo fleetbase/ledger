@@ -27,7 +27,11 @@
                                         <div style="font-size:12px; line-height:16px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#64748b;">Invoice</div>
                                         <h1 style="margin:8px 0 8px; font-size:26px; line-height:34px; color:#111827;">{{ $invoiceNumber }}</h1>
                                         <p style="margin:0; font-size:15px; line-height:24px; color:#475569;">
-                                            {{ $companyName }} sent you an invoice@if ($orderLabel) for order <strong style="color:#1f2937;">{{ $orderLabel }}</strong>@endif.
+                                            @if ($orderLabel)
+                                                {{ $companyName }} sent you an invoice for order <strong style="color:#1f2937;">{{ $orderLabel }}</strong>.
+                                            @else
+                                                {{ $companyName }} sent you an invoice.
+                                            @endif
                                         </p>
                                     </td>
                                 </tr>
