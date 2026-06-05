@@ -1,10 +1,12 @@
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
+import { action } from '@ember/object';
 import { tracked } from '@glimmer/tracking';
 
 export default class BillingInvoicesIndexController extends Controller {
     @service invoiceActions;
     @service tableContext;
+    @service hostRouter;
     @service intl;
 
     @tracked queryParams = ['page', 'limit', 'sort', 'query', 'status', 'customer_uuid'];
@@ -60,6 +62,14 @@ export default class BillingInvoicesIndexController extends Controller {
             {
                 label: this.intl.t('column.customer'),
                 valuePath: 'customerName',
+                resizable: true,
+                sortable: false,
+            },
+            {
+                label: 'Order',
+                valuePath: 'orderTrackingLabel',
+                cellComponent: 'table/cell/anchor',
+                action: this.viewOrder,
                 resizable: true,
                 sortable: false,
             },
@@ -173,5 +183,14 @@ export default class BillingInvoicesIndexController extends Controller {
                 ],
             },
         ];
+    }
+
+    @action viewOrder(invoice) {
+        const orderId = invoice?.orderRouteIdentifier;
+        if (!orderId) {
+            return;
+        }
+
+        return this.hostRouter.transitionTo('console.fleet-ops.operations.orders.index.details', orderId);
     }
 }

@@ -135,7 +135,7 @@ class HandleSuccessfulPayment implements ShouldQueue
                     [
                         'company_uuid'             => $companyUuid,
                         'currency'                 => $currency,
-                        'type'                     => 'gateway_payment',
+                        'journal_type'             => 'gateway_payment',
                         'gateway_transaction_uuid' => $gatewayTransaction->uuid,
                         'meta'                     => [
                             'gateway_driver'         => $gateway->driver,

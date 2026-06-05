@@ -22,10 +22,10 @@ export default class CustomerInvoiceComponent extends Component {
     @service urlSearchParams;
     @service notifications;
     @service fetch;
-    @service router;
 
     @tracked invoice = null;
     @tracked gateways = [];
+    @tracked gatewaysLoaded = false;
     @tracked showPaymentForm = false;
     @tracked selectedGatewayId = null;
     @tracked paymentReference = '';
@@ -53,7 +53,11 @@ export default class CustomerInvoiceComponent extends Component {
     }
 
     get canAcceptPayment() {
-        return this.invoice && !this.isPaid && !this.isVoid;
+        return this.invoice && !this.isPaid && !this.isVoid && this.gatewaysLoaded && this.hasGateways;
+    }
+
+    get cannotAcceptOnlinePayment() {
+        return this.invoice && !this.isPaid && !this.isVoid && this.gatewaysLoaded && !this.hasGateways;
     }
 
     get hasGateways() {
@@ -79,6 +83,7 @@ export default class CustomerInvoiceComponent extends Component {
     @task({ restartable: true })
     *loadInvoice() {
         this.error = null;
+        this.gatewaysLoaded = false;
         const id = this.invoiceId;
 
         // Detect Stripe redirect-back
@@ -108,6 +113,8 @@ export default class CustomerInvoiceComponent extends Component {
             } catch {
                 // Gateways are optional — do not block the invoice view if unavailable
                 this.gateways = [];
+            } finally {
+                this.gatewaysLoaded = true;
             }
         } catch (err) {
             const status = err?.status ?? err?.response?.status;
@@ -136,6 +143,11 @@ export default class CustomerInvoiceComponent extends Component {
     @task({ drop: true })
     *submitPayment() {
         this.error = null;
+
+        if (!this.selectedGatewayId) {
+            this.error = 'Online payment is not available for this invoice.';
+            return;
+        }
 
         try {
             const data = yield this.fetch.post(
@@ -177,9 +189,5 @@ export default class CustomerInvoiceComponent extends Component {
 
     @action updateReference(event) {
         this.paymentReference = event.target.value;
-    }
-
-    @action transitionToConsole() {
-        return this.router.transitionTo('console');
     }
 }

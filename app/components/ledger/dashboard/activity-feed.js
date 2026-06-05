@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/ledger-engine/components/dashboard/activity-feed';
+export { default } from '@fleetbase/ledger-engine/components/widget/activity-feed';

@@ -4,8 +4,10 @@ namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
 use Fleetbase\Ledger\Http\Controllers\LedgerResourceController;
 use Fleetbase\Ledger\Http\Resources\v1\Invoice as InvoiceResource;
+use Fleetbase\Ledger\Http\Resources\v1\Transaction as TransactionResource;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Models\InvoiceItem;
+use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Ledger\Services\InvoiceService;
 use Fleetbase\Services\TemplateRenderService;
 use Illuminate\Http\JsonResponse;
@@ -105,6 +107,42 @@ class InvoiceController extends LedgerResourceController
     }
 
     /**
+     * List transactions related to an invoice.
+     */
+    public function transactions(string $id, Request $request)
+    {
+        $invoice = Invoice::where('company_uuid', session('company'))
+            ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
+            ->firstOrFail();
+
+        $transactions = Transaction::where('company_uuid', session('company'))
+            ->where(function ($query) use ($invoice) {
+                $query->where('subject_uuid', $invoice->uuid)
+                    ->orWhere('context_uuid', $invoice->uuid);
+
+                if ($invoice->transaction_uuid) {
+                    $query->orWhere('uuid', $invoice->transaction_uuid);
+                }
+            })
+            ->with([
+                'items',
+                'journal.debitAccount',
+                'journal.creditAccount',
+                'subject',
+                'payer',
+                'payee',
+                'initiator',
+                'context',
+            ])
+            ->orderBy('created_at', $request->input('sort') === 'created_at' ? 'asc' : 'desc')
+            ->paginate($request->integer('limit', 50));
+
+        TransactionResource::wrap('transactions');
+
+        return TransactionResource::collection($transactions);
+    }
+
+    /**
      * Mark an invoice as sent (without dispatching a notification).
      */
     public function markAsSent(string $id, Request $request): InvoiceResource
@@ -128,13 +166,11 @@ class InvoiceController extends LedgerResourceController
             ->with('customer')
             ->firstOrFail();
 
-        if (!$invoice->customer || !$invoice->customer->email) {
-            abort(422, 'Invoice customer does not have a valid email address.');
+        try {
+            $invoice = app(InvoiceService::class)->send($invoice);
+        } catch (\InvalidArgumentException $e) {
+            abort(422, $e->getMessage());
         }
-
-        $invoice->markAsSent();
-
-        // TODO (M5): Dispatch InvoiceSentNotification to $invoice->customer->email
 
         return new InvoiceResource($invoice->load(['customer', 'items', 'template']));
     }

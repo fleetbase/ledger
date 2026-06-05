@@ -1,18 +1,24 @@
-<div class="flex flex-col" ...attributes>
-    <div class="flex flex-row items-center justify-between px-4 py-2 border border-b-0 dark:border-gray-700 border-gray-200 dark:bg-gray-800 bg-gray-50 rounded-t-lg shadow-sm">
-        <span class="text-base font-bold text-black dark:text-gray-100">Recent Journal Entries</span>
+<div class="ledger-dashboard-widget flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800" ...attributes>
+    <div class="ledger-widget-header">
+        <div class="min-w-0">
+            <div class="ledger-widget-title">Recent Financial Activity</div>
+            <div class="ledger-widget-subtitle">Latest journal entries posted to the ledger</div>
+        </div>
+        <button type="button" class="ledger-icon-button" {{on "click" (perform this.loadData)}}><FaIcon @icon="rotate" /></button>
     </div>
-    <div class="border dark:border-gray-700 border-gray-200 rounded-b-lg shadow-sm bg-white dark:bg-gray-900">
-        {{#if this.loadData.isRunning}}
-            <div class="flex items-center justify-center py-6"><Spinner /></div>
+    <div class="min-h-0 flex-1 overflow-y-auto">
+        {{#if this.error}}
+            <div class="ledger-widget-empty">{{this.error}}</div>
+        {{else if this.loadData.isRunning}}
+            <div class="ledger-widget-empty"><Spinner /></div>
         {{else if this.entries.length}}
-            <div class="divide-y divide-gray-100 dark:divide-gray-700">
+            <div class="ledger-animated-list divide-y divide-gray-100 dark:divide-gray-700">
                 {{#each this.entries as |entry|}}
-                    <div class="flex items-start gap-3 text-sm px-4 py-3">
-                        <FaIcon @icon="book" class="text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div class="ledger-animated-row flex items-start gap-3 px-4 py-3 text-sm">
+                        <div class="ledger-activity-icon"><FaIcon @icon="book" /></div>
                         <div class="flex-1 min-w-0">
                             <p class="font-medium text-gray-800 dark:text-gray-200 truncate">{{n-a entry.description}}</p>
-                            <p class="text-xs text-gray-400">{{format-date-fns entry.created_at "MMM d, yyyy"}}</p>
+                            <p class="text-xs text-gray-400">{{format-date-fns entry.created_at "MMM d, yyyy"}} · {{n-a entry.debit}} / {{n-a entry.credit}}</p>
                         </div>
                         <span class="font-semibold text-xs text-gray-700 dark:text-gray-300 flex-shrink-0">
                             {{format-currency entry.amount (or entry.currency this.companyCurrency)}}
@@ -21,7 +27,7 @@
                 {{/each}}
             </div>
         {{else}}
-            <div class="text-center text-gray-400 py-6 text-sm">No recent journal entries.</div>
+            <div class="ledger-widget-empty">No recent journal entries.</div>
         {{/if}}
     </div>
 </div>
