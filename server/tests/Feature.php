@@ -32,7 +32,14 @@ test('ledger navigator search endpoint is registered', function () {
         ->toContain("'transactions' => 'ledger see transaction'")
         ->toContain("'route'       => 'console.ledger.billing.invoices.index.details'")
         ->toContain("'route'       => 'console.ledger.payments.wallets.index.details'")
-        ->toContain("'route'       => 'console.ledger.accounting.journal.index.details'");
+        ->toContain("'route'       => 'console.ledger.accounting.journal.index.details'")
+        ->toContain("'models'      => [\$invoice->uuid]")
+        ->toContain("'models'      => [\$template->uuid]")
+        ->toContain("'models'      => [\$wallet->uuid]")
+        ->toContain("'models'      => [\$transaction->uuid]")
+        ->toContain("'models'      => [\$gateway->uuid]")
+        ->toContain("'models'      => [\$account->uuid]")
+        ->toContain("'models'      => [\$journal->uuid]");
 });
 
 test('order accounting observer preserves seed metadata on storefront sale journal entries', function () {

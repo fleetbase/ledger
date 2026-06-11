@@ -113,7 +113,7 @@ class SearchController extends Controller
                 'icon'        => 'file-invoice-dollar',
                 'type'        => 'Invoice',
                 'route'       => 'console.ledger.billing.invoices.index.details',
-                'models'      => [$invoice->id],
+                'models'      => [$invoice->uuid],
                 'breadcrumb'  => 'Ledger > Billing > Invoices',
             ]);
     }
@@ -133,7 +133,7 @@ class SearchController extends Controller
                 'icon'        => 'file-code',
                 'type'        => 'Invoice Template',
                 'route'       => 'console.ledger.billing.invoice-templates.index.edit',
-                'models'      => [$template->id],
+                'models'      => [$template->uuid],
                 'breadcrumb'  => 'Ledger > Billing > Invoice Templates',
             ]);
     }
@@ -152,7 +152,7 @@ class SearchController extends Controller
                 'icon'        => 'wallet',
                 'type'        => 'Wallet',
                 'route'       => 'console.ledger.payments.wallets.index.details',
-                'models'      => [$wallet->id],
+                'models'      => [$wallet->uuid],
                 'breadcrumb'  => 'Ledger > Payments > Wallets',
             ]);
     }
@@ -171,7 +171,7 @@ class SearchController extends Controller
                 'icon'        => 'money-bill-transfer',
                 'type'        => 'Transaction',
                 'route'       => 'console.ledger.payments.transactions.index.details',
-                'models'      => [$transaction->id],
+                'models'      => [$transaction->uuid],
                 'breadcrumb'  => 'Ledger > Payments > Transactions',
             ]);
     }
@@ -190,7 +190,7 @@ class SearchController extends Controller
                 'icon'        => 'credit-card',
                 'type'        => 'Gateway',
                 'route'       => 'console.ledger.payments.gateways.index.details',
-                'models'      => [$gateway->id],
+                'models'      => [$gateway->uuid],
                 'breadcrumb'  => 'Ledger > Payments > Gateways',
             ]);
     }
@@ -209,7 +209,7 @@ class SearchController extends Controller
                 'icon'        => 'sitemap',
                 'type'        => 'Account',
                 'route'       => 'console.ledger.accounting.accounts.index.details',
-                'models'      => [$account->id],
+                'models'      => [$account->uuid],
                 'breadcrumb'  => 'Ledger > Accounting > Chart of Accounts',
             ]);
     }
@@ -228,7 +228,7 @@ class SearchController extends Controller
                 'icon'        => 'book',
                 'type'        => 'Journal Entry',
                 'route'       => 'console.ledger.accounting.journal.index.details',
-                'models'      => [$journal->id],
+                'models'      => [$journal->uuid],
                 'breadcrumb'  => 'Ledger > Accounting > Journal Entries',
             ]);
     }
