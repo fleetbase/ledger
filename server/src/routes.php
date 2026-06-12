@@ -170,6 +170,11 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 });
 
                                 // ----------------------------------------------------------------
+                                // Search
+                                // ----------------------------------------------------------------
+                                $router->get('search', 'SearchController@search');
+
+                                // ----------------------------------------------------------------
                                 // Reports & Financial Statements
                                 // ----------------------------------------------------------------
                                 $router->get('reports/general-ledger', 'ReportController@generalLedger');
