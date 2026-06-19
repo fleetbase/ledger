@@ -6,10 +6,10 @@ use Fleetbase\Ledger\DTO\GatewayResponse;
 use Fleetbase\Ledger\DTO\PurchaseRequest;
 use Fleetbase\Ledger\DTO\RefundRequest;
 use Fleetbase\Ledger\Exceptions\WebhookSignatureException;
+use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Http\Client\Response as HttpResponse;
+use Illuminate\Support\Str;
 
 /**
  * TalerDriver.
@@ -84,6 +84,7 @@ class TalerDriver extends AbstractGatewayDriver
             'purchase',
             'refund',
             'webhooks',
+            'sandbox',
         ];
     }
 
@@ -97,25 +98,29 @@ class TalerDriver extends AbstractGatewayDriver
     {
         return [
             [
-                'key'      => 'backend_url',
-                'label'    => 'Merchant Backend URL',
-                'type'     => 'text',
-                'required' => true,
-                'hint'     => 'Base URL of your Taler Merchant Backend, e.g. https://backend.demo.taler.net/',
+                'key'         => 'backend_url',
+                'label'       => 'Merchant Backend URL',
+                'type'        => 'text',
+                'required'    => true,
+                'hint'        => 'Base URL of your Taler Merchant Backend, e.g. https://backend.demo.taler.net/',
+                'description' => 'Base URL of your Taler Merchant Backend, e.g. https://backend.demo.taler.net/',
             ],
             [
-                'key'      => 'instance_id',
-                'label'    => 'Instance ID',
-                'type'     => 'text',
-                'required' => true,
-                'hint'     => 'The Taler merchant instance identifier. Defaults to "default".',
+                'key'         => 'instance_id',
+                'label'       => 'Instance ID',
+                'type'        => 'text',
+                'required'    => true,
+                'default'     => 'default',
+                'hint'        => 'The Taler merchant instance identifier. Defaults to "default".',
+                'description' => 'The Taler merchant instance identifier. Defaults to "default".',
             ],
             [
-                'key'      => 'api_token',
-                'label'    => 'API Token',
-                'type'     => 'password',
-                'required' => true,
-                'hint'     => 'Bearer token for authenticating against the private Merchant API.',
+                'key'         => 'api_token',
+                'label'       => 'API Token',
+                'type'        => 'password',
+                'required'    => true,
+                'hint'        => 'Bearer token for authenticating against the private Merchant API.',
+                'description' => 'Bearer token for authenticating against the private Merchant API.',
             ],
         ];
     }
@@ -147,19 +152,33 @@ class TalerDriver extends AbstractGatewayDriver
      */
     public function purchase(PurchaseRequest $request): GatewayResponse
     {
-        $backendUrl = $this->backendUrl();
+        if ($configurationFailure = $this->configurationFailureResponse()) {
+            return $configurationFailure;
+        }
+
         $instanceId = $this->instanceId();
 
         $talerAmount = $this->toTalerAmount($request->amount, $request->currency);
+        $orderId     = $this->orderIdForPurchase($request);
 
         // Build the order payload. The invoice_uuid is stored as a top-level
         // field in the order object so it is included in the signed contract
         // terms and can be retrieved verbatim when the webhook fires.
         $payload = [
+            'order_id' => $orderId,
             'order' => [
                 'amount'       => $talerAmount,
                 'summary'      => $request->description,
                 'invoice_uuid' => $request->invoiceUuid,
+                'metadata'     => array_filter([
+                    'invoice_uuid'      => $request->invoiceUuid,
+                    'invoice_public_id' => $request->metadata['invoice_public_id'] ?? null,
+                    'invoice_number'    => $request->metadata['invoice_number'] ?? null,
+                    'order_uuid'        => $request->orderUuid,
+                    'gateway_public_id' => $request->metadata['gateway_public_id'] ?? null,
+                    'gateway_uuid'      => $request->metadata['gateway_uuid'] ?? null,
+                    'company_uuid'      => $request->metadata['company_uuid'] ?? null,
+                ]),
             ],
         ];
 
@@ -170,6 +189,7 @@ class TalerDriver extends AbstractGatewayDriver
 
         $this->logInfo('Creating Taler order', [
             'amount'       => $talerAmount,
+            'order_id'     => $orderId,
             'invoice_uuid' => $request->invoiceUuid,
         ]);
 
@@ -221,11 +241,26 @@ class TalerDriver extends AbstractGatewayDriver
                 $orderStatusRaw = $statusResponse->json() ?? [];
             }
         } catch (\Throwable $e) {
-            // Non-fatal: we still return the pending response with the order_id.
             $this->logError('Could not retrieve taler_pay_uri after order creation', [
                 'order_id' => $orderId,
                 'error'    => $e->getMessage(),
             ]);
+
+            return GatewayResponse::failure(
+                gatewayTransactionId: $orderId,
+                eventType: GatewayResponse::EVENT_PAYMENT_FAILED,
+                message: 'Taler order created, but payment URI retrieval failed: ' . $e->getMessage(),
+                rawResponse: ['error' => $e->getMessage(), 'order_id' => $orderId],
+            );
+        }
+
+        if (!$talerPayUri) {
+            return GatewayResponse::failure(
+                gatewayTransactionId: $orderId,
+                eventType: GatewayResponse::EVENT_PAYMENT_FAILED,
+                message: 'Taler order created, but no taler_pay_uri was returned.',
+                rawResponse: array_merge($createResponse->json() ?? [], ['status' => $orderStatusRaw]),
+            );
         }
 
         $this->logInfo('Taler order created', [
@@ -240,8 +275,10 @@ class TalerDriver extends AbstractGatewayDriver
             rawResponse: array_merge($createResponse->json() ?? [], ['status' => $orderStatusRaw]),
             data: [
                 'taler_pay_uri' => $talerPayUri,
+                'payment_url'   => $talerPayUri,
                 'order_id'      => $orderId,
                 'invoice_uuid'  => $request->invoiceUuid,
+                'status'        => $orderStatusRaw['order_status'] ?? null,
             ],
         );
     }
@@ -279,6 +316,10 @@ class TalerDriver extends AbstractGatewayDriver
      */
     public function handleWebhook(Request $request): GatewayResponse
     {
+        if ($configurationFailure = $this->configurationFailureResponse()) {
+            return $configurationFailure;
+        }
+
         $orderId = $request->input('order_id');
 
         if (!$orderId) {
@@ -348,7 +389,8 @@ class TalerDriver extends AbstractGatewayDriver
         // during order creation. The HandleSuccessfulPayment listener uses this
         // to locate and mark the Fleetbase invoice as paid.
         $contractTerms = $data['contract_terms'] ?? [];
-        $invoiceUuid   = $contractTerms['invoice_uuid'] ?? null;
+        $metadata      = $contractTerms['metadata'] ?? [];
+        $invoiceUuid   = $contractTerms['invoice_uuid'] ?? $metadata['invoice_uuid'] ?? null;
 
         // Parse the deposit_total amount back to Fleetbase integer cents.
         $depositTotal  = $data['deposit_total'] ?? null;
@@ -371,6 +413,7 @@ class TalerDriver extends AbstractGatewayDriver
             data: [
                 'invoice_uuid' => $invoiceUuid,
                 'order_id'     => $orderId,
+                'metadata'     => $metadata,
                 'wired'        => $data['wired'] ?? false,
                 'last_payment' => $data['last_payment'] ?? null,
             ],
@@ -401,7 +444,10 @@ class TalerDriver extends AbstractGatewayDriver
      */
     public function refund(RefundRequest $request): GatewayResponse
     {
-        $backendUrl = $this->backendUrl();
+        if ($configurationFailure = $this->configurationFailureResponse(GatewayResponse::EVENT_REFUND_FAILED)) {
+            return $configurationFailure;
+        }
+
         $instanceId = $this->instanceId();
         $orderId    = $request->gatewayTransactionId;
 
@@ -458,17 +504,22 @@ class TalerDriver extends AbstractGatewayDriver
             'amount'   => $talerAmount,
         ]);
 
+        $rawResponse = $response->json() ?? [];
+        $refundUri   = $rawResponse['taler_refund_uri'] ?? null;
+
         return GatewayResponse::success(
             gatewayTransactionId: $orderId,
             eventType: GatewayResponse::EVENT_REFUND_PROCESSED,
             message: 'GNU Taler refund processed.',
             amount: $request->amount,
             currency: $request->currency,
-            rawResponse: $response->json() ?? [],
+            rawResponse: $rawResponse,
             data: [
-                'invoice_uuid' => $request->invoiceUuid,
-                'order_id'     => $orderId,
-                'refund_amount' => $talerAmount,
+                'invoice_uuid'     => $request->invoiceUuid,
+                'order_id'         => $orderId,
+                'taler_refund_uri' => $refundUri,
+                'refund_url'       => $refundUri,
+                'refund_amount'    => $talerAmount,
             ],
         );
     }
@@ -493,6 +544,49 @@ class TalerDriver extends AbstractGatewayDriver
         return $this->config('instance_id', 'default');
     }
 
+    private function configurationFailureResponse(string $eventType = GatewayResponse::EVENT_PAYMENT_FAILED): ?GatewayResponse
+    {
+        if (!$this->backendUrl()) {
+            return GatewayResponse::failure(
+                eventType: $eventType,
+                message: 'Taler Merchant Backend URL is not configured.',
+            );
+        }
+
+        if (!$this->apiToken()) {
+            return GatewayResponse::failure(
+                eventType: $eventType,
+                message: 'Taler API token is not configured.',
+            );
+        }
+
+        return null;
+    }
+
+    private function orderIdForPurchase(PurchaseRequest $request): string
+    {
+        if (!empty($request->metadata['taler_order_id'])) {
+            return $this->sanitizeOrderId($request->metadata['taler_order_id']);
+        }
+
+        $source = implode('|', array_filter([
+            'ledger',
+            $request->invoiceUuid,
+            $request->metadata['invoice_public_id'] ?? null,
+            $request->amount,
+            strtoupper($request->currency),
+        ]));
+
+        return 'ledger-' . substr(hash('sha256', $source ?: Str::uuid()->toString()), 0, 32);
+    }
+
+    private function sanitizeOrderId(string $orderId): string
+    {
+        $sanitized = preg_replace('/[^A-Za-z0-9_.:-]/', '-', $orderId) ?: Str::uuid()->toString();
+
+        return Str::limit($sanitized, 64, '');
+    }
+
     /**
      * Execute an authenticated HTTP request against the Taler Merchant Backend.
      *
@@ -509,7 +603,7 @@ class TalerDriver extends AbstractGatewayDriver
     private function privateRequest(string $method, string $path, array $payload = []): HttpResponse
     {
         $url     = $this->backendUrl() . '/' . ltrim($path, '/');
-        $token   = $this->config('api_token', '');
+        $token   = $this->apiToken();
         $pending = Http::withToken($token)
                        ->acceptJson()
                        ->contentType('application/json');
@@ -542,6 +636,11 @@ class TalerDriver extends AbstractGatewayDriver
         $fraction = $amountCents % 100;
 
         return sprintf('%s:%d.%02d', strtoupper($currency), $units, $fraction);
+    }
+
+    private function apiToken(): string
+    {
+        return preg_replace('/^Bearer\s+/i', '', trim((string) $this->config('api_token', '')));
     }
 
     /**

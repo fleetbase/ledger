@@ -105,6 +105,7 @@ test('purchase_creates_order_and_returns_pending_response', function () {
         ->and($response->eventType)->toBe(GatewayResponse::EVENT_PAYMENT_PENDING)
         ->and($response->gatewayTransactionId)->toBe('TALER-ORDER-001')
         ->and($response->data['taler_pay_uri'])->toBe('taler://pay/backend.example.taler.net/testmerchant/TALER-ORDER-001')
+        ->and($response->data['payment_url'])->toBe('taler://pay/backend.example.taler.net/testmerchant/TALER-ORDER-001')
         ->and($response->data['invoice_uuid'])->toBe('invoice-uuid-abc');
 });
 
@@ -163,6 +164,35 @@ test('purchase_embeds_invoice_uuid_in_order_payload', function () {
     });
 });
 
+test('purchase_sends_deterministic_order_id', function () {
+    Http::fake([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
+            ['order_id' => 'ledger-returned-order-id'],
+            200
+        ),
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/ledger-returned-order-id' => Http::response(
+            ['order_status' => 'unpaid', 'taler_pay_uri' => 'taler://pay/...'],
+            200
+        ),
+    ]);
+
+    $request = new PurchaseRequest(
+        amount: 500,
+        currency: 'EUR',
+        description: 'Test',
+        invoiceUuid: 'invoice-uuid-for-order-id',
+    );
+
+    talerDriver()->purchase($request);
+
+    Http::assertSent(function ($httpRequest) {
+        $body = $httpRequest->data();
+        return isset($body['order_id'])
+            && str_starts_with($body['order_id'], 'ledger-')
+            && strlen($body['order_id']) === 39;
+    });
+});
+
 // ---------------------------------------------------------------------------
 // purchase() — failure paths
 // ---------------------------------------------------------------------------
@@ -204,6 +234,43 @@ test('purchase_returns_failure_when_order_id_missing', function () {
     $response = talerDriver()->purchase($request);
 
     expect($response->isFailed())->toBeTrue();
+});
+
+test('purchase_returns_failure_when_payment_uri_missing', function () {
+    Http::fake([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
+            ['order_id' => 'TALER-ORDER-NO-URI'],
+            200
+        ),
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-NO-URI' => Http::response(
+            ['order_status' => 'unpaid'],
+            200
+        ),
+    ]);
+
+    $request = new PurchaseRequest(
+        amount: 1000,
+        currency: 'USD',
+        description: 'Test',
+    );
+
+    $response = talerDriver()->purchase($request);
+
+    expect($response->isFailed())->toBeTrue()
+        ->and($response->gatewayTransactionId)->toBe('TALER-ORDER-NO-URI');
+});
+
+test('purchase_returns_failure_when_required_config_missing', function () {
+    $request = new PurchaseRequest(
+        amount: 1000,
+        currency: 'USD',
+        description: 'Test',
+    );
+
+    $response = talerDriver(['backend_url' => ''])->purchase($request);
+
+    expect($response->isFailed())->toBeTrue()
+        ->and($response->message)->toContain('Backend URL');
 });
 
 // ---------------------------------------------------------------------------
@@ -315,7 +382,8 @@ test('refund_issues_refund_and_returns_success', function () {
         ->and($response->eventType)->toBe(GatewayResponse::EVENT_REFUND_PROCESSED)
         ->and($response->amount)->toBe(2500)
         ->and($response->currency)->toBe('USD')
-        ->and($response->gatewayTransactionId)->toBe('TALER-ORDER-001');
+        ->and($response->gatewayTransactionId)->toBe('TALER-ORDER-001')
+        ->and($response->data['taler_refund_uri'])->toBe('taler://refund/...');
 });
 
 test('refund_sends_correct_taler_amount_format', function () {

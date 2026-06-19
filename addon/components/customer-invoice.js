@@ -31,6 +31,7 @@ export default class CustomerInvoiceComponent extends Component {
     @tracked paymentReference = '';
     @tracked error = null;
     @tracked successMessage = null;
+    @tracked pendingMessage = null;
     @tracked isRedirectingToCheckout = false;
 
     constructor() {
@@ -126,9 +127,8 @@ export default class CustomerInvoiceComponent extends Component {
     /**
      * Submits a payment request.
      *
-     * For Stripe: backend returns { checkout_url } and the browser is redirected
-     * to Stripe's hosted checkout page. isRedirectingToCheckout is set to true
-     * to show a loading state while the redirect happens.
+     * For redirect-capable gateways: backend returns { payment_url } or
+     * { checkout_url } and the browser is redirected to the hosted/wallet flow.
      *
      * For other gateways: backend records the payment immediately and returns
      * the updated invoice.
@@ -147,10 +147,19 @@ export default class CustomerInvoiceComponent extends Component {
                 { namespace: 'ledger/public' }
             );
 
-            // Stripe Checkout Session — redirect the browser to Stripe's hosted page
-            if (data?.checkout_url) {
+            const paymentUrl = data?.payment_url ?? data?.payment_uri ?? data?.checkout_url ?? data?.data?.taler_pay_uri;
+
+            // Redirect payment sessions — Stripe Checkout, Taler wallet URI, QPay app link, etc.
+            if (paymentUrl) {
                 this.isRedirectingToCheckout = true;
-                window.location.href = data.checkout_url;
+                this.pendingMessage = data?.message ?? 'Redirecting to payment provider...';
+                window.location.href = paymentUrl;
+                return;
+            }
+
+            if (data?.payment_status === 'pending') {
+                this.pendingMessage = data?.message ?? 'Payment started. Complete it in your payment app, then refresh this invoice.';
+                this.showPaymentForm = false;
                 return;
             }
 
@@ -168,6 +177,7 @@ export default class CustomerInvoiceComponent extends Component {
     @action togglePaymentForm() {
         this.showPaymentForm = !this.showPaymentForm;
         this.successMessage = null;
+        this.pendingMessage = null;
         this.error = null;
     }
 
