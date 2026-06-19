@@ -92,10 +92,12 @@ export default class OrderInvoiceComponent extends Component {
             const results = yield this.store.query('ledger-invoice', {
                 order_uuid: order.id,
                 with: 'items',
-                limit: 1,
+                sort: '-created_at',
+                limit: 10,
             });
 
-            this.invoice = results.firstObject ?? null;
+            const invoices = results.toArray();
+            this.invoice = invoices.find((invoice) => !['void', 'cancelled'].includes(invoice.status)) ?? invoices[0] ?? null;
         } catch {
             this.invoice = null;
         }

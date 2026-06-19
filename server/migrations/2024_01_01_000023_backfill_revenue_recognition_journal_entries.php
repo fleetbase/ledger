@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Backfill revenue-recognition journal entries for invoices that were
      * created before InvoiceController::onAfterCreate started calling
@@ -43,14 +42,20 @@ return new class extends Migration
                 $query->select(DB::raw(1))
                     ->from('ledger_journals')
                     ->whereNull('ledger_journals.deleted_at')
-                    ->where('ledger_journals.type', 'revenue_recognition')
-                    ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(ledger_journals.meta, '$.invoice_uuid')) = ledger_invoices.uuid");
+                    ->whereColumn('ledger_journals.company_uuid', 'ledger_invoices.company_uuid')
+                    ->whereColumn('ledger_journals.amount', 'ledger_invoices.total_amount')
+                    ->where(function ($query) {
+                        $query->where(function ($query) {
+                            $query->where('ledger_journals.type', 'revenue_recognition')
+                                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(ledger_journals.meta, '$.invoice_uuid')) = ledger_invoices.uuid");
+                        })->orWhereRaw("ledger_journals.description = CONCAT('Revenue recognition for invoice ', ledger_invoices.number)");
+                    });
             })
             ->get(['uuid', 'public_id', 'company_uuid', 'total_amount', 'currency', 'number', 'created_at']);
 
         foreach ($invoices as $invoice) {
             // Resolve or create the AR and Revenue accounts for this company
-            $arAccount = $this->resolveAccount($invoice->company_uuid, 'AR-DEFAULT', 'asset', 'Accounts Receivable');
+            $arAccount  = $this->resolveAccount($invoice->company_uuid, 'AR-DEFAULT', 'asset', 'Accounts Receivable');
             $revAccount = $this->resolveAccount($invoice->company_uuid, 'REV-DEFAULT', 'revenue', 'Sales Revenue');
 
             if (!$arAccount || !$revAccount) {
@@ -129,6 +134,7 @@ return new class extends Migration
                     ->update(['status' => 'active']);
                 $account->status = 'active';
             }
+
             return $account;
         }
 

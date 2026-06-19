@@ -82,6 +82,90 @@ class ReportController extends Controller
         ]);
     }
 
+    public function dashboardSummary(Request $request): JsonResponse
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date',
+        ]);
+
+        return response()->json([
+            'status' => 'ok',
+            'data'   => $this->ledgerService->getDashboardSummary(session('company'), $request->input('start_date'), $request->input('end_date')),
+        ]);
+    }
+
+    public function dashboardRevenueTrend(Request $request): JsonResponse
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date',
+        ]);
+
+        return response()->json([
+            'status' => 'ok',
+            'data'   => $this->ledgerService->getDashboardRevenueTrend(session('company'), $request->input('start_date'), $request->input('end_date')),
+        ]);
+    }
+
+    public function dashboardCashFlowSummary(Request $request): JsonResponse
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date',
+        ]);
+
+        return response()->json([
+            'status' => 'ok',
+            'data'   => $this->ledgerService->getDashboardCashFlowSummary(session('company'), $request->input('start_date'), $request->input('end_date')),
+        ]);
+    }
+
+    public function dashboardInvoiceStatus(): JsonResponse
+    {
+        return response()->json([
+            'status' => 'ok',
+            'data'   => $this->ledgerService->getDashboardInvoiceStatus(session('company')),
+        ]);
+    }
+
+    public function dashboardArAgingSummary(Request $request): JsonResponse
+    {
+        $request->validate([
+            'as_of_date' => 'nullable|date',
+        ]);
+
+        return response()->json([
+            'status' => 'ok',
+            'data'   => $this->ledgerService->getDashboardArAgingSummary(session('company'), $request->input('as_of_date')),
+        ]);
+    }
+
+    public function dashboardWalletBalances(Request $request): JsonResponse
+    {
+        $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date',
+        ]);
+
+        return response()->json([
+            'status' => 'ok',
+            'data'   => $this->ledgerService->getDashboardWalletBalances(session('company'), $request->input('date_from'), $request->input('date_to')),
+        ]);
+    }
+
+    public function dashboardActivity(Request $request): JsonResponse
+    {
+        $request->validate([
+            'limit' => 'nullable|integer|min:1|max:25',
+        ]);
+
+        return response()->json([
+            'status' => 'ok',
+            'data'   => $this->ledgerService->getDashboardActivity(session('company'), (int) $request->input('limit', 10)),
+        ]);
+    }
+
     // =========================================================================
     // Trial Balance
     // =========================================================================

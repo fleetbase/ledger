@@ -1,0 +1,34 @@
+<div class="ledger-dashboard-widget flex h-full flex-col overflow-hidden rounded-md border bg-white shadow-sm dark:bg-gray-800" ...attributes>
+    <div class="ledger-widget-header">
+        <div class="min-w-0">
+            <div class="ledger-widget-title">Financial Reports</div>
+            <div class="ledger-widget-subtitle">Jump into the source reports behind the dashboard</div>
+        </div>
+        <FaIcon @icon="file-lines" class="text-gray-400" />
+    </div>
+
+    <div class="ledger-widget-body ledger-report-body">
+        <div class="ledger-animated-list ledger-report-grid">
+            <LinkTo @route="reports.income-statement" class="ledger-animated-row ledger-report-link">
+                <FaIcon @icon="chart-line" />
+                <span class="ledger-report-label">Income Statement</span>
+            </LinkTo>
+            <LinkTo @route="reports.cash-flow" class="ledger-animated-row ledger-report-link">
+                <FaIcon @icon="money-bill-transfer" />
+                <span class="ledger-report-label">Cash Flow</span>
+            </LinkTo>
+            <LinkTo @route="reports.ar-aging" class="ledger-animated-row ledger-report-link">
+                <FaIcon @icon="clock" />
+                <span class="ledger-report-label">AR Aging</span>
+            </LinkTo>
+            <LinkTo @route="reports.wallet-summary" class="ledger-animated-row ledger-report-link">
+                <FaIcon @icon="wallet" />
+                <span class="ledger-report-label">Wallet Summary</span>
+            </LinkTo>
+            <LinkTo @route="accounting.general-ledger" class="ledger-animated-row ledger-report-link">
+                <FaIcon @icon="book-open" />
+                <span class="ledger-report-label">General Ledger</span>
+            </LinkTo>
+        </div>
+    </div>
+</div>

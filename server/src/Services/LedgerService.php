@@ -76,6 +76,11 @@ class LedgerService
             $companyUuid = $options['company_uuid'] ?? session('company');
             $currency    = $options['currency'] ?? $debitAccount->currency ?? 'USD';
             $meta        = $options['meta'] ?? [];
+            foreach (['subject_uuid', 'subject_type', 'gateway_transaction_uuid'] as $metaKey) {
+                if (array_key_exists($metaKey, $options) && !array_key_exists($metaKey, $meta)) {
+                    $meta[$metaKey] = $options[$metaKey];
+                }
+            }
 
             // Create the double-entry Journal record, linked to the caller's Transaction if provided
             $journal = Journal::create([
@@ -86,7 +91,7 @@ class LedgerService
                 'amount'              => $amount,
                 'currency'            => $currency,
                 'description'         => $description,
-                'type'                => $options['journal_type'] ?? 'general',
+                'type'                => $options['journal_type'] ?? $options['type'] ?? 'general',
                 'status'              => 'posted',
                 'reference'           => $options['reference'] ?? null,
                 'memo'                => $options['memo'] ?? $description,
@@ -352,51 +357,11 @@ class LedgerService
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate   = $endDate ?? now()->toDateString();
 
-        $accounts = Account::where('company_uuid', $companyUuid)
-            ->where('status', 'active')
-            ->whereIn('type', [Account::TYPE_REVENUE, Account::TYPE_EXPENSE])
-            ->orderBy('code')
-            ->get();
-
-        $revenues = [];
-        $expenses = [];
-
-        foreach ($accounts as $account) {
-            // Income statement uses only activity within the period
-            $debits  = Journal::where('debit_account_uuid', $account->uuid)
-                ->whereBetween('entry_date', [$startDate, $endDate])
-                ->sum('amount');
-
-            $credits = Journal::where('credit_account_uuid', $account->uuid)
-                ->whereBetween('entry_date', [$startDate, $endDate])
-                ->sum('amount');
-
-            if ($account->type === Account::TYPE_REVENUE) {
-                $balance = (int) ($credits - $debits); // credit-normal
-            } else {
-                $balance = (int) ($debits - $credits); // debit-normal
-            }
-
-            if ($balance === 0) {
-                continue;
-            }
-
-            $row = [
-                'uuid'    => $account->uuid,
-                'code'    => $account->code,
-                'name'    => $account->name,
-                'balance' => $balance,
-            ];
-
-            if ($account->type === Account::TYPE_REVENUE) {
-                $revenues[] = $row;
-            } else {
-                $expenses[] = $row;
-            }
-        }
-
-        $totalRevenue  = array_sum(array_column($revenues, 'balance'));
-        $totalExpenses = array_sum(array_column($expenses, 'balance'));
+        $activity      = $this->getProfitAndLossActivity($companyUuid, $startDate, $endDate);
+        $revenues      = $activity['revenues'];
+        $expenses      = $activity['expenses'];
+        $totalRevenue  = $activity['total_revenue'];
+        $totalExpenses = $activity['total_expenses'];
         $netIncome     = $totalRevenue - $totalExpenses;
 
         return [
@@ -410,7 +375,236 @@ class LedgerService
             'total_expenses' => (int) $totalExpenses,
             'net_income'     => (int) $netIncome,
             'profitable'     => $netIncome >= 0,
+            'currency'       => $activity['currency'],
+            'daily'          => $activity['daily'],
+            'audit'          => $activity['audit'],
         ];
+    }
+
+    /**
+     * Return normalized profit and loss journal activity for reports and dashboard widgets.
+     */
+    protected function getProfitAndLossActivity(string $companyUuid, string $startDate, string $endDate): array
+    {
+        $rows = Journal::where('company_uuid', $companyUuid)
+            ->whereBetween('entry_date', [$startDate, $endDate])
+            ->where(function ($query) {
+                $query->whereHas('creditAccount', fn ($q) => $q->whereIn('type', [Account::TYPE_REVENUE, Account::TYPE_EXPENSE]))
+                    ->orWhereHas('debitAccount', fn ($q) => $q->whereIn('type', [Account::TYPE_REVENUE, Account::TYPE_EXPENSE]));
+            })
+            ->with(['creditAccount', 'debitAccount'])
+            ->orderBy('entry_date')
+            ->orderBy('created_at')
+            ->get();
+
+        [$journals, $duplicates] = $this->deduplicateProfitAndLossJournals($rows);
+        $revenues                = [];
+        $expenses                = [];
+        $daily                   = collect();
+        $revenueByType           = [];
+        $expenseByType           = [];
+
+        $cursor = now()->parse($startDate);
+        $end    = now()->parse($endDate);
+
+        while ($cursor->lte($end)) {
+            $key = $cursor->toDateString();
+            $daily->put($key, ['date' => $key, 'revenue' => 0, 'expenses' => 0]);
+            $cursor->addDay();
+        }
+
+        foreach ($journals as $journal) {
+            $date = $journal->entry_date instanceof \DateTimeInterface ? $journal->entry_date->format('Y-m-d') : (string) $journal->entry_date;
+
+            if (!$daily->has($date)) {
+                $daily->put($date, ['date' => $date, 'revenue' => 0, 'expenses' => 0]);
+            }
+
+            $dailyEntry = $daily->get($date);
+
+            if ($journal->creditAccount?->type === Account::TYPE_REVENUE) {
+                $amount     = (int) $journal->amount;
+                $accountKey = $journal->creditAccount->uuid;
+                $typeKey    = $journal->type ?: 'general';
+
+                $revenues[$accountKey] ??= $this->makeProfitAndLossAccountRow($journal->creditAccount);
+                $revenues[$accountKey]['balance'] += $amount;
+                $dailyEntry['revenue'] += $amount;
+                $revenueByType[$typeKey] = ($revenueByType[$typeKey] ?? 0) + $amount;
+            }
+
+            if ($journal->debitAccount?->type === Account::TYPE_REVENUE) {
+                $amount     = (int) $journal->amount;
+                $accountKey = $journal->debitAccount->uuid;
+                $typeKey    = $journal->type ?: 'general';
+
+                $revenues[$accountKey] ??= $this->makeProfitAndLossAccountRow($journal->debitAccount);
+                $revenues[$accountKey]['balance'] -= $amount;
+                $dailyEntry['revenue'] -= $amount;
+                $revenueByType[$typeKey] = ($revenueByType[$typeKey] ?? 0) - $amount;
+            }
+
+            if ($journal->debitAccount?->type === Account::TYPE_EXPENSE) {
+                $amount     = (int) $journal->amount;
+                $accountKey = $journal->debitAccount->uuid;
+                $typeKey    = $journal->type ?: 'general';
+
+                $expenses[$accountKey] ??= $this->makeProfitAndLossAccountRow($journal->debitAccount);
+                $expenses[$accountKey]['balance'] += $amount;
+                $dailyEntry['expenses'] += $amount;
+                $expenseByType[$typeKey] = ($expenseByType[$typeKey] ?? 0) + $amount;
+            }
+
+            if ($journal->creditAccount?->type === Account::TYPE_EXPENSE) {
+                $amount     = (int) $journal->amount;
+                $accountKey = $journal->creditAccount->uuid;
+                $typeKey    = $journal->type ?: 'general';
+
+                $expenses[$accountKey] ??= $this->makeProfitAndLossAccountRow($journal->creditAccount);
+                $expenses[$accountKey]['balance'] -= $amount;
+                $dailyEntry['expenses'] -= $amount;
+                $expenseByType[$typeKey] = ($expenseByType[$typeKey] ?? 0) - $amount;
+            }
+
+            $daily->put($date, $dailyEntry);
+        }
+
+        $revenues = collect($revenues)->filter(fn ($row) => $row['balance'] !== 0)->sortBy('code')->values();
+        $expenses = collect($expenses)->filter(fn ($row) => $row['balance'] !== 0)->sortBy('code')->values();
+        $currency = $this->resolveCurrencyFromJournals($journals) ?? $this->resolveDashboardCurrency();
+
+        return [
+            'revenues'       => $revenues->all(),
+            'expenses'       => $expenses->all(),
+            'total_revenue'  => (int) $revenues->sum('balance'),
+            'total_expenses' => (int) $expenses->sum('balance'),
+            'daily'          => $daily->sortKeys()->values(),
+            'currency'       => $currency,
+            'audit'          => [
+                'source'             => 'ledger_journals',
+                'amount_unit'        => 'minor',
+                'journal_rows'       => $rows->count(),
+                'counted_rows'       => $journals->count(),
+                'deduplicated_rows'  => $duplicates,
+                'revenue_by_type'    => $revenueByType,
+                'expense_by_type'    => $expenseByType,
+                'duplicate_strategy' => 'source_record_fingerprint',
+            ],
+        ];
+    }
+
+    /**
+     * Keep one accounting journal per authoritative invoice/order/gateway source.
+     */
+    protected function deduplicateProfitAndLossJournals(Collection $rows): array
+    {
+        $seen       = [];
+        $duplicates = 0;
+        $journals   = collect();
+
+        foreach ($rows as $journal) {
+            $key = $this->profitAndLossJournalFingerprint($journal);
+
+            if ($key && array_key_exists($key, $seen)) {
+                $duplicates++;
+                continue;
+            }
+
+            if ($key) {
+                $seen[$key] = true;
+            }
+
+            $journals->push($journal);
+        }
+
+        return [$journals, $duplicates];
+    }
+
+    /**
+     * Build a stable source fingerprint for revenue/expense rows that are backed by another record.
+     */
+    protected function profitAndLossJournalFingerprint(Journal $journal): ?string
+    {
+        $meta        = $journal->meta ?? [];
+        $companyUuid = $journal->company_uuid;
+        $description = (string) $journal->description;
+
+        if (str_ends_with((string) $journal->type, '_reversal')) {
+            $reversesJournalUuid = data_get($meta, 'reverses_journal_uuid');
+
+            return implode('|', [
+                'journal-reversal',
+                $companyUuid,
+                (string) $journal->type,
+                $reversesJournalUuid ?: $journal->uuid,
+            ]);
+        }
+
+        if (str_ends_with((string) $journal->type, '_reinstatement')) {
+            $reinstatesJournalUuid = data_get($meta, 'reinstates_journal_uuid');
+
+            return implode('|', [
+                'journal-reinstatement',
+                $companyUuid,
+                (string) $journal->type,
+                $reinstatesJournalUuid ?: $journal->uuid,
+            ]);
+        }
+
+        if (preg_match('/Revenue recognition for invoice\s+([^\s\[]+)/', $description, $matches)) {
+            return implode('|', [
+                'invoice-number',
+                $companyUuid,
+                $matches[1],
+                (string) $journal->amount,
+                (string) $journal->currency,
+            ]);
+        }
+
+        $invoiceUuid = data_get($meta, 'invoice_uuid');
+        if ($invoiceUuid) {
+            return implode('|', ['invoice', $companyUuid, $invoiceUuid]);
+        }
+
+        $orderUuid = data_get($meta, 'order_uuid');
+        if ($orderUuid) {
+            return implode('|', ['order', $companyUuid, $orderUuid]);
+        }
+
+        $gatewayTransactionUuid = data_get($meta, 'gateway_transaction_uuid');
+        if ($gatewayTransactionUuid) {
+            return implode('|', ['gateway-transaction', $companyUuid, $gatewayTransactionUuid]);
+        }
+
+        $transactionUuid = $journal->transaction_uuid;
+        if ($transactionUuid && in_array($journal->type, ['revenue', 'expense', 'gateway_payment', 'wallet_fee', 'refund'], true)) {
+            return implode('|', ['transaction', $companyUuid, $transactionUuid, (string) $journal->type]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Build a report row from an account model.
+     */
+    protected function makeProfitAndLossAccountRow(Account $account): array
+    {
+        return [
+            'uuid'    => $account->uuid,
+            'code'    => $account->code,
+            'name'    => $account->name,
+            'balance' => 0,
+        ];
+    }
+
+    /**
+     * Resolve the currency used by counted journal rows when all rows agree.
+     */
+    protected function resolveCurrencyFromJournals(Collection $journals): ?string
+    {
+        $currencies = $journals->pluck('currency')->filter()->unique()->values();
+
+        return $currencies->count() === 1 ? $currencies->first() : null;
     }
 
     // =========================================================================
@@ -531,6 +725,277 @@ class LedgerService
         }
 
         return $net;
+    }
+
+    /**
+     * Return owner/operator KPI tiles for the redesigned dashboard.
+     */
+    public function getDashboardSummary(string $companyUuid, ?string $startDate = null, ?string $endDate = null): array
+    {
+        $dashboard = $this->getDashboardMetrics($companyUuid, $startDate, $endDate);
+        $currency  = $dashboard['currency'] ?? $this->resolveDashboardCurrency($dashboard['kpis']['wallet_totals'] ?? []);
+
+        $outstandingAr = $dashboard['kpis']['outstanding_ar'] ?? ['total' => 0, 'overdue' => 0];
+        $invoiceCounts = collect($dashboard['invoice_counts'] ?? []);
+        $walletTotals  = collect($dashboard['kpis']['wallet_totals'] ?? []);
+        $walletMetric  = $walletTotals->count() === 1 ? (int) ($walletTotals->first()['total'] ?? 0) : null;
+
+        return [
+            'period'   => $dashboard['period'],
+            'currency' => $currency,
+            'audit'    => $dashboard['audit'] ?? [],
+            'metrics'  => [
+                'total_revenue'  => $this->makeDashboardMetric('Total Revenue', $dashboard['kpis']['total_revenue'] ?? [], 'money', $currency),
+                'total_expenses' => $this->makeDashboardMetric('Total Expenses', $dashboard['kpis']['total_expenses'] ?? [], 'money', $currency, true),
+                'net_income'     => $this->makeDashboardMetric('Net Income', $dashboard['kpis']['net_income'] ?? [], 'money', $currency),
+                'outstanding_ar' => [
+                    'label'         => 'Outstanding AR',
+                    'value'         => (int) ($outstandingAr['total'] ?? 0),
+                    'previous'      => null,
+                    'delta_percent' => null,
+                    'format'        => 'money',
+                    'currency'      => $currency,
+                    'inverse'       => true,
+                ],
+                'overdue_ar' => [
+                    'label'         => 'Overdue AR',
+                    'value'         => (int) ($outstandingAr['overdue'] ?? 0),
+                    'previous'      => null,
+                    'delta_percent' => null,
+                    'format'        => 'money',
+                    'currency'      => $currency,
+                    'inverse'       => true,
+                ],
+                'open_invoices' => [
+                    'label'         => 'Open Invoices',
+                    'value'         => (int) $invoiceCounts->except(['paid', 'cancelled', 'void'])->sum(),
+                    'previous'      => null,
+                    'delta_percent' => null,
+                    'format'        => 'count',
+                    'currency'      => $currency,
+                    'inverse'       => true,
+                ],
+                'wallet_balance' => [
+                    'label'          => 'Wallet Balance',
+                    'value'          => $walletMetric,
+                    'previous'       => null,
+                    'delta_percent'  => null,
+                    'format'         => 'money',
+                    'currency'       => $walletTotals->count() === 1 ? $walletTotals->first()['currency'] : $currency,
+                    'inverse'        => false,
+                    'multi_currency' => $walletTotals->count() > 1,
+                    'currencies'     => $walletTotals->values(),
+                ],
+                'active_wallets' => [
+                    'label'         => 'Active Wallets',
+                    'value'         => (int) $walletTotals->sum('count'),
+                    'previous'      => null,
+                    'delta_percent' => null,
+                    'format'        => 'count',
+                    'currency'      => $currency,
+                    'inverse'       => false,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Return revenue and expense trend rows for chart widgets.
+     */
+    public function getDashboardRevenueTrend(string $companyUuid, ?string $startDate = null, ?string $endDate = null): array
+    {
+        $startDate = $startDate ?? now()->subDays(29)->toDateString();
+        $endDate   = $endDate ?? now()->toDateString();
+        $activity  = $this->getProfitAndLossActivity($companyUuid, $startDate, $endDate);
+        $points    = $activity['daily'];
+        $revenue   = (int) $points->sum('revenue');
+        $expenses  = (int) $points->sum('expenses');
+
+        return [
+            'period' => [
+                'from' => $startDate,
+                'to'   => $endDate,
+            ],
+            'currency' => $activity['currency'],
+            'audit'    => $activity['audit'],
+            'summary'  => [
+                'revenue'  => $revenue,
+                'expenses' => $expenses,
+                'net'      => $revenue - $expenses,
+            ],
+            'labels'   => $points->pluck('date')->values(),
+            'datasets' => [
+                [
+                    'label'           => 'Revenue',
+                    'data'            => $points->pluck('revenue')->values(),
+                    'borderColor'     => '#059669',
+                    'backgroundColor' => 'rgba(5, 150, 105, 0.12)',
+                    'tension'         => 0.35,
+                    'fill'            => true,
+                ],
+                [
+                    'label'           => 'Expenses',
+                    'data'            => $points->pluck('expenses')->values(),
+                    'borderColor'     => '#dc2626',
+                    'backgroundColor' => 'rgba(220, 38, 38, 0.08)',
+                    'tension'         => 0.35,
+                    'fill'            => true,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Return a condensed cash flow summary for the dashboard.
+     */
+    public function getDashboardCashFlowSummary(string $companyUuid, ?string $startDate = null, ?string $endDate = null): array
+    {
+        $cashFlow = $this->getCashFlowSummary($companyUuid, $startDate, $endDate);
+
+        return [
+            'period'            => $cashFlow['period'],
+            'currency'          => $this->resolveDashboardCurrency(),
+            'operating'         => (int) ($cashFlow['operating_activities']['net_flow'] ?? 0),
+            'financing'         => (int) ($cashFlow['financing_activities']['net_flow'] ?? 0),
+            'investing'         => (int) ($cashFlow['investing_activities']['net_flow'] ?? 0),
+            'net_cash_change'   => (int) ($cashFlow['net_cash_change'] ?? 0),
+            'cash_account'      => $cashFlow['cash_account'],
+        ];
+    }
+
+    /**
+     * Return invoice counts and balances by status.
+     */
+    public function getDashboardInvoiceStatus(string $companyUuid): array
+    {
+        $statuses = ['draft', 'sent', 'paid', 'overdue', 'cancelled', 'void'];
+        $rows     = Invoice::where('company_uuid', $companyUuid)
+            ->select('status', 'currency', DB::raw('count(*) as count'), DB::raw('sum(total_amount) as total'), DB::raw('sum(balance) as balance'))
+            ->groupBy('status', 'currency')
+            ->get();
+
+        $summary = collect($statuses)->map(function ($status) use ($rows) {
+            $matches = $rows->where('status', $status);
+
+            return [
+                'status'   => $status,
+                'count'    => (int) $matches->sum('count'),
+                'total'    => (int) $matches->sum('total'),
+                'balance'  => (int) $matches->sum('balance'),
+                'currency' => $matches->pluck('currency')->filter()->unique()->count() === 1 ? $matches->first()?->currency : null,
+            ];
+        })->values();
+
+        return [
+            'total_count' => (int) $summary->sum('count'),
+            'total_open'  => (int) $summary->whereNotIn('status', ['paid', 'cancelled', 'void'])->sum('balance'),
+            'summary'     => $summary,
+        ];
+    }
+
+    /**
+     * Return compact AR aging buckets for dashboard widgets.
+     */
+    public function getDashboardArAgingSummary(string $companyUuid, ?string $asOfDate = null): array
+    {
+        $aging = $this->getArAging($companyUuid, $asOfDate);
+
+        return [
+            'as_of_date'     => $aging['as_of_date'],
+            'grand_total'    => $aging['grand_total'],
+            'total_invoices' => $aging['total_invoices'],
+            'buckets'        => collect($aging['buckets'])->map(fn ($bucket, $key) => [
+                'key'           => $key,
+                'label'         => $bucket['label'],
+                'days_range'    => $bucket['days_range'],
+                'total'         => (int) $bucket['total'],
+                'invoice_count' => count($bucket['invoices'] ?? []),
+            ])->values(),
+        ];
+    }
+
+    /**
+     * Return dashboard-ready wallet totals and top wallet rows.
+     */
+    public function getDashboardWalletBalances(string $companyUuid, ?string $dateFrom = null, ?string $dateTo = null): array
+    {
+        $dashboard = $this->getDashboardMetrics($companyUuid, $dateFrom, $dateTo);
+
+        $topWallets = Wallet::where('company_uuid', $companyUuid)
+            ->where('status', Wallet::STATUS_ACTIVE)
+            ->with('subject')
+            ->orderBy('balance', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(fn ($wallet) => [
+                'wallet_public_id'  => $wallet->public_id,
+                'name'              => $wallet->name,
+                'type'              => $wallet->type,
+                'balance'           => (int) $wallet->balance,
+                'formatted_balance' => $wallet->formatted_balance,
+                'currency'          => $wallet->currency,
+                'subject'           => $wallet->subject ? [
+                    'name' => $wallet->subject->name ?? $wallet->subject->email ?? $wallet->subject->public_id ?? $wallet->subject->uuid,
+                ] : null,
+            ]);
+
+        return [
+            'period'      => $dashboard['period'],
+            'totals'      => $dashboard['kpis']['wallet_totals'] ?? [],
+            'top_wallets' => $topWallets,
+        ];
+    }
+
+    /**
+     * Return recent financial activity for the dashboard feed.
+     */
+    public function getDashboardActivity(string $companyUuid, int $limit = 10): array
+    {
+        $journals = Journal::where('company_uuid', $companyUuid)
+            ->with(['debitAccount', 'creditAccount'])
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(fn ($journal) => [
+                'type'        => 'journal',
+                'public_id'   => $journal->public_id,
+                'description' => $journal->description,
+                'amount'      => (int) $journal->amount,
+                'currency'    => $journal->currency,
+                'status'      => $journal->status,
+                'created_at'  => $journal->created_at,
+                'debit'       => $journal->debitAccount?->name,
+                'credit'      => $journal->creditAccount?->name,
+            ]);
+
+        return [
+            'items' => $journals,
+        ];
+    }
+
+    protected function makeDashboardMetric(string $label, array $source, string $format, string $currency, bool $inverse = false): array
+    {
+        return [
+            'label'         => $label,
+            'value'         => (int) ($source['current'] ?? 0),
+            'previous'      => isset($source['previous']) ? (int) $source['previous'] : null,
+            'delta_percent' => $source['change_pct'] ?? null,
+            'format'        => $format,
+            'currency'      => $source['currency'] ?? $currency,
+            'inverse'       => $inverse,
+            'audit'         => $source['audit'] ?? null,
+        ];
+    }
+
+    protected function resolveDashboardCurrency(iterable $walletTotals = []): string
+    {
+        foreach ($walletTotals as $row) {
+            if (!empty($row['currency'])) {
+                return $row['currency'];
+            }
+        }
+
+        return 'USD';
     }
 
     // =========================================================================
@@ -687,17 +1152,15 @@ class LedgerService
             ]);
 
         // Revenue trend — daily breakdown for the current period
-        $revenueTrend = Journal::where('company_uuid', $companyUuid)
-            ->whereHas('creditAccount', fn ($q) => $q->where('type', Account::TYPE_REVENUE))
-            ->whereBetween('entry_date', [$startDate, $endDate])
-            ->select('entry_date', DB::raw('sum(amount) as daily_revenue'))
-            ->groupBy('entry_date')
-            ->orderBy('entry_date')
-            ->get()
-            ->map(fn ($r) => [
-                'date'          => $r->entry_date,
-                'daily_revenue' => (int) $r->daily_revenue,
-            ]);
+        $revenueTrend = collect($currentIncome['daily'] ?? []);
+        if ($revenueTrend->isEmpty()) {
+            $revenueTrend = $this->getProfitAndLossActivity($companyUuid, $startDate, $endDate)['daily'];
+        }
+
+        $revenueTrend = $revenueTrend->map(fn ($r) => [
+            'date'          => $r['date'],
+            'daily_revenue' => (int) $r['revenue'],
+        ]);
 
         // Recent journal entries
         $recentJournals = Journal::where('company_uuid', $companyUuid)
@@ -713,22 +1176,29 @@ class LedgerService
                 'previous_from' => $prevStartDate,
                 'previous_to'   => $prevEndDate,
             ],
-            'kpis' => [
+            'currency' => $currentIncome['currency'] ?? $this->resolveDashboardCurrency($walletTotals),
+            'kpis'     => [
                 'total_revenue' => [
                     'current'    => $currentIncome['total_revenue'],
                     'previous'   => $previousIncome['total_revenue'],
                     'change_pct' => $this->percentageChange($previousIncome['total_revenue'], $currentIncome['total_revenue']),
+                    'currency'   => $currentIncome['currency'],
+                    'audit'      => $currentIncome['audit'],
                 ],
                 'total_expenses' => [
                     'current'    => $currentIncome['total_expenses'],
                     'previous'   => $previousIncome['total_expenses'],
                     'change_pct' => $this->percentageChange($previousIncome['total_expenses'], $currentIncome['total_expenses']),
+                    'currency'   => $currentIncome['currency'],
+                    'audit'      => $currentIncome['audit'],
                 ],
                 'net_income' => [
                     'current'    => $currentIncome['net_income'],
                     'previous'   => $previousIncome['net_income'],
                     'change_pct' => $this->percentageChange($previousIncome['net_income'], $currentIncome['net_income']),
                     'profitable' => $currentIncome['net_income'] >= 0,
+                    'currency'   => $currentIncome['currency'],
+                    'audit'      => $currentIncome['audit'],
                 ],
                 'outstanding_ar' => [
                     'total'   => (int) $outstandingAr,
@@ -739,6 +1209,10 @@ class LedgerService
             'invoice_counts'  => $invoiceCounts,
             'revenue_trend'   => $revenueTrend,
             'recent_journals' => $recentJournals,
+            'audit'           => [
+                'income_statement' => $currentIncome['audit'],
+                'previous_period'  => $previousIncome['audit'],
+            ],
         ];
     }
 

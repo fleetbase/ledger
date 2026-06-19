@@ -1,5 +1,16 @@
 <Layout::Section::Body class="overflow-y-scroll h-full">
-    <Dashboard @defaultDashboardId="ledger" @defaultDashboardName="Ledger Dashboard" @extension="ledger" class="flex items-center justify-between p-2" />
+    <Dashboard
+        @defaultDashboardId="ledger"
+        @defaultDashboardName="Ledger Dashboard"
+        @extension="ledger"
+        @leftHeaderWrapperClass="ledger-dashboard-title"
+        @rightHeaderWrapperClass="ledger-dashboard-actions"
+        @createWrapperClass="ledger-dashboard-create-wrapper"
+        @stickyHeader={{true}}
+        class="ledger-dashboard-page"
+    >
+        <LedgerDashboard::DateRangeControl />
+    </Dashboard>
     <Spacer @height="300px" />
     {{outlet}}
 </Layout::Section::Body>

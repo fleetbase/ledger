@@ -16,6 +16,8 @@ export default class LedgerInvoiceModel extends Model {
     @attr('string') customer_uuid;
     @attr('string') customer_type;
     @attr('string') order_uuid;
+    @attr('string') order_public_id;
+    @attr('string') order_tracking_number;
     @attr('string') transaction_uuid;
     @attr('string') template_uuid;
 
@@ -62,6 +64,14 @@ export default class LedgerInvoiceModel extends Model {
     /** Alias for total_amount — used by format-currency helpers. */
     @computed('total_amount') get total() {
         return this.total_amount;
+    }
+
+    @computed('order_tracking_number', 'order_public_id', 'order_uuid') get orderTrackingLabel() {
+        return this.order_tracking_number ?? this.order_public_id ?? this.order_uuid;
+    }
+
+    @computed('order_public_id', 'order_uuid') get orderRouteIdentifier() {
+        return this.order_public_id ?? this.order_uuid;
     }
 
     // -------------------------------------------------------------------------

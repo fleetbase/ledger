@@ -1,0 +1,23 @@
+<div class="ledger-dashboard-widget ledger-chart-widget flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800" ...attributes>
+    <div class="ledger-widget-header">
+        <div class="min-w-0">
+            <div class="ledger-widget-title">Revenue Trend</div>
+            <div class="ledger-widget-subtitle">{{this.formattedRevenue}} revenue · {{this.formattedNet}} net</div>
+        </div>
+        <button type="button" class="ledger-icon-button" {{on "click" (perform this.load)}}><FaIcon @icon="rotate" /></button>
+    </div>
+
+    <div class="ledger-chart-body">
+        {{#if this.error}}
+            <div class="ledger-widget-empty">{{this.error}}</div>
+        {{else if this.load.isRunning}}
+            <div class="ledger-widget-empty"><Spinner /></div>
+        {{else if this.data}}
+            <div class="ledger-chart-frame">
+                <Chart @type="line" @labels={{this.data.labels}} @datasets={{this.chartDatasets}} @options={{this.chartOptions}} />
+            </div>
+        {{else}}
+            <div class="ledger-widget-empty">No revenue data yet.</div>
+        {{/if}}
+    </div>
+</div>

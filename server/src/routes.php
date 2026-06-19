@@ -95,6 +95,7 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                     function ($router, $controller) {
                                         $router->post('create-from-order', $controller('createFromOrder'));
                                         $router->post('{id}/record-payment', $controller('recordPayment'));
+                                        $router->get('{id}/transactions', $controller('transactions'));
                                         $router->post('{id}/mark-as-sent', $controller('markAsSent'));
                                         $router->post('{id}/send', $controller('send'));
                                         $router->post('{id}/preview', $controller('preview'));
@@ -169,10 +170,22 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 });
 
                                 // ----------------------------------------------------------------
+                                // Search
+                                // ----------------------------------------------------------------
+                                $router->get('search', 'SearchController@search');
+
+                                // ----------------------------------------------------------------
                                 // Reports & Financial Statements
                                 // ----------------------------------------------------------------
                                 $router->get('reports/general-ledger', 'ReportController@generalLedger');
                                 $router->get('reports/dashboard', 'ReportController@dashboard');
+                                $router->get('reports/dashboard/summary', 'ReportController@dashboardSummary');
+                                $router->get('reports/dashboard/revenue-trend', 'ReportController@dashboardRevenueTrend');
+                                $router->get('reports/dashboard/cash-flow-summary', 'ReportController@dashboardCashFlowSummary');
+                                $router->get('reports/dashboard/invoice-status', 'ReportController@dashboardInvoiceStatus');
+                                $router->get('reports/dashboard/ar-aging-summary', 'ReportController@dashboardArAgingSummary');
+                                $router->get('reports/dashboard/wallet-balances', 'ReportController@dashboardWalletBalances');
+                                $router->get('reports/dashboard/activity', 'ReportController@dashboardActivity');
                                 $router->get('reports/trial-balance', 'ReportController@trialBalance');
                                 $router->get('reports/balance-sheet', 'ReportController@balanceSheet');
                                 $router->get('reports/income-statement', 'ReportController@incomeStatement');

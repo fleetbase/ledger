@@ -38,6 +38,17 @@
                 <div class="field-value uppercase">{{n-a @resource.currency}}</div>
             </div>
 
+            {{#if this.orderIdentifier}}
+                <div class="field-info-container">
+                    <div class="field-name">Order</div>
+                    <div class="field-value">
+                        <button type="button" class="text-blue-500 hover:underline font-semibold" {{on "click" this.transitionToOrder}}>
+                            {{n-a this.orderLabel}}
+                        </button>
+                    </div>
+                </div>
+            {{/if}}
+
             {{#if @resource.templateName}}
                 <div class="field-info-container">
                     <div class="field-name">Template</div>

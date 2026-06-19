@@ -41,7 +41,7 @@ class LedgerServiceProvider extends CoreServiceProvider
         // Optional integrations — silently skipped when the package is not installed.
         // CoreServiceProvider::registerObservers() guards each entry with Utils::classExists().
         'Fleetbase\\FleetOps\\Models\\PurchaseRate' => \Fleetbase\Ledger\Observers\PurchaseRateObserver::class,
-        'Fleetbase\\FleetOps\\Models\\Order'        => \Fleetbase\Ledger\Observers\StorefrontOrderObserver::class,
+        'Fleetbase\\FleetOps\\Models\\Order'        => \Fleetbase\Ledger\Observers\OrderAccountingObserver::class,
     ];
 
     /**
@@ -94,6 +94,7 @@ class LedgerServiceProvider extends CoreServiceProvider
         $this->registerExpansionsFrom(__DIR__ . '/../Expansions');
         $this->loadRoutesFrom(__DIR__ . '/../routes.php');
         $this->loadMigrationsFrom(__DIR__ . '/../../migrations');
+        $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'ledger');
 
         // Register event-listener bindings for the payment gateway system
         $this->registerPaymentEvents();

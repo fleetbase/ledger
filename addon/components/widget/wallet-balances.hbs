@@ -1,22 +1,45 @@
-<div class="flex flex-col" ...attributes>
-    <div class="flex flex-row items-center justify-between px-4 py-2 border border-b-0 dark:border-gray-700 border-gray-200 dark:bg-gray-800 bg-gray-50 rounded-t-lg shadow-sm">
-        <span class="text-base font-bold text-black dark:text-gray-100">Wallet Balances</span>
+<div class="ledger-dashboard-widget flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800" ...attributes>
+    <div class="ledger-widget-header">
+        <div class="min-w-0">
+            <div class="ledger-widget-title">Wallet Balances</div>
+            <div class="ledger-widget-subtitle">Grouped by currency with top active wallets</div>
+        </div>
+        <button type="button" class="ledger-icon-button" {{on "click" (perform this.loadData)}}><FaIcon @icon="rotate" /></button>
     </div>
-    <div class="border dark:border-gray-700 border-gray-200 rounded-b-lg shadow-sm p-4 space-y-2 bg-white dark:bg-gray-900">
-        {{#if this.loadData.isRunning}}
-            <div class="flex items-center justify-center py-6"><Spinner /></div>
+
+    <div class="ledger-widget-body">
+        {{#if this.error}}
+            <div class="ledger-widget-empty">{{this.error}}</div>
+        {{else if this.loadData.isRunning}}
+            <div class="ledger-widget-empty"><Spinner /></div>
         {{else if this.totals.length}}
-            {{#each this.totals as |row|}}
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="font-mono text-gray-500 dark:text-gray-400">{{row.currency}}</span>
-                        <span class="text-xs text-gray-400">({{row.count}} wallet{{if (gt row.count 1) "s"}})</span>
+            <div class="ledger-animated-list space-y-3">
+                {{#each this.totals as |row|}}
+                    <div class="ledger-animated-row ledger-balance-row">
+                        <div>
+                            <div class="font-mono text-xs font-bold text-gray-700 dark:text-gray-200">{{row.currency}}</div>
+                            <div class="text-[11px] text-gray-400">{{row.count}} wallet{{if (gt row.count 1) "s"}}</div>
+                        </div>
+                        <div class="text-sm font-bold text-gray-900 dark:text-gray-100">{{format-currency row.total (or row.currency this.companyCurrency)}}</div>
                     </div>
-                    <span class="font-semibold text-gray-800 dark:text-gray-200">{{format-currency row.total (or row.currency this.companyCurrency)}}</span>
+                {{/each}}
+            </div>
+            {{#if this.topWallets.length}}
+                <div class="mt-5 border-t border-gray-100 pt-4 dark:border-gray-700">
+                    <div class="mb-2 text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400">Top Wallets</div>
+                    <div class="ledger-animated-list space-y-2">
+                        {{#each this.topWallets as |wallet index|}}
+                            <div class="ledger-animated-row flex items-center gap-3 text-xs">
+                                <span class="w-5 text-center font-mono text-gray-400">{{add index 1}}</span>
+                                <span class="min-w-0 flex-1 truncate font-semibold text-gray-700 dark:text-gray-200">{{n-a (or wallet.subject.name wallet.name wallet.wallet_public_id)}}</span>
+                                <span class="font-bold text-emerald-600 dark:text-emerald-400">{{format-currency wallet.balance (or wallet.currency this.companyCurrency)}}</span>
+                            </div>
+                        {{/each}}
+                    </div>
                 </div>
-            {{/each}}
+            {{/if}}
         {{else}}
-            <div class="text-center text-gray-400 py-4 text-sm">No wallet data.</div>
+            <div class="ledger-widget-empty">No wallet data.</div>
         {{/if}}
     </div>
 </div>

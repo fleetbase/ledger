@@ -1,0 +1,11 @@
+<div class="ledger-dashboard-period-control" ...attributes>
+    <DatePicker
+        @value={{this.dateRange}}
+        @range={{true}}
+        @onSelect={{this.onDateRangeChanged}}
+        @autoClose={{true}}
+        @buttons={{array "clear"}}
+        @placeholder="Dashboard period"
+        class="w-52 form-input form-input-sm"
+    />
+</div>
