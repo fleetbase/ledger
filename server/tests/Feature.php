@@ -53,6 +53,7 @@ test('order accounting observer preserves seed metadata on storefront sale journ
 
 test('order accounting observer handles cancellation and reinstatement journal corrections', function () {
     $observer = file_get_contents(__DIR__ . '/../src/Observers/OrderAccountingObserver.php');
+    $service  = file_get_contents(__DIR__ . '/../src/Services/RevenueLifecycleService.php');
     $provider = file_get_contents(__DIR__ . '/../src/Providers/LedgerServiceProvider.php');
 
     expect($provider)
@@ -60,13 +61,42 @@ test('order accounting observer handles cancellation and reinstatement journal c
         ->toContain('OrderAccountingObserver::class');
 
     expect($observer)
+        ->toContain('RevenueLifecycleService')
+        ->toContain('handleOrderCanceled')
+        ->toContain('handleOrderRestored')
+        ->toContain('handleOrderDeleted')
+        ->toContain('handleOrderRestoredFromDelete');
+
+    expect($service)
         ->toContain('storefront_sale_reversal')
         ->toContain('storefront_sale_reinstatement')
         ->toContain('revenue_recognition_reversal')
         ->toContain('revenue_recognition_reinstatement')
         ->toContain('reverses_journal_uuid')
         ->toContain('reinstates_journal_uuid')
-        ->toContain('order_cancellation_previous_status');
+        ->toContain('revenue_lifecycle_previous_status');
+});
+
+test('invoice deletion and repair command use the revenue lifecycle service', function () {
+    $invoiceObserver = file_get_contents(__DIR__ . '/../src/Observers/InvoiceObserver.php');
+    $provider        = file_get_contents(__DIR__ . '/../src/Providers/LedgerServiceProvider.php');
+    $command         = file_get_contents(__DIR__ . '/../src/Console/Commands/RepairRevenueLifecycle.php');
+
+    expect($invoiceObserver)
+        ->toContain('RevenueLifecycleService')
+        ->toContain('handleInvoiceDeleting')
+        ->toContain('handleInvoiceRestored')
+        ->toContain('isForceDeleting');
+
+    expect($provider)
+        ->toContain('RevenueLifecycleService::class')
+        ->toContain('RepairRevenueLifecycle::class');
+
+    expect($command)
+        ->toContain('fleetops:repair-revenue-lifecycle')
+        ->toContain('{--apply')
+        ->toContain('repairOrder')
+        ->toContain('repairInvoice');
 });
 
 test('profit and loss deduplication preserves reversal and reinstatement journals', function () {
