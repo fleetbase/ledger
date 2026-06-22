@@ -193,6 +193,27 @@
                                     <FaIcon @icon="spinner" @spin={{true}} @size="lg" />
                                     <p class="text-sm font-medium">Redirecting to payment provider...</p>
                                 </div>
+                            {{else if this.hasTalerPaymentUri}}
+                                <div class="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 p-4 flex flex-col gap-3">
+                                    <div class="flex items-start gap-3">
+                                        <FaIcon @icon="wallet" class="text-indigo-500 mt-0.5" />
+                                        <div>
+                                            <p class="text-sm font-semibold text-indigo-800 dark:text-indigo-200">GNU Taler payment ready</p>
+                                            <p class="text-sm text-indigo-700 dark:text-indigo-300 mt-1">
+                                                Open your Taler wallet to approve the payment, then return here to refresh the invoice.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-end gap-3">
+                                        <a
+                                            href={{this.talerPaymentUri}}
+                                            class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                                        >
+                                            <FaIcon @icon="wallet" class="mr-2" />
+                                            Open GNU Taler Wallet
+                                        </a>
+                                    </div>
+                                </div>
                             {{else}}
                                 {{! Submit }}
                                 <div class="flex items-center justify-between pt-2">

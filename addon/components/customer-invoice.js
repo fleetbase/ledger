@@ -33,10 +33,17 @@ export default class CustomerInvoiceComponent extends Component {
     @tracked successMessage = null;
     @tracked pendingMessage = null;
     @tracked isRedirectingToCheckout = false;
+    @tracked talerPaymentUri = null;
 
     constructor() {
         super(...arguments);
+        this.installTalerSupportMeta();
         this.loadInvoice.perform();
+    }
+
+    willDestroy() {
+        super.willDestroy(...arguments);
+        this.removeTalerSupportMeta();
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────
@@ -71,6 +78,10 @@ export default class CustomerInvoiceComponent extends Component {
 
     get isStripeGateway() {
         return this.selectedGateway?.driver === 'stripe';
+    }
+
+    get hasTalerPaymentUri() {
+        return typeof this.talerPaymentUri === 'string' && this.talerPaymentUri.startsWith('taler');
     }
 
     // ── Tasks ─────────────────────────────────────────────────────────────────
@@ -161,7 +172,14 @@ export default class CustomerInvoiceComponent extends Component {
 
             const paymentUrl = data?.payment_url ?? data?.payment_uri ?? data?.checkout_url ?? data?.data?.taler_pay_uri;
 
-            // Redirect payment sessions — Stripe Checkout, Taler wallet URI, QPay app link, etc.
+            if (this.isTalerUri(paymentUrl)) {
+                this.talerPaymentUri = paymentUrl;
+                this.isRedirectingToCheckout = false;
+                this.pendingMessage = data?.message ?? 'Payment started. Open your GNU Taler wallet to complete it.';
+                return;
+            }
+
+            // Redirect payment sessions — Stripe Checkout, QPay app link, etc.
             if (paymentUrl) {
                 this.isRedirectingToCheckout = true;
                 this.pendingMessage = data?.message ?? 'Redirecting to payment provider...';
@@ -190,6 +208,7 @@ export default class CustomerInvoiceComponent extends Component {
         this.showPaymentForm = !this.showPaymentForm;
         this.successMessage = null;
         this.pendingMessage = null;
+        this.talerPaymentUri = null;
         this.error = null;
     }
 
@@ -199,5 +218,35 @@ export default class CustomerInvoiceComponent extends Component {
 
     @action updateReference(event) {
         this.paymentReference = event.target.value;
+    }
+
+    isTalerUri(value) {
+        return typeof value === 'string' && (value.startsWith('taler://') || value.startsWith('taler+http://') || value.startsWith('taler+https://'));
+    }
+
+    installTalerSupportMeta() {
+        if (typeof document === 'undefined') {
+            return;
+        }
+
+        let meta = document.querySelector('meta[name="taler-support"]');
+
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.name = 'taler-support';
+            meta.dataset.ledgerTalerSupport = 'true';
+            document.head.appendChild(meta);
+        }
+
+        meta.content = 'uri';
+    }
+
+    removeTalerSupportMeta() {
+        if (typeof document === 'undefined') {
+            return;
+        }
+
+        const meta = document.querySelector('meta[name="taler-support"][data-ledger-taler-support="true"]');
+        meta?.remove();
     }
 }

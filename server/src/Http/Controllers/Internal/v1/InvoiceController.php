@@ -169,7 +169,7 @@ class InvoiceController extends LedgerResourceController
         try {
             $invoice = app(InvoiceService::class)->send($invoice);
         } catch (\InvalidArgumentException $e) {
-            abort(422, $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 422);
         }
 
         return new InvoiceResource($invoice->load(['customer', 'items', 'template']));
