@@ -10,6 +10,7 @@ export default class LedgerTransactionModel extends Model {
     @attr('string') type;
     @attr('string') direction;
     @attr('string') status;
+    @attr('string') settlement_status;
 
     @computed('direction') get direction_sign() {
         return this.direction === 'debit' ? '-' : '+';

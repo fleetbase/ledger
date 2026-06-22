@@ -77,6 +77,7 @@ class Transaction extends FleetbaseResource
             'type'                        => $this->type,
             'direction'                   => $this->direction,
             'status'                      => $this->status,
+            'settlement_status'           => $this->settlement_status,
 
             // ── Monetary ───────────────────────────────────────────────────
             'amount'                      => $this->amount,

@@ -115,6 +115,34 @@ class RevenueLifecycleService
         }
     }
 
+    public function handleInvoiceCanceled(Invoice $invoice, string $previousStatus, string $reason = 'invoice_cancelled'): void
+    {
+        try {
+            DB::transaction(function () use ($invoice, $previousStatus, $reason) {
+                if ((int) $invoice->amount_paid > 0 || $invoice->status === 'paid') {
+                    $this->flagPaidInvoiceForReview($invoice, $reason);
+
+                    return;
+                }
+
+                $invoice->updateMeta([
+                    'revenue_lifecycle_previous_status' => $previousStatus,
+                    'revenue_lifecycle_status_changed'  => true,
+                    'revenue_lifecycle_reason'          => $reason,
+                    'revenue_lifecycle_changed_at'      => now()->toIso8601String(),
+                ]);
+
+                $this->reverseInvoiceRevenue($invoice, $reason);
+                $this->voidInvoiceTransactionIfUnpaid($invoice, $reason);
+            });
+        } catch (\Throwable $e) {
+            Log::channel('ledger')->error('[Ledger] RevenueLifecycleService: failed to process invoice cancellation.', [
+                'error'        => $e->getMessage(),
+                'invoice_uuid' => $invoice->uuid ?? null,
+            ]);
+        }
+    }
+
     public function handleInvoiceRestored(Invoice $invoice): void
     {
         try {

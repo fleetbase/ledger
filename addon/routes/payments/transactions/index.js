@@ -10,6 +10,7 @@ export default class PaymentsTransactionsIndexRoute extends Route {
         sort: { refreshModel: true },
         query: { refreshModel: true },
         status: { refreshModel: true },
+        settlement_status: { refreshModel: true },
     };
 
     model(params) {

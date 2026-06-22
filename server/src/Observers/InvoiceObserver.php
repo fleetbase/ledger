@@ -31,8 +31,12 @@ class InvoiceObserver
     public function updated(Invoice $invoice)
     {
         // Fire InvoicePaid event if status changed to paid
-        if ($invoice->isDirty('status') && $invoice->status === 'paid') {
+        if ($invoice->wasChanged('status') && $invoice->status === 'paid') {
             event(new InvoicePaid($invoice));
+        }
+
+        if ($invoice->wasChanged('status') && in_array($invoice->status, ['void', 'voided', 'cancelled', 'canceled'], true)) {
+            $this->revenueLifecycleService->handleInvoiceCanceled($invoice, (string) $invoice->getOriginal('status'));
         }
     }
 

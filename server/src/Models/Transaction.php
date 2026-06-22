@@ -33,6 +33,7 @@ class Transaction extends BaseTransaction
         'initiator_type',
         'context_uuid',
         'context_type',
+        'settlement_status',
         'fee_amount',
         'tax_amount',
         'net_amount',

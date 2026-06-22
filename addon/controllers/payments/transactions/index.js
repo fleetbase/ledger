@@ -16,6 +16,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
         'description',
         'type',
         'status',
+        'settlement_status',
         'direction',
         'currency',
         'gateway',
@@ -35,6 +36,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
     @tracked description = null;
     @tracked type = null;
     @tracked status = null;
+    @tracked settlement_status = null;
     @tracked direction = null;
     @tracked currency = null;
     @tracked gateway = null;
@@ -141,7 +143,19 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterable: true,
                 filterParam: 'status',
                 filterComponent: 'filter/multi-option',
-                filterOptions: ['pending', 'succeeded', 'failed', 'refunded', 'voided', 'reversed', 'expired'],
+                filterOptions: ['pending', 'success', 'failed', 'cancelled', 'voided', 'reversed', 'expired'],
+            },
+            {
+                label: 'Settlement',
+                valuePath: 'settlement_status',
+                cellComponent: 'table/cell/status',
+                hidden: true,
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'settlement_status',
+                filterComponent: 'filter/multi-option',
+                filterOptions: ['unpaid', 'partially_paid', 'paid', 'partially_refunded', 'refunded'],
             },
             // ── Hidden / toggleable columns ──────────────────────────────────
             {

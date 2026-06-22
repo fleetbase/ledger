@@ -9,13 +9,18 @@ export default class BillingInvoicesIndexController extends Controller {
     @service hostRouter;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'status', 'customer_uuid'];
+    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'status', 'currency', 'order', 'customer', 'created_at', 'due_date', 'amount'];
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
     @tracked query = null;
     @tracked status = null;
-    @tracked customer_uuid = null;
+    @tracked currency = null;
+    @tracked order = null;
+    @tracked customer = null;
+    @tracked created_at = null;
+    @tracked due_date = null;
+    @tracked amount = null;
     @tracked table = null;
 
     get actionButtons() {
@@ -64,6 +69,11 @@ export default class BillingInvoicesIndexController extends Controller {
                 valuePath: 'customerName',
                 resizable: true,
                 sortable: false,
+                filterable: true,
+                filterParam: 'customer',
+                filterComponent: 'filter/model',
+                filterComponentPlaceholder: 'Select customer',
+                model: 'customer',
             },
             {
                 label: 'Order',
@@ -72,6 +82,12 @@ export default class BillingInvoicesIndexController extends Controller {
                 action: this.viewOrder,
                 resizable: true,
                 sortable: false,
+                filterable: true,
+                filterParam: 'order',
+                filterComponent: 'filter/model',
+                filterComponentPlaceholder: 'Select order',
+                model: 'order',
+                modelNamePath: 'tracking',
             },
             {
                 label: this.intl.t('column.status'),
@@ -100,6 +116,23 @@ export default class BillingInvoicesIndexController extends Controller {
                 currencyPath: 'currency',
                 resizable: true,
                 sortable: true,
+                filterable: true,
+                filterParam: 'amount',
+                filterComponent: 'filter/range',
+                min: 0,
+                max: 10000000,
+                step: 100,
+                minLabel: 'Min',
+                maxLabel: 'Max',
+            },
+            {
+                label: this.intl.t('column.currency'),
+                valuePath: 'currency',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterParam: 'currency',
+                filterComponent: 'filter/string',
             },
             {
                 label: this.intl.t('column.balance'),
@@ -114,6 +147,9 @@ export default class BillingInvoicesIndexController extends Controller {
                 valuePath: 'dueDate',
                 resizable: true,
                 sortable: true,
+                filterable: true,
+                filterParam: 'due_date',
+                filterComponent: 'filter/date',
             },
             {
                 label: this.intl.t('column.invoice-date'),
@@ -126,6 +162,9 @@ export default class BillingInvoicesIndexController extends Controller {
                 valuePath: 'createdAt',
                 resizable: true,
                 sortable: true,
+                filterable: true,
+                filterParam: 'created_at',
+                filterComponent: 'filter/date',
             },
             {
                 label: '',
