@@ -62,11 +62,22 @@ class WebhookController extends Controller
         $companyUuid = $request->input('company_uuid')
             ?? $request->header('X-Company-UUID')
             ?? null;
+        $gatewayIdentifier = $request->input('gateway_id')
+            ?? $request->input('gateway_uuid')
+            ?? $request->input('gateway_public_id')
+            ?? $request->header('X-Gateway-ID')
+            ?? null;
 
         // Find the active gateway for this driver
         $gateway = Gateway::query()
             ->when($companyUuid, fn ($q) => $q->where('company_uuid', $companyUuid))
             ->where('driver', $driver)
+            ->when($gatewayIdentifier, function ($q) use ($gatewayIdentifier) {
+                $q->where(function ($q) use ($gatewayIdentifier) {
+                    $q->where('uuid', $gatewayIdentifier)
+                        ->orWhere('public_id', $gatewayIdentifier);
+                });
+            })
             ->where('status', 'active')
             ->first();
 

@@ -42,6 +42,14 @@ test('ledger navigator search endpoint is registered', function () {
         ->toContain("'models'      => [\$journal->uuid]");
 });
 
+test('invoice send validation failures return json errors', function () {
+    $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/InvoiceController.php');
+
+    expect($controller)
+        ->not->toContain('abort(422, $e->getMessage())')
+        ->toContain("return response()->json(['error' => \$e->getMessage()], 422);");
+});
+
 test('order accounting observer preserves seed metadata on storefront sale journal entries', function () {
     $observer = file_get_contents(__DIR__ . '/../src/Observers/OrderAccountingObserver.php');
 

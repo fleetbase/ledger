@@ -31,11 +31,21 @@ export default class CustomerInvoiceComponent extends Component {
     @tracked paymentReference = '';
     @tracked error = null;
     @tracked successMessage = null;
+    @tracked pendingMessage = null;
     @tracked isRedirectingToCheckout = false;
+    @tracked talerPaymentUri = null;
+    @tracked paymentQrImage = null;
+    @tracked paymentQrText = null;
 
     constructor() {
         super(...arguments);
+        this.installTalerSupportMeta();
         this.loadInvoice.perform();
+    }
+
+    willDestroy() {
+        super.willDestroy(...arguments);
+        this.removeTalerSupportMeta();
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────
@@ -70,6 +80,22 @@ export default class CustomerInvoiceComponent extends Component {
 
     get isStripeGateway() {
         return this.selectedGateway?.driver === 'stripe';
+    }
+
+    get hasTalerPaymentUri() {
+        return typeof this.talerPaymentUri === 'string' && this.talerPaymentUri.startsWith('taler');
+    }
+
+    get paymentQrImageSrc() {
+        if (typeof this.paymentQrImage !== 'string' || this.paymentQrImage.length === 0) {
+            return null;
+        }
+
+        if (this.paymentQrImage.startsWith('data:') || this.paymentQrImage.startsWith('http://') || this.paymentQrImage.startsWith('https://')) {
+            return this.paymentQrImage;
+        }
+
+        return `data:image/png;base64,${this.paymentQrImage}`;
     }
 
     // ── Tasks ─────────────────────────────────────────────────────────────────
@@ -133,9 +159,8 @@ export default class CustomerInvoiceComponent extends Component {
     /**
      * Submits a payment request.
      *
-     * For Stripe: backend returns { checkout_url } and the browser is redirected
-     * to Stripe's hosted checkout page. isRedirectingToCheckout is set to true
-     * to show a loading state while the redirect happens.
+     * For redirect-capable gateways: backend returns { payment_url } or
+     * { checkout_url } and the browser is redirected to the hosted/wallet flow.
      *
      * For other gateways: backend records the payment immediately and returns
      * the updated invoice.
@@ -159,10 +184,28 @@ export default class CustomerInvoiceComponent extends Component {
                 { namespace: 'ledger/public' }
             );
 
-            // Stripe Checkout Session — redirect the browser to Stripe's hosted page
-            if (data?.checkout_url) {
+            const paymentUrl = data?.payment_url ?? data?.payment_uri ?? data?.checkout_url ?? data?.data?.taler_pay_uri;
+            this.paymentQrImage = data?.qr_image ?? data?.data?.qr_image ?? null;
+            this.paymentQrText = data?.qr_text ?? data?.data?.qr_text ?? paymentUrl ?? null;
+
+            if (this.isTalerUri(paymentUrl)) {
+                this.talerPaymentUri = paymentUrl;
+                this.isRedirectingToCheckout = false;
+                this.pendingMessage = data?.message ?? 'Payment started. Open your GNU Taler wallet to complete it.';
+                return;
+            }
+
+            // Redirect payment sessions — Stripe Checkout, QPay app link, etc.
+            if (paymentUrl) {
                 this.isRedirectingToCheckout = true;
-                window.location.href = data.checkout_url;
+                this.pendingMessage = data?.message ?? 'Redirecting to payment provider...';
+                window.location.href = paymentUrl;
+                return;
+            }
+
+            if (data?.payment_status === 'pending') {
+                this.pendingMessage = data?.message ?? 'Payment started. Complete it in your payment app, then refresh this invoice.';
+                this.showPaymentForm = false;
                 return;
             }
 
@@ -180,6 +223,10 @@ export default class CustomerInvoiceComponent extends Component {
     @action togglePaymentForm() {
         this.showPaymentForm = !this.showPaymentForm;
         this.successMessage = null;
+        this.pendingMessage = null;
+        this.talerPaymentUri = null;
+        this.paymentQrImage = null;
+        this.paymentQrText = null;
         this.error = null;
     }
 
@@ -189,5 +236,35 @@ export default class CustomerInvoiceComponent extends Component {
 
     @action updateReference(event) {
         this.paymentReference = event.target.value;
+    }
+
+    isTalerUri(value) {
+        return typeof value === 'string' && (value.startsWith('taler://') || value.startsWith('taler+http://') || value.startsWith('taler+https://'));
+    }
+
+    installTalerSupportMeta() {
+        if (typeof document === 'undefined') {
+            return;
+        }
+
+        let meta = document.querySelector('meta[name="taler-support"]');
+
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.name = 'taler-support';
+            meta.dataset.ledgerTalerSupport = 'true';
+            document.head.appendChild(meta);
+        }
+
+        meta.content = 'uri';
+    }
+
+    removeTalerSupportMeta() {
+        if (typeof document === 'undefined') {
+            return;
+        }
+
+        const meta = document.querySelector('meta[name="taler-support"][data-ledger-taler-support="true"]');
+        meta?.remove();
     }
 }
