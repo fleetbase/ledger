@@ -116,9 +116,9 @@ test('transactions use two-axis lifecycle and settlement status contract', funct
     $controller      = file_get_contents(__DIR__ . '/../../addon/controllers/payments/transactions/index.js');
 
     expect($coreTransaction)
-        ->toContain("public const SETTLEMENT_STATUS_UNPAID")
-        ->toContain("public const SETTLEMENT_STATUS_PAID")
-        ->toContain("public const SETTLEMENT_STATUS_REFUNDED")
+        ->toContain('public const SETTLEMENT_STATUS_UNPAID')
+        ->toContain('public const SETTLEMENT_STATUS_PAID')
+        ->toContain('public const SETTLEMENT_STATUS_REFUNDED')
         ->toContain("'settlement_status'");
 
     expect($invoiceService)

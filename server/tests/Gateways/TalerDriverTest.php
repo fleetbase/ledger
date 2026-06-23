@@ -1,7 +1,7 @@
 <?php
 
 /**
- * TalerDriverTest
+ * TalerDriverTest.
  *
  * Unit tests for the GNU Taler payment gateway driver.
  *
@@ -83,7 +83,7 @@ test('purchase_creates_order_and_returns_pending_response', function () {
         // Step 2: status fetch for taler_pay_uri
         'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-001' => Http::response(
             [
-                'order_status' => 'unpaid',
+                'order_status'  => 'unpaid',
                 'taler_pay_uri' => 'taler://pay/backend.example.taler.net/testmerchant/TALER-ORDER-001',
             ],
             200
@@ -135,6 +135,7 @@ test('purchase_sends_correct_taler_amount_format', function () {
     // Assert the POST body contained the correct Taler amount string
     Http::assertSent(function ($httpRequest) {
         $body = $httpRequest->data();
+
         return isset($body['order']['amount']) && $body['order']['amount'] === 'USD:10.50';
     });
 });
@@ -162,6 +163,7 @@ test('purchase_embeds_invoice_uuid_in_order_payload', function () {
 
     Http::assertSent(function ($httpRequest) {
         $body = $httpRequest->data();
+
         return isset($body['order']['invoice_uuid']) && $body['order']['invoice_uuid'] === 'my-invoice-uuid';
     });
 });
@@ -189,6 +191,7 @@ test('purchase_sends_deterministic_order_id', function () {
 
     Http::assertSent(function ($httpRequest) {
         $body = $httpRequest->data();
+
         return isset($body['order_id'])
             && str_starts_with($body['order_id'], 'ledger-')
             && strlen($body['order_id']) === 39;
@@ -283,8 +286,8 @@ test('handleWebhook_verifies_paid_order_and_returns_success', function () {
     Http::fake([
         'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-001' => Http::response(
             [
-                'order_status'  => 'paid',
-                'deposit_total' => 'USD:25.00',
+                'order_status'   => 'paid',
+                'deposit_total'  => 'USD:25.00',
                 'contract_terms' => [
                     'invoice_uuid' => 'invoice-uuid-abc',
                     'summary'      => 'Invoice #INV-001',
@@ -406,6 +409,7 @@ test('refund_sends_correct_taler_amount_format', function () {
 
     Http::assertSent(function ($httpRequest) {
         $body = $httpRequest->data();
+
         return isset($body['refund']) && $body['refund'] === 'USD:9.99';
     });
 });
@@ -460,6 +464,7 @@ test('purchase_converts_zero_amount_correctly', function () {
 
     Http::assertSent(function ($httpRequest) {
         $body = $httpRequest->data();
+
         return isset($body['order']['amount']) && $body['order']['amount'] === 'EUR:0.00';
     });
 });

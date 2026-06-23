@@ -57,17 +57,11 @@ class TalerDriver extends AbstractGatewayDriver
     // Driver Identity & Metadata
     // -------------------------------------------------------------------------
 
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return 'GNU Taler';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getCode(): string
     {
         return 'taler';
@@ -167,7 +161,7 @@ class TalerDriver extends AbstractGatewayDriver
         // terms and can be retrieved verbatim when the webhook fires.
         $payload = [
             'order_id' => $orderId,
-            'order' => [
+            'order'    => [
                 'amount'       => $talerAmount,
                 'summary'      => $request->description,
                 'invoice_uuid' => $request->invoiceUuid,
@@ -314,8 +308,8 @@ class TalerDriver extends AbstractGatewayDriver
      *
      * @return GatewayResponse Normalized response for event dispatching
      *
-     * @throws WebhookSignatureException Never thrown by this driver (verification
-     *                                   is done via API re-query, not signature).
+     * @throws WebhookSignatureException never thrown by this driver (verification
+     *                                   is done via API re-query, not signature)
      */
     public function handleWebhook(Request $request): GatewayResponse
     {
@@ -396,7 +390,7 @@ class TalerDriver extends AbstractGatewayDriver
         $invoiceUuid   = $contractTerms['invoice_uuid'] ?? $metadata['invoice_uuid'] ?? null;
 
         // Parse the deposit_total amount back to Fleetbase integer cents.
-        $depositTotal  = $data['deposit_total'] ?? null;
+        $depositTotal             = $data['deposit_total'] ?? null;
         [$currency, $amountCents] = $this->fromTalerAmount($depositTotal);
 
         $this->logInfo('Webhook verified: payment confirmed', [
