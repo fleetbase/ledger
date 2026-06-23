@@ -34,6 +34,8 @@ export default class CustomerInvoiceComponent extends Component {
     @tracked pendingMessage = null;
     @tracked isRedirectingToCheckout = false;
     @tracked talerPaymentUri = null;
+    @tracked paymentQrImage = null;
+    @tracked paymentQrText = null;
 
     constructor() {
         super(...arguments);
@@ -82,6 +84,18 @@ export default class CustomerInvoiceComponent extends Component {
 
     get hasTalerPaymentUri() {
         return typeof this.talerPaymentUri === 'string' && this.talerPaymentUri.startsWith('taler');
+    }
+
+    get paymentQrImageSrc() {
+        if (typeof this.paymentQrImage !== 'string' || this.paymentQrImage.length === 0) {
+            return null;
+        }
+
+        if (this.paymentQrImage.startsWith('data:') || this.paymentQrImage.startsWith('http://') || this.paymentQrImage.startsWith('https://')) {
+            return this.paymentQrImage;
+        }
+
+        return `data:image/png;base64,${this.paymentQrImage}`;
     }
 
     // ── Tasks ─────────────────────────────────────────────────────────────────
@@ -171,6 +185,8 @@ export default class CustomerInvoiceComponent extends Component {
             );
 
             const paymentUrl = data?.payment_url ?? data?.payment_uri ?? data?.checkout_url ?? data?.data?.taler_pay_uri;
+            this.paymentQrImage = data?.qr_image ?? data?.data?.qr_image ?? null;
+            this.paymentQrText = data?.qr_text ?? data?.data?.qr_text ?? paymentUrl ?? null;
 
             if (this.isTalerUri(paymentUrl)) {
                 this.talerPaymentUri = paymentUrl;
@@ -209,6 +225,8 @@ export default class CustomerInvoiceComponent extends Component {
         this.successMessage = null;
         this.pendingMessage = null;
         this.talerPaymentUri = null;
+        this.paymentQrImage = null;
+        this.paymentQrText = null;
         this.error = null;
     }
 

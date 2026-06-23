@@ -106,6 +106,8 @@ test('purchase_creates_order_and_returns_pending_response', function () {
         ->and($response->gatewayTransactionId)->toBe('TALER-ORDER-001')
         ->and($response->data['taler_pay_uri'])->toBe('taler://pay/backend.example.taler.net/testmerchant/TALER-ORDER-001')
         ->and($response->data['payment_url'])->toBe('taler://pay/backend.example.taler.net/testmerchant/TALER-ORDER-001')
+        ->and($response->data['qr_text'])->toBe('taler://pay/backend.example.taler.net/testmerchant/TALER-ORDER-001')
+        ->and(array_key_exists('qr_image', $response->data))->toBeTrue()
         ->and($response->data['invoice_uuid'])->toBe('invoice-uuid-abc');
 });
 

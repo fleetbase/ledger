@@ -10,6 +10,7 @@ use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
 
 /**
  * TalerDriver.
@@ -271,11 +272,13 @@ class TalerDriver extends AbstractGatewayDriver
         return GatewayResponse::pending(
             gatewayTransactionId: $orderId,
             eventType: GatewayResponse::EVENT_PAYMENT_PENDING,
-            message: 'Taler order created. Redirect customer to taler_pay_uri.',
+            message: 'Taler order created. Open the GNU Taler wallet to complete payment.',
             rawResponse: array_merge($createResponse->json() ?? [], ['status' => $orderStatusRaw]),
             data: [
                 'taler_pay_uri' => $talerPayUri,
                 'payment_url'   => $talerPayUri,
+                'qr_image'      => $this->qrImageForUri($talerPayUri),
+                'qr_text'       => $talerPayUri,
                 'order_id'      => $orderId,
                 'invoice_uuid'  => $request->invoiceUuid,
                 'status'        => $orderStatusRaw['order_status'] ?? null,
@@ -641,6 +644,19 @@ class TalerDriver extends AbstractGatewayDriver
     private function apiToken(): string
     {
         return preg_replace('/^Bearer\s+/i', '', trim((string) $this->config('api_token', '')));
+    }
+
+    private function qrImageForUri(string $uri): ?string
+    {
+        try {
+            return DNS2D::getBarcodePNG($uri, 'QRCODE', 8, 8);
+        } catch (\Throwable $e) {
+            $this->logError('Unable to generate Taler QR code', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     /**

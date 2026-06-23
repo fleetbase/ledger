@@ -305,6 +305,8 @@ class PublicInvoiceController extends Controller
             'payment_url'            => $paymentUrl,
             'payment_uri'            => $paymentUrl,
             'message'                => $response->message,
+            'qr_image'               => $response->data['qr_image'] ?? null,
+            'qr_text'                => $response->data['qr_text'] ?? $paymentUrl,
             'data'                   => $response->data,
         ];
 
