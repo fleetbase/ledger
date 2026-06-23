@@ -10,6 +10,12 @@ export default class BillingInvoicesIndexRoute extends Route {
         sort: { refreshModel: true },
         query: { refreshModel: true },
         status: { refreshModel: true },
+        currency: { refreshModel: true },
+        order: { refreshModel: true },
+        customer: { refreshModel: true },
+        created_at: { refreshModel: true },
+        due_date: { refreshModel: true },
+        amount: { refreshModel: true },
     };
 
     model(params) {

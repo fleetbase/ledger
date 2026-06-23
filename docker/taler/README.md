@@ -1,0 +1,109 @@
+# Fleetbase Ledger GNU Taler local stack
+
+This directory owns the Docker artifacts for Ledger's local GNU Taler E2E test
+stack. It runs matching local services instead of mixing a local merchant
+backend with the public demo exchange:
+
+- libeufin bank: `http://taler-bank.lvh.me:8082`
+- Taler exchange: `http://taler-exchange.lvh.me:8081`
+- Taler merchant backend: `http://taler-merchant.lvh.me:9966`
+
+Start the stack from the Fleetbase repo root:
+
+```sh
+docker compose up -d --build taler-merchant application queue scheduler httpd console
+```
+
+After startup, use the generated merchant token in the Ledger Taler gateway
+config:
+
+```sh
+cat packages/ledger/docker/taler/generated-token.txt
+```
+
+Use these local gateway values:
+
+```txt
+backend_url=http://taler-merchant.lvh.me:9966
+instance_id=default
+api_token=<exact contents of generated-token.txt>
+```
+
+## Validate the Taler stack
+
+Run the built-in smoke test:
+
+```sh
+docker compose exec taler-merchant fleetbase-taler-smoke-test
+```
+
+Or check the services manually:
+
+```sh
+curl http://taler-bank.lvh.me:8082/config
+curl http://taler-exchange.lvh.me:8081/keys
+curl http://taler-merchant.lvh.me:9966/config
+```
+
+The merchant logs should not show `Failed to download .../keys` or `Could not
+decode /keys response`. Those errors were symptoms of using the public demo
+exchange with a local merchant package.
+
+## Demo KUDOS invoice fixture
+
+Fleetbase does not expose `KUDOS` as a normal currency option. Ledger provides
+a dedicated local fixture so the Taler wallet flow can be tested without making
+KUDOS a business currency.
+
+Run Ledger migrations and seed the demo invoice from the Fleetbase repo root:
+
+```sh
+docker compose exec application php artisan migrate
+docker compose exec application php artisan db:seed --class="Fleetbase\\Ledger\\Seeders\\Testing\\TalerDemoSeeder"
+```
+
+To seed for a specific company:
+
+```sh
+docker compose exec -e TALER_DEMO_COMPANY_UUID=<company_uuid> application php artisan db:seed --class="Fleetbase\\Ledger\\Seeders\\Testing\\TalerDemoSeeder"
+```
+
+The seeder creates an idempotent FleetOps-style payload, order, service quote,
+purchase rate, tracking number, core transaction, transaction items, and sent
+Ledger invoice in `KUDOS`. The order should appear in FleetOps Orders as
+`TALER-DEMO-KUDOS`. Open the seeded public payment link shown by the seeder:
+
+```txt
+/~/invoice?id=<invoice_public_id>
+```
+
+## Wallet notes
+
+The local bank suggests the local exchange to wallets. To add KUDOS to the GNU
+Taler browser wallet, create a bank withdrawal operation:
+
+```sh
+docker compose exec taler-merchant fleetbase-taler-create-withdrawal KUDOS:5.00
+```
+
+Open the normal HTTP page printed by the command:
+
+```txt
+http://taler-bank.lvh.me:8082/webui/#/operation/<withdrawal_id>
+```
+
+Then click the wallet action from that page. Do not paste the raw
+`taler+http://withdraw/...` URI into the browser address bar; browser extensions
+generally intercept Taler wallet links from supported pages, not direct address
+bar navigation.
+
+The fake bank admin credentials are:
+
+```txt
+Username: admin
+Password: admin-password
+```
+
+If your wallet blocks plain HTTP, use the wallet's development/test setting that
+allows unsafe HTTP for local Taler services, or use `taler-wallet-cli --no-http`
+for CLI testing.

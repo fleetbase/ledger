@@ -6,6 +6,7 @@ use Fleetbase\Ledger\Contracts\GatewayDriverInterface;
 use Fleetbase\Ledger\Gateways\CashDriver;
 use Fleetbase\Ledger\Gateways\QPayDriver;
 use Fleetbase\Ledger\Gateways\StripeDriver;
+use Fleetbase\Ledger\Gateways\TalerDriver;
 use Fleetbase\Ledger\Models\Gateway;
 use Fleetbase\Support\Utils;
 use Illuminate\Support\Manager;
@@ -89,7 +90,7 @@ class PaymentGatewayManager extends Manager
      */
     public function getRegisteredDriverCodes(): array
     {
-        return ['stripe', 'qpay', 'cash'];
+        return ['stripe', 'qpay', 'cash', 'taler'];
     }
 
     /**
@@ -154,5 +155,13 @@ class PaymentGatewayManager extends Manager
     protected function createCashDriver(): CashDriver
     {
         return $this->container->make(CashDriver::class);
+    }
+
+    /**
+     * Create the GNU Taler driver instance.
+     */
+    protected function createTalerDriver(): TalerDriver
+    {
+        return $this->container->make(TalerDriver::class);
     }
 }

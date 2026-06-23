@@ -42,6 +42,14 @@ test('ledger navigator search endpoint is registered', function () {
         ->toContain("'models'      => [\$journal->uuid]");
 });
 
+test('invoice send validation failures return json errors', function () {
+    $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/InvoiceController.php');
+
+    expect($controller)
+        ->not->toContain('abort(422, $e->getMessage())')
+        ->toContain("return response()->json(['error' => \$e->getMessage()], 422);");
+});
+
 test('order accounting observer preserves seed metadata on storefront sale journal entries', function () {
     $observer = file_get_contents(__DIR__ . '/../src/Observers/OrderAccountingObserver.php');
 
@@ -53,6 +61,7 @@ test('order accounting observer preserves seed metadata on storefront sale journ
 
 test('order accounting observer handles cancellation and reinstatement journal corrections', function () {
     $observer = file_get_contents(__DIR__ . '/../src/Observers/OrderAccountingObserver.php');
+    $service  = file_get_contents(__DIR__ . '/../src/Services/RevenueLifecycleService.php');
     $provider = file_get_contents(__DIR__ . '/../src/Providers/LedgerServiceProvider.php');
 
     expect($provider)
@@ -60,13 +69,98 @@ test('order accounting observer handles cancellation and reinstatement journal c
         ->toContain('OrderAccountingObserver::class');
 
     expect($observer)
+        ->toContain('RevenueLifecycleService')
+        ->toContain('handleOrderCanceled')
+        ->toContain('handleOrderRestored')
+        ->toContain('handleOrderDeleted')
+        ->toContain('handleOrderRestoredFromDelete');
+
+    expect($service)
         ->toContain('storefront_sale_reversal')
         ->toContain('storefront_sale_reinstatement')
         ->toContain('revenue_recognition_reversal')
         ->toContain('revenue_recognition_reinstatement')
         ->toContain('reverses_journal_uuid')
         ->toContain('reinstates_journal_uuid')
-        ->toContain('order_cancellation_previous_status');
+        ->toContain('revenue_lifecycle_previous_status');
+});
+
+test('invoice deletion and repair command use the revenue lifecycle service', function () {
+    $invoiceObserver = file_get_contents(__DIR__ . '/../src/Observers/InvoiceObserver.php');
+    $provider        = file_get_contents(__DIR__ . '/../src/Providers/LedgerServiceProvider.php');
+    $command         = file_get_contents(__DIR__ . '/../src/Console/Commands/RepairRevenueLifecycle.php');
+
+    expect($invoiceObserver)
+        ->toContain('RevenueLifecycleService')
+        ->toContain('handleInvoiceDeleting')
+        ->toContain('handleInvoiceRestored')
+        ->toContain('isForceDeleting');
+
+    expect($provider)
+        ->toContain('RevenueLifecycleService::class')
+        ->toContain('RepairRevenueLifecycle::class');
+
+    expect($command)
+        ->toContain('fleetops:repair-revenue-lifecycle')
+        ->toContain('{--apply')
+        ->toContain('repairOrder')
+        ->toContain('repairInvoice');
+});
+
+test('transactions use two-axis lifecycle and settlement status contract', function () {
+    $coreTransaction = file_get_contents(dirname(__DIR__, 3) . '/core-api/src/Models/Transaction.php');
+    $invoiceService  = file_get_contents(__DIR__ . '/../src/Services/InvoiceService.php');
+    $walletService   = file_get_contents(__DIR__ . '/../src/Services/WalletService.php');
+    $filter          = file_get_contents(__DIR__ . '/../src/Http/Filter/TransactionFilter.php');
+    $resource        = file_get_contents(__DIR__ . '/../src/Http/Resources/v1/Transaction.php');
+    $controller      = file_get_contents(__DIR__ . '/../../addon/controllers/payments/transactions/index.js');
+
+    expect($coreTransaction)
+        ->toContain('public const SETTLEMENT_STATUS_UNPAID')
+        ->toContain('public const SETTLEMENT_STATUS_PAID')
+        ->toContain('public const SETTLEMENT_STATUS_REFUNDED')
+        ->toContain("'settlement_status'");
+
+    expect($invoiceService)
+        ->toContain("'status'             => Transaction::STATUS_SUCCESS")
+        ->toContain("'settlement_status'  => Transaction::SETTLEMENT_STATUS_PAID")
+        ->toContain("'settled_at'         => now()");
+
+    expect($walletService)
+        ->toContain("'status'                 => Transaction::STATUS_SUCCESS")
+        ->toContain("'settlement_status'      => Transaction::SETTLEMENT_STATUS_PAID")
+        ->not->toContain("'status'                 => 'completed'");
+
+    expect($filter)->toContain('function settlementStatus(?string $settlementStatus)');
+    expect($resource)->toContain("'settlement_status'           => \$this->settlement_status");
+    expect($controller)
+        ->toContain("'settlement_status'")
+        ->toContain("filterOptions: ['pending', 'success', 'failed', 'cancelled', 'voided', 'reversed', 'expired']")
+        ->not->toContain("'succeeded'");
+});
+
+test('invoice filter supports table filter params', function () {
+    $filter = file_get_contents(__DIR__ . '/../src/Http/Filter/InvoiceFilter.php');
+
+    expect($filter)
+        ->toContain('function status(?string $status)')
+        ->toContain('function currency(?string $currency)')
+        ->toContain('function order(?string $order)')
+        ->toContain('function orderUuid(?string $order)')
+        ->toContain('function customer(?string $customer)')
+        ->toContain('function customerUuid(?string $customer)')
+        ->toContain('function amount(?string $amount)')
+        ->toContain('function createdAt($createdAt)')
+        ->toContain('function dueDate($dueDate)')
+        ->toContain('Utils::dateRange($createdAt)')
+        ->toContain('Utils::dateRange($dueDate)')
+        ->toContain("whereBetween('total_amount'")
+        ->toContain("where('total_amount', '>=', \$min)")
+        ->toContain("where('total_amount', '<=', \$max)")
+        ->toContain("where('currency', strtoupper(\$currency))")
+        ->toContain("where('order_uuid', \$order)")
+        ->toContain("where('public_id', \$order)")
+        ->toContain("where('tracking_number', \$order)");
 });
 
 test('profit and loss deduplication preserves reversal and reinstatement journals', function () {

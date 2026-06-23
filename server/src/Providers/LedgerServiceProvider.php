@@ -12,6 +12,7 @@ use Fleetbase\Ledger\PaymentGatewayManager;
 use Fleetbase\Ledger\Services\InvoiceService;
 use Fleetbase\Ledger\Services\LedgerService;
 use Fleetbase\Ledger\Services\PaymentService;
+use Fleetbase\Ledger\Services\RevenueLifecycleService;
 use Fleetbase\Ledger\Services\WalletService;
 use Fleetbase\Providers\CoreServiceProvider;
 use Fleetbase\Services\TemplateRenderService;
@@ -65,6 +66,7 @@ class LedgerServiceProvider extends CoreServiceProvider
         $this->app->singleton(LedgerService::class);
         $this->app->singleton(WalletService::class);
         $this->app->singleton(InvoiceService::class);
+        $this->app->singleton(RevenueLifecycleService::class);
 
         // Payment gateway system
         // The PaymentGatewayManager is bound as a singleton and also aliased
@@ -111,6 +113,7 @@ class LedgerServiceProvider extends CoreServiceProvider
                 \Fleetbase\Ledger\Console\Commands\ProvisionLedgerDefaults::class,
                 \Fleetbase\Ledger\Console\Commands\BackfillTransactionDirection::class,
                 \Fleetbase\Ledger\Console\Commands\UpdateOverdueInvoices::class,
+                \Fleetbase\Ledger\Console\Commands\RepairRevenueLifecycle::class,
             ]);
         }
     }

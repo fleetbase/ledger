@@ -52,6 +52,11 @@ class TransactionFilter extends Filter
         $this->builder->where('status', $status);
     }
 
+    public function settlementStatus(?string $settlementStatus): void
+    {
+        $this->builder->where('settlement_status', $settlementStatus);
+    }
+
     public function gateway(?string $gateway): void
     {
         $this->builder->where('gateway', $gateway);

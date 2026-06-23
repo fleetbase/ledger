@@ -3,6 +3,7 @@
 namespace Fleetbase\Ledger\Http\Filter;
 
 use Fleetbase\Http\Filter\Filter;
+use Fleetbase\Support\Utils;
 
 class InvoiceFilter extends Filter
 {
@@ -28,12 +29,82 @@ class InvoiceFilter extends Filter
 
     public function status(?string $status): void
     {
+        if (!$status) {
+            return;
+        }
+
         $this->builder->where('status', $status);
+    }
+
+    public function currency(?string $currency): void
+    {
+        if (!$currency) {
+            return;
+        }
+
+        $this->builder->where('currency', strtoupper($currency));
     }
 
     public function customer(?string $customer): void
     {
+        if (!$customer) {
+            return;
+        }
+
         $this->builder->where('customer_uuid', $customer);
+    }
+
+    public function customerUuid(?string $customer): void
+    {
+        $this->customer($customer);
+    }
+
+    public function order(?string $order): void
+    {
+        if (!$order) {
+            return;
+        }
+
+        $this->builder->where(function ($query) use ($order) {
+            $query->where('order_uuid', $order)
+                ->orWhereHas('order', function ($orderQuery) use ($order) {
+                    $orderQuery->where('uuid', $order)
+                        ->orWhere('public_id', $order)
+                        ->orWhereHas('trackingNumber', function ($trackingQuery) use ($order) {
+                            $trackingQuery->where('tracking_number', $order);
+                        });
+                });
+        });
+    }
+
+    public function orderUuid(?string $order): void
+    {
+        $this->order($order);
+    }
+
+    public function amount(?string $amount): void
+    {
+        if (!$amount) {
+            return;
+        }
+
+        [$min, $max] = array_pad(array_map('trim', explode(',', $amount, 2)), 2, null);
+        $min         = is_numeric($min) ? (int) $min : null;
+        $max         = is_numeric($max) ? (int) $max : null;
+
+        if ($min !== null && $max !== null) {
+            $this->builder->whereBetween('total_amount', [$min, $max]);
+
+            return;
+        }
+
+        if ($min !== null) {
+            $this->builder->where('total_amount', '>=', $min);
+        }
+
+        if ($max !== null) {
+            $this->builder->where('total_amount', '<=', $max);
+        }
     }
 
     public function publicId(?string $publicId): void
@@ -43,7 +114,7 @@ class InvoiceFilter extends Filter
 
     public function createdAt($createdAt): void
     {
-        $createdAt = \Fleetbase\Support\Utils::dateRange($createdAt);
+        $createdAt = Utils::dateRange($createdAt);
         if (is_array($createdAt)) {
             $this->builder->whereBetween('created_at', $createdAt);
         } else {
@@ -53,7 +124,7 @@ class InvoiceFilter extends Filter
 
     public function dueDate($dueDate): void
     {
-        $dueDate = \Fleetbase\Support\Utils::dateRange($dueDate);
+        $dueDate = Utils::dateRange($dueDate);
         if (is_array($dueDate)) {
             $this->builder->whereBetween('due_date', $dueDate);
         } else {

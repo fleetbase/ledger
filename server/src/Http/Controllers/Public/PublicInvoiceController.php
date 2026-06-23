@@ -2,7 +2,9 @@
 
 namespace Fleetbase\Ledger\Http\Controllers\Public;
 
+use Fleetbase\Ledger\DTO\GatewayResponse;
 use Fleetbase\Ledger\DTO\PurchaseRequest;
+use Fleetbase\Ledger\Gateways\CashDriver;
 use Fleetbase\Ledger\Gateways\StripeDriver;
 use Fleetbase\Ledger\Http\Resources\v1\Gateway as GatewayResource;
 use Fleetbase\Ledger\Http\Resources\v1\Invoice as InvoiceResource;
@@ -10,6 +12,7 @@ use Fleetbase\Ledger\Models\Gateway;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\PaymentGatewayManager;
 use Fleetbase\Ledger\Services\InvoiceService;
+use Fleetbase\Ledger\Services\PaymentService;
 use Fleetbase\Support\Utils;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,11 +33,13 @@ class PublicInvoiceController extends Controller
 {
     protected InvoiceService $invoiceService;
     protected PaymentGatewayManager $gatewayManager;
+    protected PaymentService $paymentService;
 
-    public function __construct(InvoiceService $invoiceService, PaymentGatewayManager $gatewayManager)
+    public function __construct(InvoiceService $invoiceService, PaymentGatewayManager $gatewayManager, PaymentService $paymentService)
     {
         $this->invoiceService = $invoiceService;
         $this->gatewayManager = $gatewayManager;
+        $this->paymentService = $paymentService;
     }
 
     // -------------------------------------------------------------------------
@@ -109,9 +114,12 @@ class PublicInvoiceController extends Controller
      *             a checkout.session.completed webhook when the customer pays,
      *             which HandleSuccessfulPayment will process.
      *
-     *   cash / bank_transfer / other non-redirect gateways
-     *           → Records the payment immediately via InvoiceService::recordPayment.
-     *             Returns HTTP 200 with the updated invoice.
+     *   taler/qpay/other pending gateways
+     *           → Creates a gateway transaction and returns { payment_url } or
+     *             gateway-specific payment data. The invoice is only marked paid
+     *             after the gateway webhook confirms payment.
+     *
+     *   cash    → Records the payment immediately via InvoiceService::recordPayment.
      *
      * Request body:
      *   gateway_id     string  required  public_id of the Gateway model
@@ -155,7 +163,43 @@ class PublicInvoiceController extends Controller
             return $this->initiateStripeCheckout($driver, $invoice, $request);
         }
 
-        // ── All other gateways: immediate manual record ───────────────────────
+        // ── Cash/manual: immediate local record ────────────────────────────────
+        if ($driver instanceof CashDriver) {
+            return $this->recordManualPayment($driver, $invoice, $request);
+        }
+
+        // ── Redirect / asynchronous gateways: create gateway charge ───────────
+        $response = $this->paymentService->charge(
+            $gateway->public_id ?? $gateway->uuid,
+            $this->buildPurchaseRequest($invoice, [
+                'gateway_public_id' => $gateway->public_id,
+                'gateway_uuid'      => $gateway->uuid,
+                'gateway_driver'    => $gateway->driver,
+                'company_uuid'      => $invoice->company_uuid,
+            ])
+        );
+
+        if ($response->isFailed()) {
+            return response()->json([
+                'error' => $response->message ?? 'Failed to initiate payment. Please try again.',
+            ], 422);
+        }
+
+        if ($response->isPending()) {
+            return response()->json($this->pendingPaymentPayload($response, $gateway));
+        }
+
+        return response()->json([
+            'status'                 => $response->status,
+            'payment_status'         => $response->status,
+            'gateway_transaction_id' => $response->gatewayTransactionId,
+            'message'                => $response->message ?? 'Payment processed successfully.',
+            'invoice'                => (new InvoiceResource($invoice->fresh(['customer', 'items'])))->resolve(),
+        ]);
+    }
+
+    private function recordManualPayment(CashDriver $driver, Invoice $invoice, Request $request): JsonResponse
+    {
         $invoice = $this->invoiceService->recordPayment($invoice, $invoice->balance, [
             'payment_method' => $driver->getCode(),
             'reference'      => $request->input('reference'),
@@ -193,25 +237,7 @@ class PublicInvoiceController extends Controller
             'payment' => 'cancelled',
         ]);
 
-        // Resolve customer email if available
-        $customerEmail = null;
-        if ($invoice->customer && method_exists($invoice->customer, 'getAttribute')) {
-            $customerEmail = $invoice->customer->email ?? $invoice->customer->contact_email ?? null;
-        }
-
-        $purchaseRequest = new PurchaseRequest(
-            amount: (int) $invoice->balance,
-            currency: $invoice->currency ?? 'USD',
-            description: 'Invoice ' . $invoice->number,
-            customerEmail: $customerEmail,
-            invoiceUuid: $invoice->uuid,
-            returnUrl: $successUrl,
-            cancelUrl: $cancelUrl,
-            metadata: [
-                'invoice_public_id' => $invoice->public_id,
-                'invoice_number'    => $invoice->number,
-            ],
-        );
+        $purchaseRequest = $this->buildPurchaseRequest($invoice);
 
         try {
             $response = $driver->createCheckoutSession($purchaseRequest, $successUrl, $cancelUrl);
@@ -228,10 +254,71 @@ class PublicInvoiceController extends Controller
             ], 422);
         }
 
-        return response()->json([
+        return response()->json(array_merge($this->pendingPaymentPayload($response, null), [
             'checkout_url'        => $response->data['checkout_url'],
             'checkout_session_id' => $response->data['checkout_session_id'] ?? null,
+        ]));
+    }
+
+    private function buildPurchaseRequest(Invoice $invoice, array $metadata = []): PurchaseRequest
+    {
+        $successUrl = Utils::consoleUrl('~/invoice', [
+            'id'      => $invoice->public_id,
+            'payment' => 'success',
         ]);
+        $cancelUrl = Utils::consoleUrl('~/invoice', [
+            'id'      => $invoice->public_id,
+            'payment' => 'cancelled',
+        ]);
+
+        $customerEmail = null;
+        if ($invoice->customer && method_exists($invoice->customer, 'getAttribute')) {
+            $customerEmail = $invoice->customer->email ?? $invoice->customer->contact_email ?? null;
+        }
+
+        return new PurchaseRequest(
+            amount: (int) $invoice->balance,
+            currency: $invoice->currency ?? 'USD',
+            description: 'Invoice ' . $invoice->number,
+            customerEmail: $customerEmail,
+            invoiceUuid: $invoice->uuid,
+            returnUrl: $successUrl,
+            cancelUrl: $cancelUrl,
+            metadata: array_merge([
+                'invoice_public_id' => $invoice->public_id,
+                'invoice_number'    => $invoice->number,
+            ], $metadata),
+        );
+    }
+
+    private function pendingPaymentPayload(GatewayResponse $response, ?Gateway $gateway): array
+    {
+        $paymentUrl = $response->data['checkout_url']
+            ?? $response->data['payment_url']
+            ?? $response->data['taler_pay_uri']
+            ?? data_get($response->data, 'urls.0.link');
+
+        $payload = [
+            'status'                 => GatewayResponse::STATUS_PENDING,
+            'payment_status'         => GatewayResponse::STATUS_PENDING,
+            'gateway_transaction_id' => $response->gatewayTransactionId,
+            'payment_url'            => $paymentUrl,
+            'payment_uri'            => $paymentUrl,
+            'message'                => $response->message,
+            'qr_image'               => $response->data['qr_image'] ?? null,
+            'qr_text'                => $response->data['qr_text'] ?? $paymentUrl,
+            'data'                   => $response->data,
+        ];
+
+        if ($gateway) {
+            $payload['gateway'] = [
+                'id'     => $gateway->public_id,
+                'driver' => $gateway->driver,
+                'name'   => $gateway->name,
+            ];
+        }
+
+        return $payload;
     }
 
     /**
