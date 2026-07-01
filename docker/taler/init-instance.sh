@@ -133,7 +133,7 @@ webhook_payload="$(jq -n \
     url: $url,
     http_method: "POST",
     header_template: "Content-Type: application/json",
-    body_template: "{\"order_id\":\"${order_id}\",\"event_type\":\"pay\"}"
+    body_template: "{\"order_id\":\"${ORDER_ID}\",\"event_type\":\"pay\"}"
   }')"
 
 webhook_response="$(api POST "/instances/${INSTANCE_ID}/private/webhooks" "${webhook_payload}" "${auth_header}")"

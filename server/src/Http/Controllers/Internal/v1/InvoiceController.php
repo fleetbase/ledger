@@ -41,6 +41,7 @@ class InvoiceController extends LedgerResourceController
         $record->save();
         // Recognise revenue now that totals are finalised (Debit AR, Credit Revenue)
         app(InvoiceService::class)->recogniseRevenue($record);
+        $record = app(InvoiceService::class)->autoSendOnCreation($record);
         $record->load(['customer', 'items', 'template']);
     }
 

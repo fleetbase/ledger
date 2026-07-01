@@ -51,14 +51,12 @@ export default class BillingInvoicesIndexNewController extends Controller {
                     defaults.terms = invoiceSettings.default_terms;
                 }
 
-                // Due date — calculate from today + offset only when the user
-                // has explicitly saved a non-zero value in Invoice Settings.
-                // A null/undefined/0 setting means "no default due date" so we
-                // leave the field empty rather than silently pre-filling 30 days.
-                const offset = invoiceSettings.due_date_offset_days;
-                if (offset != null && Number(offset) > 0) {
+                // Due date — payment_terms_days is canonical; due_date_offset_days
+                // remains a legacy alias for settings saved by older clients.
+                const terms = invoiceSettings.payment_terms_days ?? invoiceSettings.due_date_offset_days;
+                if (terms != null && Number(terms) > 0) {
                     const due = new Date();
-                    due.setDate(due.getDate() + Number(offset));
+                    due.setDate(due.getDate() + Number(terms));
                     defaults.due_date = due;
                 }
             }
