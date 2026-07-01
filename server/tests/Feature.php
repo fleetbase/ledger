@@ -50,6 +50,57 @@ test('invoice send validation failures return json errors', function () {
         ->toContain("return response()->json(['error' => \$e->getMessage()], 422);");
 });
 
+test('invoice settings normalize payment terms and legacy due date offset', function () {
+    $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/SettingController.php');
+
+    expect($controller)
+        ->toContain('private function normalizeInvoiceSettings')
+        ->toContain("if (array_key_exists('payment_terms_days', \$settings))")
+        ->toContain("} elseif (array_key_exists('due_date_offset_days', \$settings))")
+        ->toContain("\$terms = \$defaults['payment_terms_days'] ?? \$defaults['due_date_offset_days'] ?? 30;")
+        ->toContain('$settings = array_merge($defaults, $settings);')
+        ->toContain("\$settings['payment_terms_days']   = \$terms;")
+        ->toContain("\$settings['due_date_offset_days'] = \$terms;")
+        ->toContain("\$settings = \$this->normalizeInvoiceSettings(Setting::lookupCompany('ledger.invoice-settings', \$defaults), \$defaults);")
+        ->toContain('private function syncInvoicePaymentTerms(array $settings): array')
+        ->toContain("\$invoiceSettings = \$this->syncInvoicePaymentTerms(\$request->input('invoiceSettings', []));")
+        ->toContain('$merged = $this->normalizeInvoiceSettings(array_merge($current, $invoiceSettings));');
+});
+
+test('invoice defaults use payment terms before legacy due date offset', function () {
+    $model      = file_get_contents(__DIR__ . '/../src/Models/Invoice.php');
+    $controller = file_get_contents(__DIR__ . '/../../addon/controllers/billing/invoices/index/new.js');
+
+    expect($model)
+        ->toContain("if (isset(\$settings['payment_terms_days']))")
+        ->toContain("\$paymentTermsDays = (int) \$settings['payment_terms_days'];")
+        ->toContain("} elseif (isset(\$settings['due_date_offset_days']))")
+        ->toContain("\$paymentTermsDays = (int) \$settings['due_date_offset_days'];")
+        ->toContain('&& $paymentTermsDays > 0')
+        ->toContain('addDays($paymentTermsDays)');
+
+    expect($controller)
+        ->toContain('const terms = invoiceSettings.payment_terms_days ?? invoiceSettings.due_date_offset_days;')
+        ->toContain('due.setDate(due.getDate() + Number(terms));');
+});
+
+test('invoice auto send on creation is shared and non blocking', function () {
+    $invoiceController = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/InvoiceController.php');
+    $invoiceService    = file_get_contents(__DIR__ . '/../src/Services/InvoiceService.php');
+
+    expect($invoiceController)
+        ->toContain('autoSendOnCreation($record)');
+
+    expect($invoiceService)
+        ->toContain('public function autoSendOnCreation(Invoice $invoice): Invoice')
+        ->toContain("data_get(\$settings, 'auto_send_on_creation', false)")
+        ->toContain('return $this->send($invoice);')
+        ->toContain('catch (\\Throwable $e)')
+        ->toContain('$invoice->saveQuietly();')
+        ->toContain("Log::channel('ledger')->warning('[Ledger] Invoice auto-send on creation failed.'")
+        ->toContain('return $this->autoSendOnCreation($invoice);');
+});
+
 test('order accounting observer preserves seed metadata on storefront sale journal entries', function () {
     $observer = file_get_contents(__DIR__ . '/../src/Observers/OrderAccountingObserver.php');
 

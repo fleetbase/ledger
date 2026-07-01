@@ -44,14 +44,7 @@ class SettingController extends Controller
             'default_template_uuid'    => null,
         ];
 
-        $settings = Setting::lookupCompany('ledger.invoice-settings', $defaults);
-
-        // Merge with defaults so new keys are always present
-        if (is_array($settings)) {
-            $settings = array_merge($defaults, $settings);
-        } else {
-            $settings = $defaults;
-        }
+        $settings = $this->normalizeInvoiceSettings(Setting::lookupCompany('ledger.invoice-settings', $defaults), $defaults);
 
         // Attach the template name/public_id for display purposes
         $settings['default_template'] = null;
@@ -94,7 +87,7 @@ class SettingController extends Controller
         ]);
 
         // Validate that the template UUID belongs to this company (if provided)
-        $invoiceSettings = $request->input('invoiceSettings', []);
+        $invoiceSettings = $this->syncInvoicePaymentTerms($request->input('invoiceSettings', []));
         if (!empty($invoiceSettings['default_template_uuid'])) {
             $template = InvoiceTemplate::where('company_uuid', session('company'))
                 ->where(function ($q) use ($invoiceSettings) {
@@ -116,7 +109,7 @@ class SettingController extends Controller
         if (!is_array($current)) {
             $current = [];
         }
-        $merged = array_merge($current, $invoiceSettings);
+        $merged = $this->normalizeInvoiceSettings(array_merge($current, $invoiceSettings));
 
         Setting::configureCompany('ledger.invoice-settings', $merged);
 
@@ -125,6 +118,60 @@ class SettingController extends Controller
             'message'         => 'Invoice settings saved.',
             'invoiceSettings' => $merged,
         ]);
+    }
+
+    /**
+     * Normalize invoice settings so payment_terms_days is canonical while
+     * due_date_offset_days remains a synchronized legacy alias.
+     */
+    private function normalizeInvoiceSettings(mixed $settings, array $defaults = []): array
+    {
+        if (!is_array($settings)) {
+            $settings = [];
+        }
+
+        if (array_key_exists('payment_terms_days', $settings)) {
+            $terms = $settings['payment_terms_days'];
+        } elseif (array_key_exists('due_date_offset_days', $settings)) {
+            $terms = $settings['due_date_offset_days'];
+        } else {
+            $terms = $defaults['payment_terms_days'] ?? $defaults['due_date_offset_days'] ?? 30;
+        }
+
+        $settings = array_merge($defaults, $settings);
+
+        if ($terms !== null) {
+            $terms = (int) $terms;
+        }
+
+        $settings['payment_terms_days']   = $terms;
+        $settings['due_date_offset_days'] = $terms;
+
+        return $settings;
+    }
+
+    /**
+     * Synchronize canonical payment terms and legacy offset on incoming partial
+     * settings without forcing a default over previously saved values.
+     */
+    private function syncInvoicePaymentTerms(array $settings): array
+    {
+        if (array_key_exists('payment_terms_days', $settings)) {
+            $terms = $settings['payment_terms_days'];
+        } elseif (array_key_exists('due_date_offset_days', $settings)) {
+            $terms = $settings['due_date_offset_days'];
+        } else {
+            return $settings;
+        }
+
+        if ($terms !== null) {
+            $terms = (int) $terms;
+        }
+
+        $settings['payment_terms_days']   = $terms;
+        $settings['due_date_offset_days'] = $terms;
+
+        return $settings;
     }
 
     // =========================================================================

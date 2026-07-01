@@ -8,7 +8,9 @@ use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Models\InvoiceItem;
 use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Ledger\Notifications\InvoiceSent;
+use Fleetbase\Models\Setting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class InvoiceService
@@ -42,7 +44,7 @@ class InvoiceService
      */
     public function createFromOrder(Order $order, array $options = [], ?object $purchaseRate = null): Invoice
     {
-        return DB::transaction(function () use ($order, $options, $purchaseRate) {
+        $invoice = DB::transaction(function () use ($order, $options, $purchaseRate) {
             // Resolve currency from options, order meta, or company default
             $currency = $options['currency']
                 ?? $order->getMeta('currency')
@@ -89,6 +91,8 @@ class InvoiceService
 
             return $invoice;
         });
+
+        return $this->autoSendOnCreation($invoice);
     }
 
     /**
@@ -114,6 +118,36 @@ class InvoiceService
         Notification::route('mail', $email)->notify(new InvoiceSent($invoice->fresh(['customer', 'items', 'template'])));
 
         return $invoice->fresh(['customer', 'items', 'template']);
+    }
+
+    /**
+     * Automatically send newly-created invoices when enabled in Invoice Settings.
+     * Send failures are logged and never abort invoice creation.
+     */
+    public function autoSendOnCreation(Invoice $invoice): Invoice
+    {
+        $settings = Setting::lookupCompany('ledger.invoice-settings', []);
+        if (!is_array($settings) || !data_get($settings, 'auto_send_on_creation', false)) {
+            return $invoice;
+        }
+
+        $originalStatus = $invoice->status;
+        $originalSentAt = $invoice->sent_at;
+
+        try {
+            return $this->send($invoice);
+        } catch (\Throwable $e) {
+            $invoice->status  = $originalStatus;
+            $invoice->sent_at = $originalSentAt;
+            $invoice->saveQuietly();
+
+            Log::channel('ledger')->warning('[Ledger] Invoice auto-send on creation failed.', [
+                'invoice_uuid' => $invoice->uuid,
+                'error'        => $e->getMessage(),
+            ]);
+
+            return $invoice->fresh(['customer', 'items', 'template']);
+        }
     }
 
     /**
