@@ -68,13 +68,28 @@ To seed for a specific company:
 docker compose exec -e TALER_DEMO_COMPANY_UUID=<company_uuid> application php artisan db:seed --class="Fleetbase\\Ledger\\Seeders\\Testing\\TalerDemoSeeder"
 ```
 
-The seeder creates an idempotent FleetOps-style payload, order, service quote,
-purchase rate, tracking number, core transaction, transaction items, and sent
-Ledger invoice in `KUDOS`. The order should appear in FleetOps Orders as
-`TALER-DEMO-KUDOS`. Open the seeded public payment link shown by the seeder:
+The default demo invoice amount is `KUDOS 0.50`. To seed a specific invoice
+amount, use a decimal `KUDOS` value:
+
+```sh
+docker compose exec -e TALER_DEMO_COMPANY_UUID=<company_uuid> -e TALER_DEMO_AMOUNT=5.00 application php artisan db:seed --class="Fleetbase\\Ledger\\Seeders\\Testing\\TalerDemoSeeder"
+```
+
+By default, each seeder run creates a fresh payable FleetOps-style payload,
+order, service quote, purchase rate, tracking number, core transaction,
+transaction items, and sent Ledger invoice in `KUDOS`. This lets you repeat the
+wallet checkout flow without reusing a Taler order that has already been paid.
+The order should appear in FleetOps Orders as `TALER-DEMO-KUDOS-<run_suffix>`.
+Open the seeded public payment link shown by the seeder:
 
 ```txt
 /~/invoice?id=<invoice_public_id>
+```
+
+To intentionally update the same demo fixture, provide a stable run id:
+
+```sh
+docker compose exec -e TALER_DEMO_COMPANY_UUID=<company_uuid> -e TALER_DEMO_RUN_ID=nlnet-demo-001 application php artisan db:seed --class="Fleetbase\\Ledger\\Seeders\\Testing\\TalerDemoSeeder"
 ```
 
 ## Wallet notes

@@ -13,6 +13,7 @@ use Fleetbase\Seeders\Concerns\ResolvesSeedCompany;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
 
 class TalerDemoSeeder extends Seeder
@@ -21,11 +22,14 @@ class TalerDemoSeeder extends Seeder
 
     private const SEED = 'taler_demo';
     private const CURRENCY = 'KUDOS';
-    private const AMOUNT = 50;
-    private const BASE_AMOUNT = 40;
-    private const FEE_AMOUNT = 10;
+    private const DEFAULT_AMOUNT = '0.50';
 
     private array $ids = [];
+    private string $seedRunId = '';
+    private string $seedRunSuffix = '';
+    private int $amount = 50;
+    private int $baseAmount = 40;
+    private int $feeAmount = 10;
 
     public function run(): void
     {
@@ -38,8 +42,14 @@ class TalerDemoSeeder extends Seeder
         }
 
         session(['company' => $company->uuid]);
-        $this->ids = $this->stableIds($company->uuid);
         $now       = Carbon::now();
+        $this->seedRunId     = $this->resolveSeedRunId($now);
+        $this->seedRunSuffix = $this->seedRunSuffix($this->seedRunId);
+        $this->ids           = $this->stableIds($company->uuid, $this->seedRunId);
+
+        if (!$this->resolveAmount()) {
+            return;
+        }
 
         DB::transaction(function () use ($company, $now) {
             $this->seedFleetOpsRoutePlaces($company, $now);
@@ -53,10 +63,13 @@ class TalerDemoSeeder extends Seeder
         $publicId = $this->invoicePublicId($company->uuid);
         $orderId  = $this->publicId('order', $company->uuid);
         $this->command?->info("[Ledger/Taler] Seeded KUDOS demo invoice {$publicId} for company {$company->public_id}.");
-        $this->command?->info("[Ledger/Taler] FleetOps order: {$orderId} / TALER-DEMO-KUDOS");
+        $this->command?->info("[Ledger/Taler] Run ID: {$this->seedRunId}");
+        $this->command?->info("[Ledger/Taler] Amount: " . self::CURRENCY . ' ' . $this->formatAmount($this->amount));
+        $this->command?->info("[Ledger/Taler] FleetOps order: {$orderId} / {$this->orderInternalId()}");
         $this->command?->info("[Ledger/Taler] Public payment link: /~/invoice?id={$publicId}");
         $this->command?->info("[Ledger/Taler] Ledger route: /ledger/invoice/{$publicId}");
-        $this->command?->info('[Ledger/Taler] Use backend_url=http://taler-merchant.lvh.me:9966 and the generated token from packages/ledger/docker/taler/generated-token.txt.');
+        $this->command?->info('[Ledger/Taler] Local gateway: backend_url=http://taler-merchant.lvh.me:9966 and the generated token from packages/ledger/docker/taler/generated-token.txt.');
+        $this->command?->info('[Ledger/Taler] Hosted sandbox gateway: backend_url=https://merchant.taler.fleetbase.io, instance_id=default, and the hosted token.');
     }
 
     protected function resolveCompany(): ?Company
@@ -67,25 +80,27 @@ class TalerDemoSeeder extends Seeder
         );
     }
 
-    private function stableIds(string $companyUuid): array
+    private function stableIds(string $companyUuid, string $seedRunId): array
     {
+        $runScope = $companyUuid . ':' . $seedRunId;
+
         return [
             'pickup'           => $this->stableUuid($companyUuid . ':pickup'),
             'dropoff'          => $this->stableUuid($companyUuid . ':dropoff'),
-            'payload'          => $this->stableUuid($companyUuid . ':payload'),
-            'order'            => $this->stableUuid($companyUuid . ':order'),
-            'tracking_number'  => $this->stableUuid($companyUuid . ':tracking-number'),
-            'tracking_status'  => $this->stableUuid($companyUuid . ':tracking-status-created'),
-            'service_quote'    => $this->stableUuid($companyUuid . ':service-quote'),
-            'quote_item_base'  => $this->stableUuid($companyUuid . ':quote-item-base'),
-            'quote_item_fee'   => $this->stableUuid($companyUuid . ':quote-item-fee'),
-            'purchase_rate'    => $this->stableUuid($companyUuid . ':purchase-rate'),
-            'transaction'      => $this->stableUuid($companyUuid . ':transaction'),
-            'transaction_base' => $this->stableUuid($companyUuid . ':transaction-item-base'),
-            'transaction_fee'  => $this->stableUuid($companyUuid . ':transaction-item-fee'),
-            'invoice'          => $this->stableUuid($companyUuid . ':invoice'),
-            'invoice_base'     => $this->stableUuid($companyUuid . ':invoice-item-base'),
-            'invoice_fee'      => $this->stableUuid($companyUuid . ':invoice-item-fee'),
+            'payload'          => $this->stableUuid($runScope . ':payload'),
+            'order'            => $this->stableUuid($runScope . ':order'),
+            'tracking_number'  => $this->stableUuid($runScope . ':tracking-number'),
+            'tracking_status'  => $this->stableUuid($runScope . ':tracking-status-created'),
+            'service_quote'    => $this->stableUuid($runScope . ':service-quote'),
+            'quote_item_base'  => $this->stableUuid($runScope . ':quote-item-base'),
+            'quote_item_fee'   => $this->stableUuid($runScope . ':quote-item-fee'),
+            'purchase_rate'    => $this->stableUuid($runScope . ':purchase-rate'),
+            'transaction'      => $this->stableUuid($runScope . ':transaction'),
+            'transaction_base' => $this->stableUuid($runScope . ':transaction-item-base'),
+            'transaction_fee'  => $this->stableUuid($runScope . ':transaction-item-fee'),
+            'invoice'          => $this->stableUuid($runScope . ':invoice'),
+            'invoice_base'     => $this->stableUuid($runScope . ':invoice-item-base'),
+            'invoice_fee'      => $this->stableUuid($runScope . ':invoice-item-fee'),
         ];
     }
 
@@ -132,7 +147,7 @@ class TalerDemoSeeder extends Seeder
                 'dropoff_uuid'       => Schema::hasTable('places') ? $this->ids['dropoff'] : null,
                 'provider'           => 'fleetbase',
                 'payment_method'     => 'taler',
-                'cod_amount'         => self::AMOUNT,
+                'cod_amount'         => $this->amount,
                 'cod_currency'       => self::CURRENCY,
                 'cod_payment_method' => 'taler',
                 'type'               => 'transport',
@@ -149,10 +164,10 @@ class TalerDemoSeeder extends Seeder
             [
                 '_key'         => $this->fixtureKey('service_quote'),
                 'public_id'    => $this->publicId('quote', $company->uuid),
-                'request_id'   => self::SEED,
+                'request_id'   => $this->seedRunId,
                 'company_uuid' => $company->uuid,
                 'payload_uuid' => $this->ids['payload'],
-                'amount'       => self::AMOUNT,
+                'amount'       => $this->amount,
                 'currency'     => self::CURRENCY,
                 'meta'         => $this->meta('service_quote', [
                     'description' => 'GNU Taler KUDOS demo service quote',
@@ -163,8 +178,8 @@ class TalerDemoSeeder extends Seeder
             ]
         );
 
-        $this->seedServiceQuoteItem('quote_item_base', 'taler-demo-base', 'Taler demo delivery service', self::BASE_AMOUNT, $now);
-        $this->seedServiceQuoteItem('quote_item_fee', 'taler-demo-fee', 'Taler demo handling fee', self::FEE_AMOUNT, $now);
+        $this->seedServiceQuoteItem('quote_item_base', 'taler-demo-base', 'Taler demo delivery service', $this->baseAmount, $now);
+        $this->seedServiceQuoteItem('quote_item_fee', 'taler-demo-fee', 'Taler demo handling fee', $this->feeAmount, $now);
     }
 
     private function seedCoreTransaction(Company $company, Carbon $now): void
@@ -183,16 +198,16 @@ class TalerDemoSeeder extends Seeder
                 'subject_type'           => 'Fleetbase\\FleetOps\\Models\\Order',
                 'context_uuid'           => $this->ids['purchase_rate'],
                 'context_type'           => 'Fleetbase\\FleetOps\\Models\\PurchaseRate',
-                'gateway_transaction_id' => 'taler-demo-' . substr(hash('sha256', $company->uuid), 0, 16),
+                'gateway_transaction_id' => 'taler-demo-' . $this->seedRunSuffix,
                 'gateway'                => 'internal',
-                'amount'                 => self::AMOUNT,
+                'amount'                 => $this->amount,
                 'fee_amount'             => 0,
                 'tax_amount'             => 0,
-                'net_amount'             => self::AMOUNT,
+                'net_amount'             => $this->amount,
                 'currency'               => self::CURRENCY,
                 'exchange_rate'          => 1,
                 'description'            => 'GNU Taler KUDOS demo dispatch order',
-                'reference'              => 'taler-demo-' . substr(hash('sha256', $company->uuid), 0, 24),
+                'reference'              => 'taler-demo-' . $this->seedRunSuffix,
                 'type'                   => 'dispatch',
                 'direction'              => 'credit',
                 'status'                 => 'success',
@@ -206,8 +221,8 @@ class TalerDemoSeeder extends Seeder
             ])
         );
 
-        $this->seedTransactionItem('transaction_base', 'taler-demo-base', 'Taler demo delivery service', self::BASE_AMOUNT, 0, $now);
-        $this->seedTransactionItem('transaction_fee', 'taler-demo-fee', 'Taler demo handling fee', self::FEE_AMOUNT, 1, $now);
+        $this->seedTransactionItem('transaction_base', 'taler-demo-base', 'Taler demo delivery service', $this->baseAmount, 0, $now);
+        $this->seedTransactionItem('transaction_fee', 'taler-demo-fee', 'Taler demo handling fee', $this->feeAmount, 1, $now);
     }
 
     private function seedFleetOpsOrderFixture(Company $company, Carbon $now): void
@@ -228,7 +243,7 @@ class TalerDemoSeeder extends Seeder
                 'public_id'          => $this->publicId('rate', $company->uuid),
                 'meta'               => $this->meta('purchase_rate', [
                     'currency' => self::CURRENCY,
-                    'amount'   => self::AMOUNT,
+                    'amount'   => $this->amount,
                 ]),
                 'company_uuid'       => $company->uuid,
                 'transaction_uuid'   => Schema::hasTable('transactions') ? $this->ids['transaction'] : null,
@@ -245,7 +260,7 @@ class TalerDemoSeeder extends Seeder
             $this->columns('orders', [
                 '_key'               => $this->fixtureKey('order'),
                 'public_id'          => $this->publicId('order', $company->uuid),
-                'internal_id'        => 'TALER-DEMO-KUDOS',
+                'internal_id'        => $this->orderInternalId(),
                 'company_uuid'       => $company->uuid,
                 'payload_uuid'       => Schema::hasTable('payloads') ? $this->ids['payload'] : null,
                 'transaction_uuid'   => Schema::hasTable('transactions') ? $this->ids['transaction'] : null,
@@ -253,7 +268,7 @@ class TalerDemoSeeder extends Seeder
                 'order_config_uuid'  => $orderConfigUuid,
                 'meta'               => $this->meta('order', [
                     'currency' => self::CURRENCY,
-                    'total'    => self::AMOUNT,
+                    'total'    => $this->amount,
                 ]),
                 'notes'              => 'GNU Taler KUDOS demo order for local invoice payment testing.',
                 'pod_method'         => 'scan',
@@ -280,10 +295,10 @@ class TalerDemoSeeder extends Seeder
                 'company_uuid'    => $company->uuid,
                 'owner_uuid'      => $this->ids['order'],
                 'owner_type'      => 'Fleetbase\\FleetOps\\Models\\Order',
-                'tracking_number' => 'TALER-DEMO-' . strtoupper(substr(hash('sha256', $company->uuid), 0, 10)),
+                'tracking_number' => 'TALER-DEMO-' . strtoupper($this->seedRunSuffix),
                 'region'          => 'SG',
-                'qr_code'         => DNS2D::getBarcodePNG($this->ids['order'], 'QRCODE'),
-                'barcode'         => DNS2D::getBarcodePNG($this->ids['order'], 'PDF417'),
+                'qr_code'         => DNS2D::getBarcodePNG($this->orderInternalId(), 'QRCODE'),
+                'barcode'         => DNS2D::getBarcodePNG($this->orderInternalId(), 'PDF417'),
                 'created_at'      => $now,
                 'updated_at'      => $now,
             ]
@@ -320,11 +335,7 @@ class TalerDemoSeeder extends Seeder
                 'city'                 => 'Singapore',
                 'country'              => 'SG',
                 'location'             => new Point(1.2816, 103.8510),
-                'meta'                 => [
-                    'seed'     => self::SEED,
-                    'seed_id'  => 'tracking_status_created',
-                    'currency' => self::CURRENCY,
-                ],
+                'meta'                 => $this->metaArray('tracking_status_created'),
                 'created_at'           => $now,
                 'updated_at'           => $now,
             ])->save();
@@ -391,6 +402,14 @@ class TalerDemoSeeder extends Seeder
     private function seedInvoice(Company $company, Carbon $now): void
     {
         $invoicePublicId = $this->invoicePublicId($company->uuid);
+        $existingInvoice = Invoice::where('uuid', $this->ids['invoice'])->first();
+        $isPaidInvoice   = $existingInvoice && ($existingInvoice->status === 'paid' || (int) $existingInvoice->amount_paid > 0);
+
+        if ($isPaidInvoice) {
+            $this->command?->warn("[Ledger/Taler] Run {$this->seedRunId} already has a paid invoice; leaving invoice totals and line items unchanged.");
+
+            return;
+        }
 
         DB::table('ledger_invoices')->updateOrInsert(
             ['uuid' => $this->ids['invoice']],
@@ -400,14 +419,14 @@ class TalerDemoSeeder extends Seeder
                 'company_uuid'     => $company->uuid,
                 'order_uuid'       => Schema::hasTable('orders') ? $this->ids['order'] : null,
                 'transaction_uuid' => Schema::hasTable('transactions') ? $this->ids['transaction'] : null,
-                'number'           => 'TALER-DEMO-' . strtoupper(substr(hash('sha256', $company->uuid), 0, 8)),
+                'number'           => $this->invoiceNumber(),
                 'date'             => $now->toDateString(),
                 'due_date'         => $now->copy()->addDays(7)->toDateString(),
-                'subtotal'         => self::AMOUNT,
+                'subtotal'         => $this->amount,
                 'tax'              => 0,
-                'total_amount'     => self::AMOUNT,
+                'total_amount'     => $this->amount,
                 'amount_paid'      => 0,
-                'balance'          => self::AMOUNT,
+                'balance'          => $this->amount,
                 'currency'         => self::CURRENCY,
                 'status'           => 'sent',
                 'notes'            => 'GNU Taler KUDOS demo invoice for local payment testing.',
@@ -423,15 +442,16 @@ class TalerDemoSeeder extends Seeder
             ]
         );
 
-        $this->seedInvoiceItem('invoice_base', 'Taler demo delivery service', self::BASE_AMOUNT, $now);
-        $this->seedInvoiceItem('invoice_fee', 'Taler demo handling fee', self::FEE_AMOUNT, $now);
+        $this->seedInvoiceItem('invoice_base', 'Taler demo delivery service', $this->baseAmount, $now);
+        $this->seedInvoiceItem('invoice_fee', 'Taler demo handling fee', $this->feeAmount, $now);
 
         Invoice::where('uuid', $this->ids['invoice'])->first()?->calculateTotals();
+
         DB::table('ledger_invoices')
             ->where('uuid', $this->ids['invoice'])
             ->update([
                 'amount_paid' => 0,
-                'balance'     => self::AMOUNT,
+                'balance'     => $this->amount,
                 'status'      => 'sent',
                 'sent_at'     => $now,
                 'updated_at'  => $now,
@@ -476,11 +496,7 @@ class TalerDemoSeeder extends Seeder
                 'latitude'     => (string) $place['lat'],
                 'longitude'    => (string) $place['lng'],
                 'type'         => 'address',
-                'meta'         => [
-                    'seed'     => self::SEED,
-                    'seed_id'  => $idKey,
-                    'currency' => self::CURRENCY,
-                ],
+                'meta'         => $this->metaArray($idKey, includeRunId: false),
                 'created_at'   => $now,
                 'updated_at'   => $now,
             ])->save();
@@ -503,6 +519,10 @@ class TalerDemoSeeder extends Seeder
 
     private function publicId(string $prefix, string $value): string
     {
+        if (!str_starts_with($prefix, 'place-')) {
+            $value .= ':' . $this->seedRunId;
+        }
+
         return $prefix . '_taler_demo_' . substr(hash('sha256', self::SEED . ':' . $value), 0, 12);
     }
 
@@ -513,16 +533,105 @@ class TalerDemoSeeder extends Seeder
 
     private function fixtureKey(string $seedId): string
     {
+        if (in_array($seedId, ['pickup', 'dropoff'], true)) {
+            return self::SEED . ':' . $seedId;
+        }
+
+        if ($this->seedRunId) {
+            return self::SEED . ':' . $this->seedRunId . ':' . $seedId;
+        }
+
         return self::SEED . ':' . $seedId;
     }
 
     private function meta(string $seedId, array $extra = []): string
     {
-        return json_encode(array_merge([
+        return json_encode($this->metaArray($seedId, $extra));
+    }
+
+    private function metaArray(string $seedId, array $extra = [], bool $includeRunId = true): array
+    {
+        return array_merge([
             'seed'     => self::SEED,
             'seed_id'  => $seedId,
             'currency' => self::CURRENCY,
-        ], $extra));
+        ], $includeRunId && $this->seedRunId ? ['seed_run_id' => $this->seedRunId] : [], $extra);
+    }
+
+    private function resolveSeedRunId(Carbon $now): string
+    {
+        $configured = trim((string) env('TALER_DEMO_RUN_ID', ''));
+
+        if ($configured !== '') {
+            return $this->sanitizeRunId($configured);
+        }
+
+        return $this->sanitizeRunId(sprintf(
+            'taler_demo_%s_%s',
+            $now->format('YmdHis'),
+            Str::lower(Str::random(6))
+        ));
+    }
+
+    private function sanitizeRunId(string $runId): string
+    {
+        $runId = preg_replace('/[^A-Za-z0-9_-]+/', '-', $runId) ?: 'taler-demo';
+        $runId = trim($runId, '-_');
+
+        return substr($runId ?: 'taler-demo', 0, 48);
+    }
+
+    private function resolveAmount(): bool
+    {
+        $amount = trim((string) env('TALER_DEMO_AMOUNT', self::DEFAULT_AMOUNT));
+
+        if (!preg_match('/^\d+(?:\.\d{1,2})?$/', $amount)) {
+            $this->command?->error('[Ledger/Taler] Invalid TALER_DEMO_AMOUNT. Use a positive decimal amount with up to 2 decimals, for example TALER_DEMO_AMOUNT=5.00.');
+
+            return false;
+        }
+
+        $minorUnits = $this->amountToMinorUnits($amount);
+
+        if ($minorUnits <= 0) {
+            $this->command?->error('[Ledger/Taler] Invalid TALER_DEMO_AMOUNT. Amount must be greater than 0.');
+
+            return false;
+        }
+
+        $this->amount     = $minorUnits;
+        $this->baseAmount = intdiv($minorUnits * 80, 100);
+        $this->feeAmount  = $minorUnits - $this->baseAmount;
+
+        return true;
+    }
+
+    private function amountToMinorUnits(string $amount): int
+    {
+        [$units, $fraction] = array_pad(explode('.', $amount, 2), 2, '');
+        $fraction           = str_pad($fraction, 2, '0');
+
+        return ((int) $units * 100) + (int) substr($fraction, 0, 2);
+    }
+
+    private function formatAmount(int $minorUnits): string
+    {
+        return sprintf('%d.%02d', intdiv($minorUnits, 100), $minorUnits % 100);
+    }
+
+    private function seedRunSuffix(string $runId): string
+    {
+        return substr(hash('sha256', self::SEED . ':' . $runId), 0, 12);
+    }
+
+    private function orderInternalId(): string
+    {
+        return 'TALER-DEMO-KUDOS-' . strtoupper($this->seedRunSuffix);
+    }
+
+    private function invoiceNumber(): string
+    {
+        return 'TALER-DEMO-' . strtoupper($this->seedRunSuffix);
     }
 
     private function columns(string $tableName, array $values): array
