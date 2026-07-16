@@ -10,6 +10,8 @@
                     <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Gateway Ref</th>
                     <th class="text-right py-2 text-xs font-medium text-gray-500 uppercase">Amount</th>
                     <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Refund</th>
+                    <th class="text-left py-2 text-xs font-medium text-gray-500 uppercase">Reconciliation</th>
                 </tr>
             </thead>
             <tbody>
@@ -24,10 +26,12 @@
                                 {{event.status}}
                             </Badge>
                         </td>
+                        <td class="py-2 text-gray-500 text-xs">{{n-a event.refund_status}}</td>
+                        <td class="py-2 text-gray-500 text-xs">{{n-a event.reconciliation_status}}</td>
                     </tr>
                 {{else}}
                     <tr>
-                        <td colspan="5" class="py-4 text-center text-gray-400 text-xs">No webhook events recorded</td>
+                        <td colspan="7" class="py-4 text-center text-gray-400 text-xs">No webhook events recorded</td>
                     </tr>
                 {{/each}}
             </tbody>

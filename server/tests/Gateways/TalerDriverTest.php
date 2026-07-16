@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Http;
 /**
  * Build a fully-initialised TalerDriver using the given config overrides.
  */
-function talerDriver(array $config = []): TalerDriver
+function talerDriver(array $config = [], bool $sandbox = false): TalerDriver
 {
     $defaults = [
         'backend_url' => 'https://backend.example.taler.net',
@@ -35,7 +35,7 @@ function talerDriver(array $config = []): TalerDriver
     ];
 
     $driver = new TalerDriver();
-    $driver->initialize(array_merge($defaults, $config));
+    $driver->initialize(array_merge($defaults, $config), $sandbox);
 
     return $driver;
 }
@@ -272,10 +272,38 @@ test('purchase_returns_failure_when_required_config_missing', function () {
         description: 'Test',
     );
 
-    $response = talerDriver(['backend_url' => ''])->purchase($request);
+    $response = talerDriver(['backend_url' => ''], false)->purchase($request);
 
     expect($response->isFailed())->toBeTrue()
         ->and($response->message)->toContain('Backend URL');
+});
+
+test('purchase_defaults_to_hosted_fleetbase_taler_in_sandbox_when_backend_url_missing', function () {
+    Http::fake([
+        'https://merchant.taler.fleetbase.io/instances/testmerchant/private/orders' => Http::response(
+            ['order_id' => 'TALER-HOSTED-SANDBOX'],
+            200
+        ),
+        'https://merchant.taler.fleetbase.io/instances/testmerchant/private/orders/TALER-HOSTED-SANDBOX' => Http::response(
+            [
+                'order_status'  => 'unpaid',
+                'taler_pay_uri' => 'taler://pay/merchant.taler.fleetbase.io/testmerchant/TALER-HOSTED-SANDBOX',
+            ],
+            200
+        ),
+    ]);
+
+    $request = new PurchaseRequest(
+        amount: 1000,
+        currency: 'KUDOS',
+        description: 'Hosted sandbox test',
+    );
+
+    $response = talerDriver(['backend_url' => ''], true)->purchase($request);
+
+    expect($response->isPending())->toBeTrue()
+        ->and($response->gatewayTransactionId)->toBe('TALER-HOSTED-SANDBOX')
+        ->and($response->data['taler_pay_uri'])->toBe('taler://pay/merchant.taler.fleetbase.io/testmerchant/TALER-HOSTED-SANDBOX');
 });
 
 // ---------------------------------------------------------------------------
@@ -388,7 +416,10 @@ test('refund_issues_refund_and_returns_success', function () {
         ->and($response->amount)->toBe(2500)
         ->and($response->currency)->toBe('USD')
         ->and($response->gatewayTransactionId)->toBe('TALER-ORDER-001')
-        ->and($response->data['taler_refund_uri'])->toBe('taler://refund/...');
+        ->and($response->data['taler_refund_uri'])->toBe('taler://refund/...')
+        ->and($response->data['refund_url'])->toBe('taler://refund/...')
+        ->and($response->data['refund_status'])->toBe('wallet_uri_returned')
+        ->and($response->data['wallet_status'])->toBe('pending_wallet_acceptance');
 });
 
 test('refund_sends_correct_taler_amount_format', function () {
@@ -491,4 +522,67 @@ test('webhook_parses_taler_amount_with_single_digit_fraction', function () {
     expect($response->isSuccessful())->toBeTrue()
         ->and($response->amount)->toBe(590)
         ->and($response->currency)->toBe('EUR');
+});
+
+test('testCredentials_checks_private_taler_endpoint', function () {
+    Http::fake([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(['orders' => []], 200),
+    ]);
+
+    $result = talerDriver()->testCredentials();
+
+    expect($result['ok'])->toBeTrue()
+        ->and($result['status'])->toBe('ok')
+        ->and($result['http_status'])->toBe(200);
+});
+
+test('registerWebhook_posts_tenant_safe_body_template', function () {
+    Http::fake([
+        'https://backend.example.taler.net/instances/testmerchant/private/webhooks' => Http::response([], 204),
+    ]);
+
+    $result = talerDriver()->registerWebhook([
+        'webhook_url'  => 'https://api.example.com/ledger/webhooks/taler',
+        'company_uuid' => 'company-uuid-1',
+        'gateway_id'   => 'gateway_public_1',
+        'gateway_uuid' => 'gateway-uuid-1',
+    ]);
+
+    expect($result['ok'])->toBeTrue()
+        ->and($result['status'])->toBe('registered');
+
+    Http::assertSent(function ($httpRequest) {
+        $body = $httpRequest->data();
+        $template = $body['body_template'] ?? '';
+
+        return str_contains($template, 'company-uuid-1')
+            && str_contains($template, 'gateway_public_1')
+            && str_contains($template, '${ORDER_ID}');
+    });
+});
+
+test('createTestOrder_uses_deterministic_test_order_metadata', function () {
+    Http::fake([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
+            ['order_id' => 'ledger-test-returned'],
+            200
+        ),
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/ledger-test-returned' => Http::response(
+            ['order_status' => 'unpaid', 'taler_pay_uri' => 'taler://pay/test'],
+            200
+        ),
+    ]);
+
+    $response = talerDriver()->createTestOrder(['amount' => 1, 'currency' => 'KUDOS']);
+
+    expect($response->isPending())->toBeTrue()
+        ->and($response->data['taler_pay_uri'])->toBe('taler://pay/test');
+
+    Http::assertSent(function ($httpRequest) {
+        $body = $httpRequest->data();
+
+        return isset($body['order_id'])
+            && str_starts_with($body['order_id'], 'ledger-test-')
+            && data_get($body, 'order.metadata.test_order') === true;
+    });
 });

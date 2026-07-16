@@ -148,6 +148,10 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                         $router->post('{id}/charge', $controller('charge'));
                                         $router->post('{id}/refund', $controller('refund'));
                                         $router->post('{id}/setup-intent', $controller('setupIntent'));
+                                        $router->post('{id}/test-credentials', $controller('testCredentials'));
+                                        $router->post('{id}/create-test-order', $controller('createTestOrder'));
+                                        $router->post('{id}/register-webhook', $controller('registerWebhook'));
+                                        $router->get('{id}/diagnostics', $controller('diagnostics'));
                                         $router->get('{id}/transactions', $controller('transactions'));
                                     }
                                 );

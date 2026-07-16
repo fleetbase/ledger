@@ -19,7 +19,7 @@
             <InputGroup @name="Status">
                 <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
                     <PowerSelect
-                        @options={{array "draft" "sent" "viewed" "partial" "paid" "overdue" "cancelled"}}
+                        @options={{array "draft" "sent" "viewed" "partial" "paid" "refunded" "overdue" "cancelled"}}
                         @selected={{@resource.status}}
                         @onChange={{fn (mut @resource.status)}}
                         @placeholder="Select status"

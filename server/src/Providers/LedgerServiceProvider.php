@@ -114,6 +114,8 @@ class LedgerServiceProvider extends CoreServiceProvider
                 \Fleetbase\Ledger\Console\Commands\BackfillTransactionDirection::class,
                 \Fleetbase\Ledger\Console\Commands\UpdateOverdueInvoices::class,
                 \Fleetbase\Ledger\Console\Commands\RepairRevenueLifecycle::class,
+                \Fleetbase\Ledger\Console\Commands\VerifyTalerSettlements::class,
+                \Fleetbase\Ledger\Console\Commands\TalerSandboxE2E::class,
             ]);
         }
     }

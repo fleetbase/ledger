@@ -89,6 +89,89 @@
         </div>
     </ContentPanel>
 
+    {{#if this.isTaler}}
+        <ContentPanel @title="Taler Diagnostics" @open={{true}} @wrapperClass="bordered-top">
+            <div class="grid grid-cols-1 gap-3 text-xs dark:text-gray-100">
+                <div class="flex flex-wrap items-center gap-2">
+                    <Button
+                        @type="secondary"
+                        @icon={{if this.testCredentials.isRunning "spinner" "check-circle"}}
+                        @iconSpin={{this.testCredentials.isRunning}}
+                        @text="Test Credentials"
+                        @onClick={{perform this.testCredentials}}
+                    />
+                    <Button
+                        @type="secondary"
+                        @icon={{if this.registerWebhook.isRunning "spinner" "link"}}
+                        @iconSpin={{this.registerWebhook.isRunning}}
+                        @text="Register Webhook"
+                        @onClick={{perform this.registerWebhook}}
+                    />
+                    <Button
+                        @type="secondary"
+                        @icon={{if this.createTestOrder.isRunning "spinner" "flask"}}
+                        @iconSpin={{this.createTestOrder.isRunning}}
+                        @text="Create Test Order"
+                        @onClick={{perform this.createTestOrder}}
+                    />
+                    <Button
+                        @type="secondary"
+                        @icon={{if this.loadDiagnostics.isRunning "spinner" "rotate"}}
+                        @iconSpin={{this.loadDiagnostics.isRunning}}
+                        @text="Refresh"
+                        @onClick={{perform this.loadDiagnostics}}
+                    />
+                </div>
+
+                {{#if this.lastActionResult}}
+                    <div class="field-info-container">
+                        <div class="field-name">Last Action</div>
+                        <div class="field-value">
+                            <Badge @status={{this.lastActionResult.status}}>{{titleize this.lastActionResult.status}}</Badge>
+                            <span class="ml-2">{{this.lastActionResult.message}}</span>
+                        </div>
+                        {{#if this.lastActionResult.data.taler_pay_uri}}
+                            <div class="mt-2 font-mono text-[11px] break-all select-all">{{this.lastActionResult.data.taler_pay_uri}}</div>
+                        {{/if}}
+                    </div>
+                {{/if}}
+
+                {{#if this.diagnostics}}
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                        <div class="field-info-container">
+                            <div class="field-name">Webhook Registration</div>
+                            <div class="field-value">{{titleize this.diagnostics.diagnostics.webhook_registration}}</div>
+                        </div>
+                        <div class="field-info-container">
+                            <div class="field-name">Last Webhook Received</div>
+                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_webhook_received_at}}</div>
+                        </div>
+                        <div class="field-info-container">
+                            <div class="field-name">Last Payment Event</div>
+                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_payment_event_at}}</div>
+                        </div>
+                        <div class="field-info-container">
+                            <div class="field-name">Last Refund Event</div>
+                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_refund_event_at}}</div>
+                        </div>
+                        <div class="field-info-container">
+                            <div class="field-name">Last Settlement Seen</div>
+                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_settlement_seen_at}}</div>
+                        </div>
+                        <div class="field-info-container">
+                            <div class="field-name">Reconciliation Status</div>
+                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_reconciliation_status}}</div>
+                        </div>
+                    </div>
+                {{else if this.loadDiagnostics.isRunning}}
+                    <div class="flex items-center gap-2 text-gray-500"><Spinner /> Loading diagnostics...</div>
+                {{else}}
+                    <div class="text-gray-400">Diagnostics are not available for this gateway yet.</div>
+                {{/if}}
+            </div>
+        </ContentPanel>
+    {{/if}}
+
     {{! RECORD INFO }}
     <ContentPanel @title="Record Info" @open={{true}} @wrapperClass="bordered-top">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">

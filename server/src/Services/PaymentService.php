@@ -197,8 +197,12 @@ class PaymentService
                 'message'              => $response->message,
                 'raw_response'         => array_merge(
                     $response->rawResponse,
-                    array_filter(['invoice_uuid' => $invoiceUuid])
+                    array_filter([
+                        'invoice_uuid' => $invoiceUuid,
+                        'data'         => $response->data,
+                    ])
                 ),
+                'refund_status'        => $type === 'refund' ? ($response->data['refund_status'] ?? $response->status) : null,
             ]);
         } catch (\Throwable $e) {
             // Log but don't fail the payment — the charge already went through

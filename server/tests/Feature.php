@@ -190,6 +190,74 @@ test('transactions use two-axis lifecycle and settlement status contract', funct
         ->not->toContain("'succeeded'");
 });
 
+test('taler gateway lifecycle routes and diagnostics are registered', function () {
+    $routes     = file_get_contents(__DIR__ . '/../src/routes.php');
+    $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/GatewayController.php');
+    $driver     = file_get_contents(__DIR__ . '/../src/Gateways/TalerDriver.php');
+    $resource   = file_get_contents(__DIR__ . '/../src/Http/Resources/v1/GatewayTransaction.php');
+    $authSchema = file_get_contents(__DIR__ . '/../src/Auth/Schemas/Ledger.php');
+
+    expect($routes)
+        ->toContain("'{id}/test-credentials'")
+        ->toContain("'{id}/create-test-order'")
+        ->toContain("'{id}/register-webhook'")
+        ->toContain("'{id}/diagnostics'");
+
+    expect($controller)
+        ->toContain('public function testCredentials')
+        ->toContain('public function createTestOrder')
+        ->toContain('public function registerWebhook')
+        ->toContain('public function diagnostics');
+
+    expect($driver)
+        ->toContain('public function testCredentials')
+        ->toContain('public function createTestOrder')
+        ->toContain('public function registerWebhook')
+        ->toContain("'company_uuid' => \$companyUuid")
+        ->toContain("'gateway_id'   => \$gatewayId");
+
+    expect($resource)
+        ->toContain("'gateway_reference_id'")
+        ->toContain("'refund_status'")
+        ->toContain("'reconciliation_status'");
+
+    expect($authSchema)
+        ->toContain("'test-credentials'")
+        ->toContain("'create-test-order'")
+        ->toContain("'register-webhook'")
+        ->toContain("'diagnostics'");
+});
+
+test('taler webhook unresolved routing is audited', function () {
+    $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/WebhookController.php');
+
+    expect($controller)
+        ->toContain("\$driver === 'taler'")
+        ->toContain('recordUnresolvedWebhook')
+        ->toContain('matched multiple active gateways')
+        ->toContain('Taler webhook could not resolve an active gateway.');
+});
+
+test('taler settlement and e2e commands are registered', function () {
+    $provider = file_get_contents(__DIR__ . '/../src/Providers/LedgerServiceProvider.php');
+    $settlementCommand = file_get_contents(__DIR__ . '/../src/Console/Commands/VerifyTalerSettlements.php');
+    $e2eCommand = file_get_contents(__DIR__ . '/../src/Console/Commands/TalerSandboxE2E.php');
+
+    expect($provider)
+        ->toContain('VerifyTalerSettlements::class')
+        ->toContain('TalerSandboxE2E::class');
+
+    expect($settlementCommand)
+        ->toContain('ledger:taler:verify-settlements')
+        ->toContain('reconciliation_status')
+        ->toContain('wire_reconciled');
+
+    expect($e2eCommand)
+        ->toContain('ledger:taler:e2e')
+        ->toContain('TALER_E2E_ENABLED')
+        ->toContain('TALER_E2E_BACKEND_URL');
+});
+
 test('invoice filter supports table filter params', function () {
     $filter = file_get_contents(__DIR__ . '/../src/Http/Filter/InvoiceFilter.php');
 

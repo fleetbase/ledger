@@ -104,6 +104,7 @@ export default class BillingInvoicesIndexController extends Controller {
                     { label: 'Viewed', value: 'viewed' },
                     { label: 'Partial', value: 'partial' },
                     { label: 'Paid', value: 'paid' },
+                    { label: 'Refunded', value: 'refunded' },
                     { label: 'Overdue', value: 'overdue' },
                     { label: 'Void', value: 'void' },
                     { label: 'Cancelled', value: 'cancelled' },

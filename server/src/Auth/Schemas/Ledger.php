@@ -49,7 +49,7 @@ class Ledger
         ],
         [
             'name'    => 'gateway',
-            'actions' => ['charge', 'refund', 'setup-intent'],
+            'actions' => ['charge', 'refund', 'setup-intent', 'test-credentials', 'create-test-order', 'register-webhook', 'diagnostics'],
         ],
         [
             'name'    => 'gateway-transaction',
