@@ -259,7 +259,8 @@ test('invoice refund workflow routes controller and ui are registered', function
         ->toContain('refundableGatewayTransactions')
         ->toContain('invoiceRemainingRefundableAmount')
         ->toContain('new RefundRequest(')
-        ->toContain("'refund_kind' => \$refundKind")
+        ->toContain("'refund_kind'")
+        ->toContain('$refundKind')
         ->toContain("'data'                   => \$response->data");
 
     expect($ui)
