@@ -267,6 +267,10 @@ test('invoice refund workflow routes controller and ui are registered', function
         ->toContain('Issue Refund')
         ->toContain("invoices/\${invoice.id}/refund-options")
         ->toContain("invoices/\${invoice.id}/refund")
+        ->toContain('confirmRefund(invoice, options, selected, modal)')
+        ->toContain('this.modalsManager.confirm')
+        ->toContain('Confirm Refund')
+        ->toContain('refundInvoice(invoice, options)')
         ->toContain('showRefundResult')
         ->toContain("responseData.taler_refund_uri ?? responseData.refund_url")
         ->toContain('this.hostRouter.refresh()');

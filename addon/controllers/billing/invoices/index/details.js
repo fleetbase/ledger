@@ -252,33 +252,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
                         return;
                     }
 
-                    modal.startLoading();
-
-                    try {
-                        const response = await this.fetch.post(
-                            `invoices/${invoice.id}/refund`,
-                            {
-                                gateway_transaction_id: options.selectedGatewayTransactionId,
-                                amount: options.amount,
-                                reason: options.reason || null,
-                            },
-                            { namespace: 'ledger/int/v1' }
-                        );
-                        const responseData = response.data ?? {};
-                        const refundUrl = responseData.taler_refund_uri ?? responseData.refund_url;
-
-                        this.notifications.success('Refund issued successfully.');
-                        await invoice.reload();
-                        this.hostRouter.refresh();
-                        modal.done();
-
-                        if (refundUrl) {
-                            this.showRefundResult(response, refundUrl);
-                        }
-                    } catch (error) {
-                        this.notifications.serverError(error);
-                        modal.stopLoading();
-                    }
+                    this.confirmRefund(invoice, options, selected, modal);
                 },
             };
 
@@ -286,6 +260,51 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         } catch (error) {
             this.notifications.serverError(error);
         }
+    }
+
+    confirmRefund(invoice, options, selected, refundModal) {
+        const amountLabel = `${options.amount} ${selected.currency ?? options.summary?.currency ?? invoice.currency}`;
+        const gatewayLabel = selected.gateway?.name ?? selected.gateway?.driver ?? 'the selected gateway';
+        const talerNote = selected.requires_customer_action ? ' GNU Taler may return a refund URI that must be shared with the customer wallet.' : '';
+
+        this.modalsManager.confirm({
+            title: `Confirm Refund ${invoice.number}`,
+            body: `Issue a ${amountLabel} refund through ${gatewayLabel}? This will create a gateway refund and Ledger reversal.${talerNote}`,
+            confirm: async (confirmationModal) => {
+                confirmationModal.startLoading();
+
+                try {
+                    const response = await this.refundInvoice(invoice, options);
+                    const responseData = response.data ?? {};
+                    const refundUrl = responseData.taler_refund_uri ?? responseData.refund_url;
+
+                    this.notifications.success('Refund issued successfully.');
+                    await invoice.reload();
+                    this.hostRouter.refresh();
+                    confirmationModal.done();
+                    refundModal.done();
+
+                    if (refundUrl) {
+                        this.showRefundResult(response, refundUrl);
+                    }
+                } catch (error) {
+                    this.notifications.serverError(error);
+                    confirmationModal.stopLoading();
+                }
+            },
+        });
+    }
+
+    refundInvoice(invoice, options) {
+        return this.fetch.post(
+            `invoices/${invoice.id}/refund`,
+            {
+                gateway_transaction_id: options.selectedGatewayTransactionId,
+                amount: options.amount,
+                reason: options.reason || null,
+            },
+            { namespace: 'ledger/int/v1' }
+        );
     }
 
     showRefundResult(response, refundUrl) {
