@@ -242,6 +242,8 @@ test('invoice refund workflow routes controller and ui are registered', function
     $ui         = file_get_contents(__DIR__ . '/../../addon/controllers/billing/invoices/index/details.js');
     $modal      = file_get_contents(__DIR__ . '/../../addon/components/modals/issue-refund.hbs');
     $result     = file_get_contents(__DIR__ . '/../../addon/components/modals/refund-result.hbs');
+    $modalReexport = file_get_contents(__DIR__ . '/../../app/components/modals/issue-refund.js');
+    $resultReexport = file_get_contents(__DIR__ . '/../../app/components/modals/refund-result.js');
 
     expect($routes)
         ->toContain("'{id}/refund-options'")
@@ -278,6 +280,12 @@ test('invoice refund workflow routes controller and ui are registered', function
         ->toContain('Taler Refund URI')
         ->toContain('<ClickToCopy')
         ->toContain('Gateway refund transaction');
+
+    expect($modalReexport)
+        ->toContain("@fleetbase/ledger-engine/components/modals/issue-refund");
+
+    expect($resultReexport)
+        ->toContain("@fleetbase/ledger-engine/components/modals/refund-result");
 });
 
 test('taler webhook unresolved routing is audited', function () {
