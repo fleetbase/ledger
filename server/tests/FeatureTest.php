@@ -273,7 +273,8 @@ test('invoice refund workflow routes controller and ui are registered', function
 
     expect($modal)
         ->toContain('Remaining refundable')
-        ->toContain('Custom partial amount')
+        ->toContain('Refund Type')
+        ->toContain('custom for a partial refund')
         ->toContain('GNU Taler may return a refund URI')
         ->toContain('<MoneyInput');
 
