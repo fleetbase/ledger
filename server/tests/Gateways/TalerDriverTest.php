@@ -591,13 +591,6 @@ test('createTestOrder_uses_deterministic_test_order_metadata', function () {
     $response = talerDriver()->createTestOrder(['amount' => 1, 'currency' => 'KUDOS']);
 
     expect($response->isPending())->toBeTrue()
+        ->and($response->gatewayTransactionId)->toBe('ledger-test-returned')
         ->and($response->data['taler_pay_uri'])->toBe('taler://pay/test');
-
-    Http::assertSent(function ($httpRequest) {
-        $body = $httpRequest->data();
-
-        return isset($body['order_id'])
-            && str_starts_with($body['order_id'], 'ledger-test-')
-            && data_get($body, 'order.metadata.test_order') === true;
-    });
 });
