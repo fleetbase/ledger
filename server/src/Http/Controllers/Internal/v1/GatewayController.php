@@ -45,16 +45,16 @@ class GatewayController extends LedgerResourceController
 
     public function summary(): JsonResponse
     {
-        $companyUuid = session('company');
-        $gateways = Gateway::where('company_uuid', $companyUuid)->get();
+        $companyUuid  = session('company');
+        $gateways     = Gateway::where('company_uuid', $companyUuid)->get();
         $gatewayUuids = $gateways->pluck('uuid');
-        $lastPayment = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->whereIn('event_type', [
+        $lastPayment  = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->whereIn('event_type', [
             \Fleetbase\Ledger\DTO\GatewayResponse::EVENT_PAYMENT_PENDING,
             \Fleetbase\Ledger\DTO\GatewayResponse::EVENT_PAYMENT_SUCCEEDED,
         ]));
-        $lastRefund = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->where('type', 'refund'));
+        $lastRefund     = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->where('type', 'refund'));
         $lastSettlement = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->whereNotNull('reconciliation_checked_at'), 'reconciliation_checked_at');
-        $driverSummary = collect($this->paymentService->getDriverManifest())->map(function ($driver) use ($gateways) {
+        $driverSummary  = collect($this->paymentService->getDriverManifest())->map(function ($driver) use ($gateways) {
             $driverGateways = $gateways->where('driver', $driver['code']);
 
             return [
@@ -69,7 +69,7 @@ class GatewayController extends LedgerResourceController
         })->values();
 
         return response()->json([
-            'status' => 'ok',
+            'status'  => 'ok',
             'summary' => [
                 'total_gateways'     => $gateways->count(),
                 'active_gateways'    => $gateways->where('status', 'active')->count(),
@@ -202,11 +202,11 @@ class GatewayController extends LedgerResourceController
         $result = $this->sanitizeProviderResult($driver->testCredentials());
 
         $this->recordGatewayDiagnostic($gateway, 'last_credential_test', [
-            'status'     => $result['status'] ?? (($result['ok'] ?? false) ? 'success' : 'failed'),
-            'successful' => (bool) ($result['ok'] ?? false),
-            'message'    => $result['message'] ?? null,
+            'status'      => $result['status'] ?? (($result['ok'] ?? false) ? 'success' : 'failed'),
+            'successful'  => (bool) ($result['ok'] ?? false),
+            'message'     => $result['message'] ?? null,
             'http_status' => $result['http_status'] ?? null,
-            'checked_at' => now()->toISOString(),
+            'checked_at'  => now()->toISOString(),
         ]);
 
         return response()->json($result, ($result['ok'] ?? false) ? 200 : 422);
@@ -329,7 +329,7 @@ class GatewayController extends LedgerResourceController
         $lastTestOrder           = $diagnosticMeta['last_test_order'] ?? [];
 
         return response()->json([
-            'status' => 'ok',
+            'status'  => 'ok',
             'gateway' => [
                 'id'                 => $gateway->public_id,
                 'uuid'               => $gateway->uuid,
@@ -350,10 +350,10 @@ class GatewayController extends LedgerResourceController
                 'last_payment_event_at'             => optional($lastPayment?->created_at)->toISOString(),
                 'last_refund_event_at'              => optional($lastRefund?->created_at)->toISOString(),
                 'last_settlement_seen_at'           => optional($lastSettlement?->reconciliation_checked_at)->toISOString(),
-                'last_reconciliation_status' => $lastSettlement?->reconciliation_status,
-                'last_credential_test'       => $lastCredentialTest ?: null,
-                'last_webhook_registration'  => $lastWebhookRegistration ?: null,
-                'last_test_order'            => $lastTestOrder ?: null,
+                'last_reconciliation_status'        => $lastSettlement?->reconciliation_status,
+                'last_credential_test'              => $lastCredentialTest ?: null,
+                'last_webhook_registration'         => $lastWebhookRegistration ?: null,
+                'last_test_order'                   => $lastTestOrder ?: null,
             ],
             'last_webhook'    => $lastWebhook ? (new GatewayTransactionResource($lastWebhook))->resolve() : null,
             'last_payment'    => $lastPayment ? (new GatewayTransactionResource($lastPayment))->resolve() : null,
@@ -390,7 +390,7 @@ class GatewayController extends LedgerResourceController
 
     private function recordGatewayDiagnostic(Gateway $gateway, string $key, array $summary): void
     {
-        $meta = $gateway->meta ?? [];
+        $meta                      = $gateway->meta ?? [];
         $meta['diagnostics'][$key] = array_filter($summary, fn ($value) => $value !== null);
 
         $gateway->forceFill(['meta' => $meta])->save();

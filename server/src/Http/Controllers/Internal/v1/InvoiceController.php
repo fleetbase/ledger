@@ -2,10 +2,10 @@
 
 namespace Fleetbase\Ledger\Http\Controllers\Internal\v1;
 
+use Fleetbase\Ledger\DTO\RefundRequest;
 use Fleetbase\Ledger\Http\Controllers\LedgerResourceController;
 use Fleetbase\Ledger\Http\Resources\v1\Invoice as InvoiceResource;
 use Fleetbase\Ledger\Http\Resources\v1\Transaction as TransactionResource;
-use Fleetbase\Ledger\DTO\RefundRequest;
 use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Models\InvoiceItem;
@@ -156,13 +156,13 @@ class InvoiceController extends LedgerResourceController
 
         return response()->json([
             'invoice' => [
-                'id'                        => $invoice->public_id,
-                'uuid'                      => $invoice->uuid,
-                'number'                    => $invoice->number,
-                'currency'                  => $invoice->currency,
-                'total_amount'              => (int) $invoice->total_amount,
-                'amount_paid'               => (int) $invoice->amount_paid,
-                'refunded_amount'           => $this->invoiceRefundedAmount($invoice),
+                'id'                          => $invoice->public_id,
+                'uuid'                        => $invoice->uuid,
+                'number'                      => $invoice->number,
+                'currency'                    => $invoice->currency,
+                'total_amount'                => (int) $invoice->total_amount,
+                'amount_paid'                 => (int) $invoice->amount_paid,
+                'refunded_amount'             => $this->invoiceRefundedAmount($invoice),
                 'remaining_refundable_amount' => $this->invoiceRemainingRefundableAmount($invoice),
             ],
             'options' => $options,
@@ -182,21 +182,21 @@ class InvoiceController extends LedgerResourceController
             'reason'                 => 'nullable|string|max:500',
         ]);
 
-        $options = collect($this->refundableGatewayTransactions($invoice));
+        $options  = collect($this->refundableGatewayTransactions($invoice));
         $selected = $options->firstWhere('gateway_transaction_id', $request->input('gateway_transaction_id'));
 
         if (!$selected) {
             return response()->json(['error' => 'The selected payment cannot be refunded.'], 422);
         }
 
-        $amount = $request->integer('amount');
+        $amount                 = $request->integer('amount');
         $remainingInvoiceAmount = $this->invoiceRemainingRefundableAmount($invoice);
         $remainingPaymentAmount = (int) data_get($selected, 'refundable_amount', 0);
-        $maxRefundableAmount = min($remainingInvoiceAmount, $remainingPaymentAmount);
+        $maxRefundableAmount    = min($remainingInvoiceAmount, $remainingPaymentAmount);
 
         if ($amount > $maxRefundableAmount) {
             return response()->json([
-                'error' => 'Refund amount exceeds the remaining refundable amount.',
+                'error'                       => 'Refund amount exceeds the remaining refundable amount.',
                 'remaining_refundable_amount' => $maxRefundableAmount,
             ], 422);
         }
@@ -210,8 +210,8 @@ class InvoiceController extends LedgerResourceController
             reason: $request->input('reason'),
             invoiceUuid: $invoice->uuid,
             metadata: [
-                'refund_kind' => $refundKind,
-                'invoice_uuid' => $invoice->uuid,
+                'refund_kind'       => $refundKind,
+                'invoice_uuid'      => $invoice->uuid,
                 'invoice_public_id' => $invoice->public_id,
             ],
         ));
@@ -399,7 +399,7 @@ class InvoiceController extends LedgerResourceController
 
         return $gatewayTransactions
             ->map(function (GatewayTransaction $transaction) use ($invoice, $remainingInvoiceAmount) {
-                $paidAmount = (int) ($transaction->amount ?: $invoice->amount_paid);
+                $paidAmount     = (int) ($transaction->amount ?: $invoice->amount_paid);
                 $refundedAmount = (int) GatewayTransaction::where('company_uuid', $invoice->company_uuid)
                     ->where('gateway_uuid', $transaction->gateway_uuid)
                     ->where('gateway_reference_id', $transaction->gateway_reference_id)
@@ -407,24 +407,24 @@ class InvoiceController extends LedgerResourceController
                     ->whereNotIn('status', ['failed'])
                     ->sum('amount');
                 $remainingPaymentAmount = max(0, $paidAmount - $refundedAmount);
-                $refundableAmount = min($remainingInvoiceAmount, $remainingPaymentAmount);
+                $refundableAmount       = min($remainingInvoiceAmount, $remainingPaymentAmount);
 
                 if (!$transaction->gateway || $refundableAmount <= 0) {
                     return null;
                 }
 
                 return [
-                    'id'                     => $transaction->public_id,
-                    'uuid'                   => $transaction->uuid,
-                    'gateway_transaction_id' => $transaction->gateway_reference_id,
-                    'amount'                 => $paidAmount,
-                    'currency'               => $transaction->currency ?? $invoice->currency,
-                    'refunded_amount'        => $refundedAmount,
-                    'refundable_amount'      => $refundableAmount,
-                    'status'                 => $transaction->status,
-                    'created_at'             => optional($transaction->created_at)->toISOString(),
+                    'id'                       => $transaction->public_id,
+                    'uuid'                     => $transaction->uuid,
+                    'gateway_transaction_id'   => $transaction->gateway_reference_id,
+                    'amount'                   => $paidAmount,
+                    'currency'                 => $transaction->currency ?? $invoice->currency,
+                    'refunded_amount'          => $refundedAmount,
+                    'refundable_amount'        => $refundableAmount,
+                    'status'                   => $transaction->status,
+                    'created_at'               => optional($transaction->created_at)->toISOString(),
                     'requires_customer_action' => $transaction->gateway->driver === 'taler',
-                    'gateway'                => [
+                    'gateway'                  => [
                         'id'        => $transaction->gateway->public_id ?? $transaction->gateway->uuid,
                         'uuid'      => $transaction->gateway->uuid,
                         'public_id' => $transaction->gateway->public_id,

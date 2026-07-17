@@ -567,7 +567,7 @@ test('registerWebhook_posts_tenant_safe_body_template', function () {
         ->and($result['status'])->toBe('registered');
 
     Http::assertSent(function ($httpRequest) {
-        $body = $httpRequest->data();
+        $body     = $httpRequest->data();
         $template = $body['body_template'] ?? '';
 
         return str_contains($template, 'company-uuid-1')

@@ -70,7 +70,7 @@ class HandleProcessedRefund implements ShouldQueue
                         'amount'             => $amount,
                         'net_amount'         => $amount,
                         'currency'           => $currency,
-                        'description'        => "Refund for invoice " . ($invoice?->number ?? $response->gatewayTransactionId),
+                        'description'        => 'Refund for invoice ' . ($invoice?->number ?? $response->gatewayTransactionId),
                         'type'               => 'gateway_refund',
                         'direction'          => 'debit',
                         'status'             => Transaction::STATUS_SUCCESS,

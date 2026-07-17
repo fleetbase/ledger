@@ -65,7 +65,7 @@ class VerifyTalerSettlements extends Command
                         ? 'wire_reconciled'
                         : ($status === 'paid' ? 'settlement_checked' : 'not_settled');
                     $transaction->reconciliation_checked_at = now();
-                    $transaction->reconciliation_data = [
+                    $transaction->reconciliation_data       = [
                         'http_status'      => $result['http_status'] ?? null,
                         'order_status'     => $status,
                         'wired'            => $wired,
@@ -76,9 +76,9 @@ class VerifyTalerSettlements extends Command
                     $transaction->save();
                     $checked++;
                 } catch (\Throwable $e) {
-                    $transaction->reconciliation_status = 'error';
+                    $transaction->reconciliation_status     = 'error';
                     $transaction->reconciliation_checked_at = now();
-                    $transaction->reconciliation_data = [
+                    $transaction->reconciliation_data       = [
                         'error' => $e->getMessage(),
                     ];
                     $transaction->save();

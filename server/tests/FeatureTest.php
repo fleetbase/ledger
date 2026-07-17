@@ -271,18 +271,18 @@ test('taler gateway lifecycle routes and diagnostics are registered', function (
 });
 
 test('payment gateway management renders hub catalog and full page details', function () {
-    $routes = file_get_contents(__DIR__ . '/../../addon/routes.js');
-    $indexController = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/index.js');
-    $indexTemplate = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/index.hbs');
-    $hub = file_get_contents(__DIR__ . '/../../addon/components/gateway/hub.hbs');
-    $catalogCard = file_get_contents(__DIR__ . '/../../addon/components/gateway/catalog-card.hbs');
-    $providerCell = file_get_contents(__DIR__ . '/../../addon/components/table/cell/gateway-provider.hbs');
-    $detailsTemplate = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/details.hbs');
-    $detailsComponent = file_get_contents(__DIR__ . '/../../addon/components/gateway/details.hbs');
+    $routes             = file_get_contents(__DIR__ . '/../../addon/routes.js');
+    $indexController    = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/index.js');
+    $indexTemplate      = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/index.hbs');
+    $hub                = file_get_contents(__DIR__ . '/../../addon/components/gateway/hub.hbs');
+    $catalogCard        = file_get_contents(__DIR__ . '/../../addon/components/gateway/catalog-card.hbs');
+    $providerCell       = file_get_contents(__DIR__ . '/../../addon/components/table/cell/gateway-provider.hbs');
+    $detailsTemplate    = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/details.hbs');
+    $detailsComponent   = file_get_contents(__DIR__ . '/../../addon/components/gateway/details.hbs');
     $detailsComponentJs = file_get_contents(__DIR__ . '/../../addon/components/gateway/details.js');
-    $detailsController = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/details.js');
-    $styles = file_get_contents(__DIR__ . '/../../addon/styles/ledger-engine.css');
-    $gatewayRoutes = "this.route('gateways', function () {
+    $detailsController  = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/details.js');
+    $styles             = file_get_contents(__DIR__ . '/../../addon/styles/ledger-engine.css');
+    $gatewayRoutes      = "this.route('gateways', function () {
             this.route('index', { path: '/' });
             this.route('new');
             this.route('edit', { path: '/edit/:id' });
@@ -348,10 +348,10 @@ test('payment gateway management renders hub catalog and full page details', fun
         ->toContain('currentRouteName')
         ->toContain('isTransactionsTab');
 
-    $newTemplate  = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/new.hbs');
-    $editTemplate = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/edit.hbs');
+    $newTemplate    = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/new.hbs');
+    $editTemplate   = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/edit.hbs');
     $editController = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/edit.js');
-    $formTemplate = file_get_contents(__DIR__ . '/../../addon/components/gateway/form.hbs');
+    $formTemplate   = file_get_contents(__DIR__ . '/../../addon/components/gateway/form.hbs');
 
     expect($newTemplate)
         ->toContain('Connect Payment Gateway')
@@ -403,13 +403,13 @@ test('payment gateway management renders hub catalog and full page details', fun
 });
 
 test('invoice refund workflow routes controller and ui are registered', function () {
-    $routes     = file_get_contents(__DIR__ . '/../src/routes.php');
-    $authSchema = file_get_contents(__DIR__ . '/../src/Auth/Schemas/Ledger.php');
-    $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/InvoiceController.php');
-    $ui         = file_get_contents(__DIR__ . '/../../addon/controllers/billing/invoices/index/details.js');
-    $modal      = file_get_contents(__DIR__ . '/../../addon/components/modals/issue-refund.hbs');
-    $result     = file_get_contents(__DIR__ . '/../../addon/components/modals/refund-result.hbs');
-    $modalReexport = file_get_contents(__DIR__ . '/../../app/components/modals/issue-refund.js');
+    $routes         = file_get_contents(__DIR__ . '/../src/routes.php');
+    $authSchema     = file_get_contents(__DIR__ . '/../src/Auth/Schemas/Ledger.php');
+    $controller     = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/InvoiceController.php');
+    $ui             = file_get_contents(__DIR__ . '/../../addon/controllers/billing/invoices/index/details.js');
+    $modal          = file_get_contents(__DIR__ . '/../../addon/components/modals/issue-refund.hbs');
+    $result         = file_get_contents(__DIR__ . '/../../addon/components/modals/refund-result.hbs');
+    $modalReexport  = file_get_contents(__DIR__ . '/../../app/components/modals/issue-refund.js');
     $resultReexport = file_get_contents(__DIR__ . '/../../app/components/modals/refund-result.js');
 
     expect($routes)
@@ -432,14 +432,14 @@ test('invoice refund workflow routes controller and ui are registered', function
 
     expect($ui)
         ->toContain('Issue Refund')
-        ->toContain("invoices/\${invoice.id}/refund-options")
-        ->toContain("invoices/\${invoice.id}/refund")
+        ->toContain('invoices/${invoice.id}/refund-options')
+        ->toContain('invoices/${invoice.id}/refund')
         ->toContain('confirmRefund(invoice, options, selected, modal)')
         ->toContain('this.modalsManager.confirm')
         ->toContain('Confirm Refund')
         ->toContain('refundInvoice(invoice, options)')
         ->toContain('showRefundResult')
-        ->toContain("responseData.taler_refund_uri ?? responseData.refund_url")
+        ->toContain('responseData.taler_refund_uri ?? responseData.refund_url')
         ->toContain('this.hostRouter.refresh()');
 
     expect($modal)
@@ -455,10 +455,10 @@ test('invoice refund workflow routes controller and ui are registered', function
         ->toContain('Gateway refund transaction');
 
     expect($modalReexport)
-        ->toContain("@fleetbase/ledger-engine/components/modals/issue-refund");
+        ->toContain('@fleetbase/ledger-engine/components/modals/issue-refund');
 
     expect($resultReexport)
-        ->toContain("@fleetbase/ledger-engine/components/modals/refund-result");
+        ->toContain('@fleetbase/ledger-engine/components/modals/refund-result');
 });
 
 test('taler webhook unresolved routing is audited', function () {
@@ -472,9 +472,9 @@ test('taler webhook unresolved routing is audited', function () {
 });
 
 test('taler settlement and e2e commands are registered', function () {
-    $provider = file_get_contents(__DIR__ . '/../src/Providers/LedgerServiceProvider.php');
+    $provider          = file_get_contents(__DIR__ . '/../src/Providers/LedgerServiceProvider.php');
     $settlementCommand = file_get_contents(__DIR__ . '/../src/Console/Commands/VerifyTalerSettlements.php');
-    $e2eCommand = file_get_contents(__DIR__ . '/../src/Console/Commands/TalerSandboxE2E.php');
+    $e2eCommand        = file_get_contents(__DIR__ . '/../src/Console/Commands/TalerSandboxE2E.php');
 
     expect($provider)
         ->toContain('VerifyTalerSettlements::class')

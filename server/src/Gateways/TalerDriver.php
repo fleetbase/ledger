@@ -6,11 +6,11 @@ use Fleetbase\Ledger\DTO\GatewayResponse;
 use Fleetbase\Ledger\DTO\PurchaseRequest;
 use Fleetbase\Ledger\DTO\RefundRequest;
 use Fleetbase\Ledger\Exceptions\WebhookSignatureException;
+use Fleetbase\Support\Utils;
 use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use Fleetbase\Support\Utils;
 use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
 
 /**
@@ -505,8 +505,8 @@ class TalerDriver extends AbstractGatewayDriver
             'amount'   => $talerAmount,
         ]);
 
-        $rawResponse = $response->json() ?? [];
-        $refundUri   = $rawResponse['taler_refund_uri'] ?? null;
+        $rawResponse  = $response->json() ?? [];
+        $refundUri    = $rawResponse['taler_refund_uri'] ?? null;
         $refundStatus = $refundUri ? 'wallet_uri_returned' : 'backend_approved';
 
         return GatewayResponse::success(
