@@ -205,12 +205,16 @@ test('taler gateway lifecycle routes and diagnostics are registered', function (
     $authSchema = file_get_contents(__DIR__ . '/../src/Auth/Schemas/Ledger.php');
 
     expect($routes)
+        ->toContain("'gateways/summary'")
         ->toContain("'{id}/test-credentials'")
         ->toContain("'{id}/create-test-order'")
         ->toContain("'{id}/register-webhook'")
         ->toContain("'{id}/diagnostics'");
 
     expect($controller)
+        ->toContain('public function summary')
+        ->toContain("'webhook_warnings'")
+        ->toContain("'last_payment_at'")
         ->toContain('public function testCredentials')
         ->toContain('public function createTestOrder')
         ->toContain('public function registerWebhook')
@@ -229,10 +233,63 @@ test('taler gateway lifecycle routes and diagnostics are registered', function (
         ->toContain("'reconciliation_status'");
 
     expect($authSchema)
+        ->toContain("'summary'")
         ->toContain("'test-credentials'")
         ->toContain("'create-test-order'")
         ->toContain("'register-webhook'")
         ->toContain("'diagnostics'");
+});
+
+test('payment gateway management renders hub catalog and full page details', function () {
+    $routes = file_get_contents(__DIR__ . '/../../addon/routes.js');
+    $indexController = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/index.js');
+    $indexTemplate = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/index.hbs');
+    $hub = file_get_contents(__DIR__ . '/../../addon/components/gateway/hub.hbs');
+    $catalogCard = file_get_contents(__DIR__ . '/../../addon/components/gateway/catalog-card.hbs');
+    $providerCell = file_get_contents(__DIR__ . '/../../addon/components/table/cell/gateway-provider.hbs');
+    $detailsTemplate = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/index/details.hbs');
+    $detailsComponent = file_get_contents(__DIR__ . '/../../addon/components/gateway/details.hbs');
+
+    expect($routes)
+        ->toContain("this.route('setup')")
+        ->toContain("this.route('diagnostics')");
+
+    expect($indexController)
+        ->toContain("this.fetch.get('gateways/summary'")
+        ->toContain("filterOptions: ['taler', 'stripe', 'cash', 'qpay']")
+        ->toContain("cellComponent: 'table/cell/gateway-provider'");
+
+    expect($indexTemplate)
+        ->toContain('<Gateway::Hub')
+        ->toContain('@summary={{this.summary}}')
+        ->toContain('@drivers={{this.drivers}}');
+
+    expect($hub)
+        ->toContain('Payment Gateway Hub')
+        ->toContain('Connected Gateways')
+        ->toContain('Supported Gateways')
+        ->toContain('<Layout::Resource::Tabular')
+        ->toContain('<Gateway::CatalogCard');
+
+    expect($catalogCard)
+        ->toContain('Manage gateway')
+        ->toContain('Connect gateway');
+
+    expect($providerCell)
+        ->toContain('this.gateway.name')
+        ->toContain('this.subtitle');
+
+    expect($detailsTemplate)
+        ->toContain('Gateway sections')
+        ->toContain('payments.gateways.index.details.setup')
+        ->toContain('payments.gateways.index.details.diagnostics')
+        ->not->toContain('Layout::Resource::Panel');
+
+    expect($detailsComponent)
+        ->toContain('Gateway Operations')
+        ->toContain('Customer Payment Preview')
+        ->toContain('Operational Health')
+        ->toContain('GNU Taler Diagnostics');
 });
 
 test('invoice refund workflow routes controller and ui are registered', function () {

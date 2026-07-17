@@ -1,0 +1,9 @@
+<button type="button" class="group flex w-full min-w-0 cursor-pointer items-start gap-2 py-1 text-left" {{on "click" this.onClick}} ...attributes>
+    <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+        <FaIcon @icon={{this.icon}} />
+    </div>
+    <div class="min-w-0 text-left">
+        <div class="truncate text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-300">{{n-a this.gateway.name}}</div>
+        <div class="mt-0.5 max-w-[240px] truncate whitespace-nowrap text-left text-xs leading-4 text-gray-500 dark:text-gray-400">{{n-a this.subtitle}}</div>
+    </div>
+</button>

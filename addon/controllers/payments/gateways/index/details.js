@@ -13,6 +13,8 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
     get tabs() {
         return [
             { label: 'Overview', route: 'payments.gateways.index.details.index' },
+            { label: 'Setup', route: 'payments.gateways.index.details.setup' },
+            { label: 'Diagnostics', route: 'payments.gateways.index.details.diagnostics' },
             { label: 'Transactions', route: 'payments.gateways.index.details.webhooks' },
         ];
     }
@@ -22,6 +24,21 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
             { label: 'Edit', icon: 'pencil', helpText: 'Edit this payment gateway configuration.', onClick: this.editGateway },
             { label: 'Delete', icon: 'trash', type: 'danger', helpText: 'Permanently remove this payment gateway. This cannot be undone.', onClick: this.deleteGateway },
         ];
+    }
+
+    get driverIcon() {
+        return (
+            {
+                taler: 'wallet',
+                stripe: 'credit-card',
+                cash: 'money-bill-wave',
+                qpay: 'qrcode',
+            }[this.model?.driver] ?? 'plug'
+        );
+    }
+
+    get statusLabel() {
+        return this.model?.status === 'active' ? 'Active' : 'Inactive';
     }
 
     @action editGateway() {

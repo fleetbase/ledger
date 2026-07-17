@@ -49,6 +49,8 @@ export default buildRoutes(function () {
                 this.route('edit', { path: '/:id/edit' });
                 this.route('details', { path: '/:id' }, function () {
                     this.route('index', { path: '/' });
+                    this.route('setup');
+                    this.route('diagnostics');
                     this.route('webhooks');
                 });
             });

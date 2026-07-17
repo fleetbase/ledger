@@ -1,11 +1,14 @@
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
+import { task } from 'ember-concurrency';
 
 export default class PaymentsGatewaysIndexController extends Controller {
     @service gatewayActions;
     @service tableContext;
     @service intl;
+    @service fetch;
+    @service notifications;
 
     @tracked queryParams = ['page', 'limit', 'sort', 'query', 'public_id', 'name', 'code', 'driver', 'environment', 'status', 'created_at', 'updated_at'];
     @tracked page = 1;
@@ -21,6 +24,13 @@ export default class PaymentsGatewaysIndexController extends Controller {
     @tracked created_at = null;
     @tracked updated_at = null;
     @tracked table = null;
+    @tracked drivers = [];
+    @tracked summary = null;
+
+    constructor() {
+        super(...arguments);
+        this.loadGatewayHub.perform();
+    }
 
     get actionButtons() {
         return [
@@ -56,9 +66,9 @@ export default class PaymentsGatewaysIndexController extends Controller {
                 sticky: true,
                 label: this.intl.t('column.name'),
                 valuePath: 'name',
-                cellComponent: 'table/cell/anchor',
+                cellComponent: 'table/cell/gateway-provider',
                 action: this.gatewayActions.transition.view,
-                width: 200,
+                width: 320,
                 resizable: true,
                 sortable: true,
                 filterable: true,
@@ -76,7 +86,7 @@ export default class PaymentsGatewaysIndexController extends Controller {
                 filterable: true,
                 filterParam: 'driver',
                 filterComponent: 'filter/multi-option',
-                filterOptions: ['stripe', 'braintree', 'paypal', 'square', 'qpay', 'cash'],
+                filterOptions: ['taler', 'stripe', 'cash', 'qpay'],
             },
             {
                 label: this.intl.t('column.environment'),
@@ -206,5 +216,19 @@ export default class PaymentsGatewaysIndexController extends Controller {
                 searchable: false,
             },
         ];
+    }
+
+    @task({ restartable: true })
+    *loadGatewayHub() {
+        try {
+            const [drivers, summary] = yield Promise.all([
+                this.fetch.get('gateways/drivers', {}, { namespace: 'ledger/int/v1' }),
+                this.fetch.get('gateways/summary', {}, { namespace: 'ledger/int/v1' }),
+            ]);
+            this.drivers = drivers?.drivers ?? [];
+            this.summary = summary;
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
     }
 }

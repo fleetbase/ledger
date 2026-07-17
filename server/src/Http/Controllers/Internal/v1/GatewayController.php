@@ -43,6 +43,47 @@ class GatewayController extends LedgerResourceController
         ]);
     }
 
+    public function summary(): JsonResponse
+    {
+        $companyUuid = session('company');
+        $gateways = Gateway::where('company_uuid', $companyUuid)->get();
+        $gatewayUuids = $gateways->pluck('uuid');
+        $lastPayment = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->whereIn('event_type', [
+            \Fleetbase\Ledger\DTO\GatewayResponse::EVENT_PAYMENT_PENDING,
+            \Fleetbase\Ledger\DTO\GatewayResponse::EVENT_PAYMENT_SUCCEEDED,
+        ]));
+        $lastRefund = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->where('type', 'refund'));
+        $lastSettlement = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->whereNotNull('reconciliation_checked_at'), 'reconciliation_checked_at');
+        $driverSummary = collect($this->paymentService->getDriverManifest())->map(function ($driver) use ($gateways) {
+            $driverGateways = $gateways->where('driver', $driver['code']);
+
+            return [
+                'code'         => $driver['code'],
+                'name'         => $driver['name'],
+                'capabilities' => $driver['capabilities'] ?? [],
+                'configured'   => $driverGateways->count(),
+                'active'       => $driverGateways->where('status', 'active')->count(),
+                'live'         => $driverGateways->where('environment', 'live')->count(),
+                'sandbox'      => $driverGateways->where('environment', 'sandbox')->count(),
+            ];
+        })->values();
+
+        return response()->json([
+            'status' => 'ok',
+            'summary' => [
+                'total_gateways'     => $gateways->count(),
+                'active_gateways'    => $gateways->where('status', 'active')->count(),
+                'live_gateways'      => $gateways->where('environment', 'live')->count(),
+                'sandbox_gateways'   => $gateways->where('environment', 'sandbox')->count(),
+                'webhook_warnings'   => $gateways->filter(fn ($gateway) => $gateway->status === 'active' && $gateway->driver !== 'cash' && empty($gateway->webhook_url))->count(),
+                'last_payment_at'    => optional($lastPayment?->created_at)->toISOString(),
+                'last_refund_at'     => optional($lastRefund?->created_at)->toISOString(),
+                'last_settlement_at' => optional($lastSettlement?->reconciliation_checked_at)->toISOString(),
+            ],
+            'drivers' => $driverSummary,
+        ]);
+    }
+
     /**
      * Initiate a payment charge through a gateway.
      */
@@ -293,5 +334,17 @@ class GatewayController extends LedgerResourceController
         return app(\Fleetbase\Ledger\PaymentGatewayManager::class)
             ->driver($gateway->driver)
             ->initialize($gateway->decryptedConfig(), $gateway->is_sandbox);
+    }
+
+    private function latestGatewayTransaction($gatewayUuids, callable $scope, string $orderBy = 'created_at'): ?GatewayTransaction
+    {
+        if ($gatewayUuids->isEmpty()) {
+            return null;
+        }
+
+        $query = GatewayTransaction::whereIn('gateway_uuid', $gatewayUuids);
+        $scope($query);
+
+        return $query->orderBy($orderBy, 'desc')->first();
     }
 }

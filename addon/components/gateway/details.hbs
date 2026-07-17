@@ -1,197 +1,158 @@
-<div class="details-wrapper" ...attributes>
-    {{! GATEWAY DETAILS }}
-    <ContentPanel @title="Gateway Details" @open={{true}} @wrapperClass="bordered-top">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
+<div class="flex flex-col gap-4" ...attributes>
+    {{#if this.showOverview}}
+        <section class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {{#each this.readinessItems as |item|}}
+                <div class="rounded-md border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <div class="truncate text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400">{{item.label}}</div>
+                            <div class="mt-2 truncate text-sm font-semibold text-gray-900 dark:text-gray-50">{{titleize item.status}}</div>
+                        </div>
+                        <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-200">
+                            <FaIcon @icon={{item.icon}} />
+                        </div>
+                    </div>
+                </div>
+            {{/each}}
+        </section>
+    {{/if}}
 
-            <div class="col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
-                Gateway Information
+    {{#if (or this.showOverview this.showSetup)}}
+        <section class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <div class="rounded-md border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+                <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">Gateway Operations</h2>
+                <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-300">How this gateway appears to customers and how Ledger receives operational events.</p>
             </div>
+            <div class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
+                <div class="rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900">
+                    <div class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Customer Payment Preview</div>
+                    <div class="mt-3 rounded-md border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{this.driverLabel}}</div>
+                                <div class="mt-1 text-xs text-gray-500 dark:text-gray-300">{{this.checkoutPreviewLabel}}</div>
+                            </div>
+                            <Badge @status={{@resource.status}} @hideStatusDot={{true}}>{{titleize @resource.status}}</Badge>
+                        </div>
+                        <div class="mt-3 flex h-16 items-center justify-center rounded-md border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
+                            {{#if this.isTaler}}
+                                QR code / wallet redirect appears here on public invoices
+                            {{else if (eq @resource.driver "cash")}}
+                                Operator records the payment manually
+                            {{else}}
+                                Customer selects this gateway on public invoices
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
 
-            <div class="field-info-container">
-                <div class="field-name">Name</div>
-                <div class="field-value">{{n-a @resource.name}}</div>
-            </div>
-
-            <div class="field-info-container">
-                <div class="field-name">Code</div>
-                <div class="field-value font-mono">{{n-a @resource.code}}</div>
-            </div>
-
-            <div class="field-info-container">
-                <div class="field-name">Driver</div>
-                <div class="field-value">{{n-a (titleize @resource.driver)}}</div>
-            </div>
-
-            <div class="field-info-container">
-                <div class="field-name">Type</div>
-                <div class="field-value capitalize">{{n-a @resource.type}}</div>
-            </div>
-
-            <div class="field-info-container">
-                <div class="field-name">Environment</div>
-                <div class="field-value">
-                    <Badge @color={{if (eq @resource.environment "live") "success" "warning"}} class="capitalize">{{n-a @resource.environment}}</Badge>
+                <div class="rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900">
+                    <div class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Integration</div>
+                    <div class="mt-3 space-y-3 text-xs">
+                        <div>
+                            <div class="font-semibold text-gray-700 dark:text-gray-200">System Webhook URL</div>
+                            <div class="mt-1 flex items-start gap-2 rounded-md bg-white p-2 font-mono text-[11px] text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                <span class="min-w-0 flex-1 break-all">{{n-a @resource.system_webhook_url}}</span>
+                                {{#if @resource.system_webhook_url}}
+                                    <ClickToCopy @value={{@resource.system_webhook_url}} @buttonText="Copy" />
+                                {{/if}}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-700 dark:text-gray-200">Capabilities</div>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                {{#each @resource.capabilities as |capability|}}
+                                    <Badge @color="blue">{{capability}}</Badge>
+                                {{else}}
+                                    <Badge @color="gray">Manual</Badge>
+                                {{/each}}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="field-info-container">
-                <div class="field-name">Status</div>
-                <div class="field-value">
-                    <Badge @status={{@resource.status}}>{{titleize @resource.status}}</Badge>
-                </div>
-            </div>
-
-            {{#if @resource.description}}
-                <div class="field-info-container col-span-2">
-                    <div class="field-name">Description</div>
-                    <div class="field-value">{{@resource.description}}</div>
-                </div>
-            {{/if}}
-
         </div>
-    </ContentPanel>
 
-    {{! INTEGRATION }}
-    <ContentPanel @title="Integration" @open={{true}} @wrapperClass="bordered-top">
-        <div class="grid grid-cols-1 gap-2 text-xs dark:text-gray-100">
-
-            {{! System-generated webhook URL — always shown, full absolute URL from backend }}
-            {{#if @resource.system_webhook_url}}
-                <div class="field-info-container">
-                    <div class="field-name">Webhook URL</div>
-                    <div class="field-value font-mono break-all flex items-center gap-2">
-                        <span class="flex-1 select-all">{{@resource.system_webhook_url}}</span>
-                        <ClickToCopy @value={{@resource.system_webhook_url}} @buttonText="Copy" />
-                    </div>
-                    <div class="text-[11px] text-gray-500 mt-1">
-                        Register this URL in your payment gateway dashboard to receive webhook events.
-                    </div>
+        <aside class="rounded-md border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+                <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">Operational Health</h2>
+                <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-300">Recent gateway events and reconciliation signals.</p>
+            </div>
+            <div class="space-y-3 p-4 text-xs">
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-gray-500 dark:text-gray-400">Last webhook</span>
+                    <span class="font-medium text-gray-900 dark:text-gray-100">{{n-a this.lastWebhookAt}}</span>
                 </div>
-            {{else if @resource.webhook_url}}
-                {{! Fallback: show the stored webhook_url if no system URL is available }}
-                <div class="field-info-container">
-                    <div class="field-name">Webhook URL</div>
-                    <div class="field-value font-mono break-all">{{@resource.webhook_url}}</div>
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-gray-500 dark:text-gray-400">Last payment</span>
+                    <span class="font-medium text-gray-900 dark:text-gray-100">{{n-a this.lastPaymentAt}}</span>
                 </div>
-            {{/if}}
-
-            {{#if @resource.capabilities}}
-                <div class="field-info-container">
-                    <div class="field-name">Capabilities</div>
-                    <div class="field-value flex flex-wrap gap-1 mt-1">
-                        {{#each @resource.capabilities as |cap|}}
-                            <Badge @color="blue">{{cap}}</Badge>
-                        {{/each}}
-                    </div>
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-gray-500 dark:text-gray-400">Last refund</span>
+                    <span class="font-medium text-gray-900 dark:text-gray-100">{{n-a this.lastRefundAt}}</span>
                 </div>
-            {{/if}}
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-gray-500 dark:text-gray-400">Last settlement</span>
+                    <span class="font-medium text-gray-900 dark:text-gray-100">{{n-a this.lastSettlementAt}}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-gray-500 dark:text-gray-400">Reconciliation</span>
+                    <span class="font-medium text-gray-900 dark:text-gray-100">{{n-a this.reconciliationStatus}}</span>
+                </div>
+            </div>
+        </aside>
+        </section>
+    {{/if}}
 
-        </div>
-    </ContentPanel>
-
-    {{#if this.isTaler}}
-        <ContentPanel @title="Taler Diagnostics" @open={{true}} @wrapperClass="bordered-top">
-            <div class="grid grid-cols-1 gap-3 text-xs dark:text-gray-100">
+    {{#if (and this.isTaler (or this.showOverview this.showDiagnostics))}}
+        <section class="rounded-md border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+                <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">GNU Taler Diagnostics</h2>
+                <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-300">Provision webhooks, create sandbox orders, and verify credential health for this Taler gateway.</p>
+            </div>
+            <div class="space-y-4 p-4">
                 <div class="flex flex-wrap items-center gap-2">
-                    <Button
-                        @type="secondary"
-                        @icon={{if this.testCredentials.isRunning "spinner" "check-circle"}}
-                        @iconSpin={{this.testCredentials.isRunning}}
-                        @text="Test Credentials"
-                        @onClick={{perform this.testCredentials}}
-                    />
-                    <Button
-                        @type="secondary"
-                        @icon={{if this.registerWebhook.isRunning "spinner" "link"}}
-                        @iconSpin={{this.registerWebhook.isRunning}}
-                        @text="Register Webhook"
-                        @onClick={{perform this.registerWebhook}}
-                    />
-                    <Button
-                        @type="secondary"
-                        @icon={{if this.createTestOrder.isRunning "spinner" "flask"}}
-                        @iconSpin={{this.createTestOrder.isRunning}}
-                        @text="Create Test Order"
-                        @onClick={{perform this.createTestOrder}}
-                    />
-                    <Button
-                        @type="secondary"
-                        @icon={{if this.loadDiagnostics.isRunning "spinner" "rotate"}}
-                        @iconSpin={{this.loadDiagnostics.isRunning}}
-                        @text="Refresh"
-                        @onClick={{perform this.loadDiagnostics}}
-                    />
+                    <Button @type="secondary" @icon={{if this.testCredentials.isRunning "spinner" "check-circle"}} @iconSpin={{this.testCredentials.isRunning}} @text="Test Credentials" @onClick={{perform this.testCredentials}} />
+                    <Button @type="secondary" @icon={{if this.registerWebhook.isRunning "spinner" "link"}} @iconSpin={{this.registerWebhook.isRunning}} @text="Register Webhook" @onClick={{perform this.registerWebhook}} />
+                    <Button @type="secondary" @icon={{if this.createTestOrder.isRunning "spinner" "flask"}} @iconSpin={{this.createTestOrder.isRunning}} @text="Create Test Order" @onClick={{perform this.createTestOrder}} />
+                    <Button @type="secondary" @icon={{if this.loadDiagnostics.isRunning "spinner" "rotate"}} @iconSpin={{this.loadDiagnostics.isRunning}} @text="Refresh" @onClick={{perform this.loadDiagnostics}} />
                 </div>
 
                 {{#if this.lastActionResult}}
-                    <div class="field-info-container">
-                        <div class="field-name">Last Action</div>
-                        <div class="field-value">
+                    <div class="rounded-md border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-700 dark:bg-gray-900">
+                        <div class="flex flex-wrap items-center gap-2">
                             <Badge @status={{this.lastActionResult.status}}>{{titleize this.lastActionResult.status}}</Badge>
-                            <span class="ml-2">{{this.lastActionResult.message}}</span>
+                            <span class="text-gray-700 dark:text-gray-200">{{this.lastActionResult.message}}</span>
                         </div>
                         {{#if this.lastActionResult.data.taler_pay_uri}}
-                            <div class="mt-2 font-mono text-[11px] break-all select-all">{{this.lastActionResult.data.taler_pay_uri}}</div>
+                            <div class="mt-2 break-all font-mono text-[11px] text-gray-500 dark:text-gray-300">{{this.lastActionResult.data.taler_pay_uri}}</div>
                         {{/if}}
                     </div>
                 {{/if}}
-
-                {{#if this.diagnostics}}
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                        <div class="field-info-container">
-                            <div class="field-name">Webhook Registration</div>
-                            <div class="field-value">{{titleize this.diagnostics.diagnostics.webhook_registration}}</div>
-                        </div>
-                        <div class="field-info-container">
-                            <div class="field-name">Last Webhook Received</div>
-                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_webhook_received_at}}</div>
-                        </div>
-                        <div class="field-info-container">
-                            <div class="field-name">Last Payment Event</div>
-                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_payment_event_at}}</div>
-                        </div>
-                        <div class="field-info-container">
-                            <div class="field-name">Last Refund Event</div>
-                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_refund_event_at}}</div>
-                        </div>
-                        <div class="field-info-container">
-                            <div class="field-name">Last Settlement Seen</div>
-                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_settlement_seen_at}}</div>
-                        </div>
-                        <div class="field-info-container">
-                            <div class="field-name">Reconciliation Status</div>
-                            <div class="field-value">{{n-a this.diagnostics.diagnostics.last_reconciliation_status}}</div>
-                        </div>
-                    </div>
-                {{else if this.loadDiagnostics.isRunning}}
-                    <div class="flex items-center gap-2 text-gray-500"><Spinner /> Loading diagnostics...</div>
-                {{else}}
-                    <div class="text-gray-400">Diagnostics are not available for this gateway yet.</div>
-                {{/if}}
             </div>
-        </ContentPanel>
+        </section>
     {{/if}}
 
-    {{! RECORD INFO }}
-    <ContentPanel @title="Record Info" @open={{true}} @wrapperClass="bordered-top">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 text-xs dark:text-gray-100">
-
-            <div class="field-info-container">
-                <div class="field-name">Internal ID</div>
-                <div class="field-value font-mono">{{n-a @resource.public_id}}</div>
+    {{#if this.showSetup}}
+        <section class="rounded-md border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+                <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">Record Info</h2>
             </div>
-
-            <div class="field-info-container">
-                <div class="field-name">Created</div>
-                <div class="field-value">{{n-a @resource.createdAt}}</div>
+            <div class="grid grid-cols-1 gap-3 p-4 text-xs md:grid-cols-3">
+                <div>
+                    <div class="text-gray-500 dark:text-gray-400">Internal ID</div>
+                    <div class="mt-1 font-mono text-gray-900 dark:text-gray-100">{{n-a @resource.public_id}}</div>
+                </div>
+                <div>
+                    <div class="text-gray-500 dark:text-gray-400">Created</div>
+                    <div class="mt-1 text-gray-900 dark:text-gray-100">{{n-a @resource.createdAt}}</div>
+                </div>
+                <div>
+                    <div class="text-gray-500 dark:text-gray-400">Updated</div>
+                    <div class="mt-1 text-gray-900 dark:text-gray-100">{{n-a @resource.updatedAt}}</div>
+                </div>
             </div>
-
-            <div class="field-info-container">
-                <div class="field-name">Last Updated</div>
-                <div class="field-value">{{n-a @resource.updatedAt}}</div>
-            </div>
-
-        </div>
-    </ContentPanel>
-    <Spacer @height="200px" />
+        </section>
+    {{/if}}
 </div>

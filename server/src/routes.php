@@ -143,6 +143,7 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 // The 'drivers' static route must be registered BEFORE fleetbaseRoutes
                                 // to avoid being swallowed by the /{id} find route.
                                 $router->get('gateways/drivers', 'GatewayController@drivers');
+                                $router->get('gateways/summary', 'GatewayController@summary');
 
                                 $router->fleetbaseRoutes(
                                     'gateways',
