@@ -339,14 +339,14 @@ test('payment gateway management renders hub catalog and full page details', fun
         ->toContain('{{#each this.tabs as |tab|}}')
         ->toContain("{{if tab.active 'border-blue-500 text-gray-900 dark:text-white'")
         ->toContain("{{if this.isTransactionsTab 'min-w-0'")
-        ->toContain('payments.gateways.details.index')
-        ->toContain('payments.gateways.details.setup')
-        ->toContain('payments.gateways.details.diagnostics')
         ->not->toContain('Layout::Resource::Panel');
 
     expect($detailsController)
         ->toContain('currentRouteName')
-        ->toContain('isTransactionsTab');
+        ->toContain('isTransactionsTab')
+        ->toContain('payments.gateways.details.index')
+        ->toContain('payments.gateways.details.setup')
+        ->toContain('payments.gateways.details.diagnostics');
 
     $newTemplate    = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/new.hbs');
     $editTemplate   = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/edit.hbs');
