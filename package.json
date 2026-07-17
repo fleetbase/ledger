@@ -1,6 +1,6 @@
 {
     "name": "@fleetbase/ledger-engine",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "description": "Accounting & Invoicing Extension for Fleetbase",
     "keywords": [
         "fleetbase-extension",
