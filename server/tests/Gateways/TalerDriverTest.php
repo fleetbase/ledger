@@ -5,7 +5,7 @@
  *
  * Unit tests for the GNU Taler payment gateway driver.
  *
- * These tests use Laravel's Http::fake() to intercept all outbound HTTP calls
+ * These tests use Laravel's fakeTalerHttp() to intercept all outbound HTTP calls
  * so no real Taler Merchant Backend is required. Each test group covers one
  * public method of TalerDriver: purchase(), handleWebhook(), and refund().
  *
@@ -31,6 +31,12 @@ beforeEach(function () {
     $app->instance('http', new HttpFactory());
     Facade::clearResolvedInstance('http');
 });
+
+function fakeTalerHttp(array $callbacks): void
+{
+    Http::swap(new HttpFactory());
+    Http::fake($callbacks);
+}
 
 /**
  * Build a fully-initialised TalerDriver using the given config overrides.
@@ -83,7 +89,7 @@ test('driver config schema contains required fields', function () {
 // ---------------------------------------------------------------------------
 
 test('purchase_creates_order_and_returns_pending_response', function () {
-    Http::fake([
+    fakeTalerHttp([
         // Step 1: order creation
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
             ['order_id' => 'TALER-ORDER-001'],
@@ -121,7 +127,7 @@ test('purchase_creates_order_and_returns_pending_response', function () {
 });
 
 test('purchase_sends_correct_taler_amount_format', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
             ['order_id' => 'TALER-ORDER-002'],
             200
@@ -150,7 +156,7 @@ test('purchase_sends_correct_taler_amount_format', function () {
 });
 
 test('purchase_embeds_invoice_uuid_in_order_payload', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
             ['order_id' => 'TALER-ORDER-003'],
             200
@@ -178,7 +184,7 @@ test('purchase_embeds_invoice_uuid_in_order_payload', function () {
 });
 
 test('purchase_sends_deterministic_order_id', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
             ['order_id' => 'ledger-returned-order-id'],
             200
@@ -212,7 +218,7 @@ test('purchase_sends_deterministic_order_id', function () {
 // ---------------------------------------------------------------------------
 
 test('purchase_returns_failure_when_backend_returns_error', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
             ['error' => 'UNAUTHORIZED'],
             401
@@ -232,7 +238,7 @@ test('purchase_returns_failure_when_backend_returns_error', function () {
 });
 
 test('purchase_returns_failure_when_order_id_missing', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
             [],   // no order_id
             200
@@ -251,7 +257,7 @@ test('purchase_returns_failure_when_order_id_missing', function () {
 });
 
 test('purchase_returns_failure_when_payment_uri_missing', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
             ['order_id' => 'TALER-ORDER-NO-URI'],
             200
@@ -288,7 +294,7 @@ test('purchase_returns_failure_when_required_config_missing', function () {
 });
 
 test('purchase_defaults_to_hosted_fleetbase_taler_in_sandbox_when_backend_url_missing', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://merchant.taler.fleetbase.io/instances/testmerchant/private/orders' => Http::response(
             ['order_id' => 'TALER-HOSTED-SANDBOX'],
             200
@@ -320,7 +326,7 @@ test('purchase_defaults_to_hosted_fleetbase_taler_in_sandbox_when_backend_url_mi
 // ---------------------------------------------------------------------------
 
 test('handleWebhook_verifies_paid_order_and_returns_success', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-001' => Http::response(
             [
                 'order_status'   => 'paid',
@@ -364,7 +370,7 @@ test('handleWebhook_returns_failure_when_order_id_missing', function () {
 });
 
 test('handleWebhook_returns_failure_when_order_not_paid', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-002' => Http::response(
             ['order_status' => 'unpaid'],
             200
@@ -382,7 +388,7 @@ test('handleWebhook_returns_failure_when_order_not_paid', function () {
 });
 
 test('handleWebhook_returns_failure_when_backend_returns_error', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-003' => Http::response(
             ['error' => 'NOT_FOUND'],
             404
@@ -403,7 +409,7 @@ test('handleWebhook_returns_failure_when_backend_returns_error', function () {
 // ---------------------------------------------------------------------------
 
 test('refund_issues_refund_and_returns_success', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-001/refund' => Http::response(
             ['taler_refund_uri' => 'taler://refund/...'],
             200
@@ -432,7 +438,7 @@ test('refund_issues_refund_and_returns_success', function () {
 });
 
 test('refund_sends_correct_taler_amount_format', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-001/refund' => Http::response(
             [],
             200
@@ -459,7 +465,7 @@ test('refund_sends_correct_taler_amount_format', function () {
 // ---------------------------------------------------------------------------
 
 test('refund_returns_failure_when_backend_returns_error', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-001/refund' => Http::response(
             ['error' => 'REFUND_EXCEEDS_PAYMENT'],
             409
@@ -483,7 +489,7 @@ test('refund_returns_failure_when_backend_returns_error', function () {
 // ---------------------------------------------------------------------------
 
 test('purchase_converts_zero_amount_correctly', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
             ['order_id' => 'TALER-ORDER-ZERO'],
             200
@@ -510,7 +516,7 @@ test('purchase_converts_zero_amount_correctly', function () {
 });
 
 test('webhook_parses_taler_amount_with_single_digit_fraction', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-FRAC' => Http::response(
             [
                 'order_status'   => 'paid',
@@ -534,7 +540,7 @@ test('webhook_parses_taler_amount_with_single_digit_fraction', function () {
 });
 
 test('testCredentials_checks_private_taler_endpoint', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(['orders' => []], 200),
     ]);
 
@@ -546,7 +552,7 @@ test('testCredentials_checks_private_taler_endpoint', function () {
 });
 
 test('registerWebhook_posts_tenant_safe_body_template', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/webhooks' => Http::response([], 204),
     ]);
 
@@ -571,7 +577,7 @@ test('registerWebhook_posts_tenant_safe_body_template', function () {
 });
 
 test('createTestOrder_uses_deterministic_test_order_metadata', function () {
-    Http::fake([
+    fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(
             ['order_id' => 'ledger-test-returned'],
             200
