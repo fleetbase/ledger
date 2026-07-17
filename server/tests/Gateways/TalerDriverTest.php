@@ -16,12 +16,21 @@ use Fleetbase\Ledger\DTO\GatewayResponse;
 use Fleetbase\Ledger\DTO\PurchaseRequest;
 use Fleetbase\Ledger\DTO\RefundRequest;
 use Fleetbase\Ledger\Gateways\TalerDriver;
+use Illuminate\Container\Container;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Http;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+beforeEach(function () {
+    $app = Container::getInstance();
+    $app->instance('http', new HttpFactory());
+    Facade::clearResolvedInstance('http');
+});
 
 /**
  * Build a fully-initialised TalerDriver using the given config overrides.

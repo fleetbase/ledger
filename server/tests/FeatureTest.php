@@ -159,7 +159,14 @@ test('invoice deletion and repair command use the revenue lifecycle service', fu
 });
 
 test('transactions use two-axis lifecycle and settlement status contract', function () {
-    $coreTransaction = file_get_contents(dirname(__DIR__, 3) . '/core-api/src/Models/Transaction.php');
+    $coreTransactionPath = collect([
+        dirname(__DIR__, 3) . '/core-api/src/Models/Transaction.php',
+        dirname(__DIR__, 2) . '/server_vendor/fleetbase/core-api/src/Models/Transaction.php',
+    ])->first(fn ($path) => is_file($path));
+
+    expect($coreTransactionPath)->not->toBeNull();
+
+    $coreTransaction = file_get_contents($coreTransactionPath);
     $invoiceService  = file_get_contents(__DIR__ . '/../src/Services/InvoiceService.php');
     $walletService   = file_get_contents(__DIR__ . '/../src/Services/WalletService.php');
     $filter          = file_get_contents(__DIR__ . '/../src/Http/Filter/TransactionFilter.php');
@@ -278,7 +285,7 @@ test('invoice filter supports table filter params', function () {
         ->toContain("where('total_amount', '<=', \$max)")
         ->toContain("where('currency', strtoupper(\$currency))")
         ->toContain("where('order_uuid', \$order)")
-        ->toContain("where('public_id', \$order)")
+        ->toContain("orWhere('public_id', \$order)")
         ->toContain("where('tracking_number', \$order)");
 });
 
