@@ -35,34 +35,19 @@
             </div>
 
             <nav class="mt-4 flex w-full gap-1 overflow-x-auto border-b border-gray-200 text-sm dark:border-gray-700" aria-label="Gateway sections">
-                <LinkTo
-                    @route="payments.gateways.index.details.setup"
-                    class="inline-flex flex-shrink-0 items-center border-b-2 border-transparent px-3 py-3 font-medium text-gray-500 hover:border-blue-400 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-                >
-                    Overview
-                </LinkTo>
-                <LinkTo
-                    @route="payments.gateways.index.details.diagnostics"
-                    class="inline-flex flex-shrink-0 items-center border-b-2 border-transparent px-3 py-3 font-medium text-gray-500 hover:border-blue-400 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-                >
-                    Setup
-                </LinkTo>
-                <LinkTo
-                    @route="payments.gateways.index.details.index"
-                    class="inline-flex flex-shrink-0 items-center border-b-2 border-transparent px-3 py-3 font-medium text-gray-500 hover:border-blue-400 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-                >
-                    Diagnostics
-                </LinkTo>
-                <LinkTo
-                    @route="payments.gateways.index.details.webhooks"
-                    class="inline-flex flex-shrink-0 items-center border-b-2 border-transparent px-3 py-3 font-medium text-gray-500 hover:border-blue-400 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-                >
-                    Transactions
-                </LinkTo>
+                {{#each this.tabs as |tab|}}
+                    <LinkTo
+                        @route={{tab.route}}
+                        class="inline-flex flex-shrink-0 items-center border-b-2 px-3 py-3 font-medium
+                            {{if tab.active 'border-blue-500 text-gray-900 dark:text-white' 'border-transparent text-gray-500 hover:border-blue-400 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'}}"
+                    >
+                        {{tab.label}}
+                    </LinkTo>
+                {{/each}}
             </nav>
         </section>
 
-        <section class="mx-auto w-full max-w-7xl min-w-0 px-4 py-4 md:px-6">
+        <section class="{{if this.isTransactionsTab 'min-w-0' 'mx-auto w-full max-w-7xl min-w-0 px-4 py-4 md:px-6'}}">
             {{outlet}}
         </section>
     </div>

@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $description
  * @property array|null  $config
  * @property array|null  $capabilities
+ * @property array|null  $meta
  * @property bool        $is_sandbox
  * @property string      $status
  * @property string|null $return_url
@@ -64,6 +65,7 @@ class Gateway extends Model
         'description',
         'config',
         'capabilities',
+        'meta',
         'is_sandbox',
         'environment',
         'status',
@@ -80,6 +82,7 @@ class Gateway extends Model
     protected $casts = [
         'config'       => 'encrypted:array',
         'capabilities' => 'array',
+        'meta'         => 'array',
         'is_sandbox'   => 'boolean',
     ];
 

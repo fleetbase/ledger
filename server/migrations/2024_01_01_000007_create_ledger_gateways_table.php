@@ -40,6 +40,7 @@ return new class extends Migration
             // URLs
             $table->string('return_url')->nullable();       // Redirect URL after off-site payment
             $table->string('webhook_url')->nullable();      // Registered webhook URL (informational)
+            $table->json('meta')->nullable();               // Sanitized operator diagnostics, never credentials
 
             $table->softDeletes();
             $table->timestamps();

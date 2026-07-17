@@ -1,31 +1,21 @@
 import Controller from '@ember/controller';
-import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
 
-export default class PaymentsGatewaysIndexEditController extends Controller {
+export default class PaymentsGatewaysEditController extends Controller {
     @service hostRouter;
     @service notifications;
     @service modalsManager;
     @service intl;
     @service events;
 
-    @tracked overlay;
-    @tracked actionButtons = [
-        {
-            icon: 'eye',
-            fn: this.view,
-        },
-    ];
-
     @task *save(gateway) {
         try {
             yield gateway.save();
             this.events.trackResourceUpdated(gateway);
-            this.overlay?.close();
 
-            yield this.hostRouter.transitionTo('console.ledger.payments.gateways.index.details', gateway);
+            yield this.hostRouter.transitionTo('console.ledger.payments.gateways.details', gateway);
             this.notifications.success(
                 this.intl.t('common.resource-updated-success', {
                     resource: 'Gateway',
@@ -41,7 +31,7 @@ export default class PaymentsGatewaysIndexEditController extends Controller {
         if (this.model.hasDirtyAttributes) {
             return this.#confirmContinueWithUnsavedChanges(this.model);
         }
-        return this.hostRouter.transitionTo('console.ledger.payments.gateways.index');
+        return this.transitionToGatewayDetails(this.model);
     }
 
     @action view() {
@@ -49,11 +39,11 @@ export default class PaymentsGatewaysIndexEditController extends Controller {
             return this.#confirmContinueWithUnsavedChanges(this.model, {
                 confirm: async () => {
                     this.model.rollbackAttributes();
-                    await this.hostRouter.transitionTo('console.ledger.payments.gateways.index.details', this.model);
+                    await this.hostRouter.transitionTo('console.ledger.payments.gateways.details', this.model);
                 },
             });
         }
-        return this.hostRouter.transitionTo('console.ledger.payments.gateways.index.details', this.model);
+        return this.hostRouter.transitionTo('console.ledger.payments.gateways.details', this.model);
     }
 
     #confirmContinueWithUnsavedChanges(gateway, options = {}) {
@@ -63,9 +53,13 @@ export default class PaymentsGatewaysIndexEditController extends Controller {
             acceptButtonText: this.intl.t('common.continue'),
             confirm: async () => {
                 gateway.rollbackAttributes();
-                await this.hostRouter.transitionTo('console.ledger.payments.gateways.index.details', gateway);
+                await this.transitionToGatewayDetails(gateway);
             },
             ...options,
         });
+    }
+
+    transitionToGatewayDetails(gateway) {
+        return this.hostRouter.transitionTo('console.ledger.payments.gateways.details', gateway);
     }
 }

@@ -3,7 +3,7 @@ import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { tracked } from '@glimmer/tracking';
 
-export default class PaymentsGatewaysIndexDetailsController extends Controller {
+export default class PaymentsGatewaysDetailsController extends Controller {
     @service notifications;
     @service modalsManager;
     @service hostRouter;
@@ -11,12 +11,23 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
     @tracked overlay = null;
 
     get tabs() {
+        const currentRouteName = this.hostRouter.currentRouteName;
+
         return [
-            { label: 'Overview', route: 'payments.gateways.index.details.index' },
-            { label: 'Setup', route: 'payments.gateways.index.details.setup' },
-            { label: 'Diagnostics', route: 'payments.gateways.index.details.diagnostics' },
-            { label: 'Transactions', route: 'payments.gateways.index.details.webhooks' },
-        ];
+            { label: 'Overview', route: 'payments.gateways.details.index' },
+            { label: 'Setup', route: 'payments.gateways.details.setup' },
+            { label: 'Diagnostics', route: 'payments.gateways.details.diagnostics' },
+            { label: 'Transactions', route: 'payments.gateways.details.webhooks' },
+        ].map((tab) => ({
+            ...tab,
+            active: currentRouteName === tab.route || currentRouteName?.endsWith(`.${tab.route}`),
+        }));
+    }
+
+    get isTransactionsTab() {
+        const currentRouteName = this.hostRouter.currentRouteName;
+
+        return currentRouteName === 'payments.gateways.details.webhooks' || currentRouteName?.endsWith('.payments.gateways.details.webhooks');
     }
 
     get actionButtons() {
@@ -43,7 +54,7 @@ export default class PaymentsGatewaysIndexDetailsController extends Controller {
 
     @action editGateway() {
         const gateway = this.model;
-        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.edit', gateway);
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.edit', gateway);
     }
 
     @action async deleteGateway() {

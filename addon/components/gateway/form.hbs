@@ -1,179 +1,310 @@
-<div class="form-wrapper" ...attributes>
-    {{! GATEWAY DETAILS }}
-    <ContentPanel @title="Gateway Details" @open={{true}} @wrapperClass="bordered-top">
-        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
-
-            {{! Identification }}
-            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
-                Identification
-            </div>
-
-            <InputGroup @name="Gateway Name" @wrapperClass="col-span-2">
-                <Input @value={{@resource.name}} @type="text" class="w-full form-input" placeholder="e.g. Stripe Production" disabled={{cannot-write @resource}} />
-            </InputGroup>
-
-            <InputGroup @name="Code">
-                <Input @value={{@resource.code}} @type="text" class="w-full form-input" placeholder="e.g. stripe_prod" disabled={{cannot-write @resource}} />
-            </InputGroup>
-
-            <InputGroup @name="Driver">
-                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
-                    <PowerSelect
-                        @options={{this.availableDrivers}}
-                        @selected={{find-by "code" @resource.driver this.availableDrivers}}
-                        @onChange={{this.selectDriver}}
-                        @placeholder="Select payment driver"
-                        @triggerClass="form-select form-input"
-                        @disabled={{cannot-write @resource}}
-                        as |driver|
-                    >
-                        <div class="text-sm">
-                            <div class="font-semibold normalize-in-trigger">{{driver.name}}</div>
-                            <div class="hide-from-trigger text-gray-500">{{driver.description}}</div>
-                        </div>
-                    </PowerSelect>
+<div class="flex min-h-0 flex-1 flex-col" ...attributes>
+    <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-6">
+        <div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
+            <section class="rounded-md border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <div class="grid grid-cols-1 gap-2 md:grid-cols-4">
+                    {{#each this.setupSteps as |step index|}}
+                        <button type="button" class="rounded-md border p-2 text-left transition {{if step.active 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10' 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600'}}" {{on "click" (fn this.goToStep index)}}>
+                            <div class="flex items-center gap-2">
+                                <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-xs {{if step.active 'bg-blue-600 text-white dark:bg-blue-500' (if step.complete 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300')}}">
+                                    <FaIcon @icon={{if step.complete "check" step.icon}} />
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">{{add index 1}}</div>
+                                    <div class="truncate text-xs font-bold text-gray-900 dark:text-gray-100">{{step.label}}</div>
+                                </div>
+                            </div>
+                        </button>
+                    {{/each}}
                 </div>
-            </InputGroup>
+            </section>
 
-            {{! If a driver is selected, show its capabilities }}
-            {{#if @resource.driver}}
-                {{#let (find-by "code" @resource.driver this.availableDrivers) as |driver|}}
-                    {{#if driver.capabilities}}
-                        <div class="col-span-1 lg:col-span-2 flex flex-wrap gap-1 mt-1">
-                            {{#each driver.capabilities as |cap|}}
-                                <Badge @color="blue" @size="xs">{{cap}}</Badge>
+            {{#if (eq this.currentStep "gateway")}}
+                <section class="rounded-md border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div class="mb-3">
+                        <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">Choose Payment Gateway</h2>
+                        <p class="text-xs leading-5 text-gray-500 dark:text-gray-300">Select the provider Ledger should use for invoice checkout, payment confirmation, refunds, and settlement tracking.</p>
+                    </div>
+
+                    {{#if this.loadDrivers.isRunning}}
+                        <div class="flex min-h-[140px] items-center justify-center"><Spinner /></div>
+                    {{else}}
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                            {{#each this.driverCards as |driver|}}
+                                <button type="button" class="flex min-h-[150px] flex-col rounded-md border p-3 text-left transition {{if driver.selected 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-gray-800' 'border-gray-200 bg-white hover:border-blue-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-400'}}" {{on "click" (fn this.selectDriver driver)}}>
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex min-w-0 items-center gap-2">
+                                            <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300">
+                                                <FaIcon @icon={{driver.icon}} />
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="truncate text-sm font-bold text-gray-900 dark:text-gray-100">{{driver.name}}</div>
+                                                <div class="truncate text-[11px] uppercase text-gray-400 dark:text-gray-500">{{driver.categoryLabel}}</div>
+                                            </div>
+                                        </div>
+                                        {{#if driver.selected}}
+                                            <Badge @status="success" @hideStatusDot={{true}}>Selected</Badge>
+                                        {{/if}}
+                                    </div>
+                                    <p class="mt-3 line-clamp-2 flex-1 text-xs leading-5 text-gray-500 dark:text-gray-300">{{driver.description}}</p>
+                                    <div class="mt-3 flex flex-wrap gap-1">
+                                        {{#each driver.capabilities as |capability|}}
+                                            <span class="rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{capability}}</span>
+                                        {{/each}}
+                                    </div>
+                                </button>
                             {{/each}}
                         </div>
                     {{/if}}
-                {{/let}}
-            {{/if}}
+                </section>
+            {{else if (eq this.currentStep "credentials")}}
+                <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div class="rounded-md border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+                        <div class="mb-3">
+                            <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">Gateway Credentials</h2>
+                            <p class="text-xs leading-5 text-gray-500 dark:text-gray-300">Enter the provider configuration Ledger stores on this gateway. Tokens are saved on the gateway record and are never shown in invoice checkout.</p>
+                        </div>
 
-            {{! Environment & Settings }}
-            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
-                Environment & Settings
-            </div>
-
-            <InputGroup @name="Environment">
-                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
-                    <PowerSelect
-                        @options={{array "sandbox" "live"}}
-                        @selected={{@resource.environment}}
-                        @onChange={{fn (mut @resource.environment)}}
-                        @placeholder="Select environment"
-                        @triggerClass="form-select form-input"
-                        @disabled={{cannot-write @resource}}
-                        as |option|
-                    >
-                        <div class="capitalize text-sm">{{option}}</div>
-                    </PowerSelect>
-                </div>
-            </InputGroup>
-
-            <InputGroup @name="Status">
-                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
-                    <PowerSelect
-                        @options={{array "active" "inactive"}}
-                        @selected={{@resource.status}}
-                        @onChange={{fn (mut @resource.status)}}
-                        @placeholder="Select status"
-                        @triggerClass="form-select form-input"
-                        @disabled={{cannot-write @resource}}
-                        as |option|
-                    >
-                        <div class="capitalize text-sm">{{option}}</div>
-                    </PowerSelect>
-                </div>
-            </InputGroup>
-
-            <InputGroup @name="Description" @wrapperClass="col-span-2">
-                <Textarea @value={{@resource.description}} class="w-full form-input" rows="2" placeholder="Optional description of this gateway..." disabled={{cannot-write @resource}} />
-            </InputGroup>
-
-            {{! URLs }}
-            <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-3">
-                URLs
-            </div>
-
-            <InputGroup @name="Return URL" @helpText="The URL the customer is redirected to after a successful payment." @wrapperClass="col-span-2">
-                <Input @value={{@resource.return_url}} @type="url" class="w-full form-input" placeholder="https://yourapp.com/payment/success" disabled={{cannot-write @resource}} />
-            </InputGroup>
-
-            <InputGroup @name="Webhook / Callback URL" @helpText="The URL the gateway will POST payment events to. Register this in your gateway dashboard." @wrapperClass="col-span-2">
-                <Input @value={{@resource.webhook_url}} @type="url" class="w-full form-input" placeholder="https://yourapp.com/ledger/webhooks/stripe" disabled={{cannot-write @resource}} />
-                {{#if @resource.system_webhook_url}}
-                    <div class="mt-1 text-[11px] text-gray-500">
-                        System webhook URL:
-                        <span class="font-mono select-all">{{@resource.system_webhook_url}}</span>
-                    </div>
-                {{/if}}
-            </InputGroup>
-
-        </div>
-    </ContentPanel>
-
-    {{! DYNAMIC CONFIGURATION }}
-    {{#if this.configSchema.length}}
-        <ContentPanel @title="Configuration" @open={{true}} @wrapperClass="bordered-top">
-            <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2 no-input-group-padding text-xs">
-                <div class="col-span-1 lg:col-span-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold mt-1">
-                    {{@resource.driver}}
-                    Configuration
-                </div>
-
-                {{#each this.configSchema as |field|}}
-                    {{#if (eq field.type "text")}}
-                        <InputGroup @name={{field.label}} @helpText={{field.description}}>
-                            <Input
-                                @value={{get this.configValues field.key}}
-                                @type="text"
-                                class="w-full form-input"
-                                placeholder={{or field.placeholder field.label}}
-                                {{on "input" (fn this.updateConfigField field.key)}}
-                                disabled={{cannot-write @resource}}
-                            />
-                        </InputGroup>
-                    {{else if (eq field.type "password")}}
-                        <InputGroup @name={{field.label}} @helpText={{field.description}}>
-                            <Input
-                                @value={{get this.configValues field.key}}
-                                @type="password"
-                                class="w-full form-input"
-                                placeholder={{or field.placeholder field.label}}
-                                {{on "input" (fn this.updateConfigField field.key)}}
-                                disabled={{cannot-write @resource}}
-                            />
-                        </InputGroup>
-                    {{else if (eq field.type "select")}}
-                        <InputGroup @name={{field.label}} @helpText={{field.description}}>
-                            <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
-                                <PowerSelect
-                                    @options={{field.options}}
-                                    @selected={{find-by "value" (get this.configValues field.key) field.options}}
-                                    @onChange={{fn this.updateConfigField field.key}}
-                                    @placeholder="Select option"
-                                    @triggerClass="form-select form-input"
-                                    @disabled={{cannot-write @resource}}
-                                    as |opt|
-                                >
-                                    <div class="text-sm">{{opt.label}}</div>
-                                </PowerSelect>
+                        {{#if this.selectedDriver}}
+                            {{#if this.configSchema.length}}
+                                <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 no-input-group-padding text-xs">
+                                    {{#each this.configSchema as |field|}}
+                                        {{#if (eq field.type "select")}}
+                                            <InputGroup @name={{field.label}} @helpText={{field.description}} @required={{field.required}}>
+                                                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                                                    <PowerSelect
+                                                        @options={{field.options}}
+                                                        @selected={{find-by "value" (get this.configValues field.key) field.options}}
+                                                        @onChange={{fn this.updateConfigField field.key}}
+                                                        @placeholder="Select option"
+                                                        @triggerClass="form-select form-input"
+                                                        @disabled={{cannot-write @resource}}
+                                                        as |option|
+                                                    >
+                                                        <div class="text-sm">{{or option.label option.value option}}</div>
+                                                    </PowerSelect>
+                                                </div>
+                                            </InputGroup>
+                                        {{else if (eq field.type "boolean")}}
+                                            <div class="rounded-md border border-gray-200 p-3 dark:border-gray-700 lg:col-span-2">
+                                                <Checkbox @value={{get this.configValues field.key}} @label={{field.label}} @onToggle={{fn this.updateConfigField field.key}} @alignItems="center" @labelClass="mb-0i" @disabled={{cannot-write @resource}} />
+                                                {{#if field.description}}
+                                                    <p class="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-300">{{field.description}}</p>
+                                                {{/if}}
+                                            </div>
+                                        {{else}}
+                                            <InputGroup @name={{field.label}} @helpText={{field.description}} @required={{field.required}}>
+                                                <Input
+                                                    @value={{get this.configValues field.key}}
+                                                    @type={{if (eq field.type "password") "password" "text"}}
+                                                    class="w-full form-input"
+                                                    placeholder={{or field.placeholder field.label}}
+                                                    {{on "input" (fn this.updateConfigField field.key)}}
+                                                    disabled={{cannot-write @resource}}
+                                                />
+                                            </InputGroup>
+                                        {{/if}}
+                                    {{/each}}
+                                </div>
+                            {{else}}
+                                <div class="rounded-md border border-dashed border-gray-300 p-6 text-center text-xs text-gray-500 dark:border-gray-700 dark:text-gray-300">
+                                    This gateway does not require provider credentials.
+                                </div>
+                            {{/if}}
+                        {{else}}
+                            <div class="rounded-md border border-dashed border-gray-300 p-6 text-center text-xs text-gray-500 dark:border-gray-700 dark:text-gray-300">
+                                Choose a payment gateway before entering credentials.
                             </div>
-                        </InputGroup>
-                    {{else if (eq field.type "boolean")}}
-                        <InputGroup @name={{field.label}} @wrapperClass="col-span-2">
-                            <Toggle
-                                @isToggled={{get this.configValues field.key}}
-                                @label={{field.label}}
-                                @helpText={{field.description}}
-                                @onToggle={{fn this.updateConfigField field.key}}
-                                @disabled={{cannot-write @resource}}
-                            />
-                        </InputGroup>
-                    {{/if}}
-                {{/each}}
-            </div>
-        </ContentPanel>
-    {{/if}}
+                        {{/if}}
+                    </div>
 
-    <Spacer @height="100px" />
+                    {{#if this.selectedDriver}}
+                        <aside class="rounded-md border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800" aria-label="Selected gateway driver">
+                            <div class="flex items-start gap-3">
+                                <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300">
+                                    <FaIcon @icon={{this.selectedDriverIcon}} />
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="truncate text-sm font-bold text-gray-900 dark:text-gray-100">{{this.selectedDriver.name}}</div>
+                                    <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-300">{{this.selectedDriver.description}}</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                {{#each this.selectedDriver.capabilities as |capability|}}
+                                    <Badge @status="info" @hideStatusDot={{true}}>{{capability}}</Badge>
+                                {{/each}}
+                            </div>
+                        </aside>
+                    {{/if}}
+                </section>
+            {{else if (eq this.currentStep "routing")}}
+                <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div class="rounded-md border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+                        <div class="mb-3">
+                            <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">Routing And Status</h2>
+                            <p class="text-xs leading-5 text-gray-500 dark:text-gray-300">Name the gateway, choose the environment, and configure where customers and providers return payment events.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 no-input-group-padding text-xs">
+                            <InputGroup @name="Gateway name">
+                                <Input @value={{@resource.name}} @type="text" class="w-full form-input" placeholder="e.g. GNU Taler Sandbox" disabled={{cannot-write @resource}} />
+                            </InputGroup>
+
+                            <InputGroup @name="Code">
+                                <Input @value={{@resource.code}} @type="text" class="w-full form-input" placeholder="e.g. taler_sandbox" disabled={{cannot-write @resource}} />
+                            </InputGroup>
+
+                            <InputGroup @name="Environment">
+                                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                                    <PowerSelect
+                                        @options={{array "sandbox" "live"}}
+                                        @selected={{@resource.environment}}
+                                        @onChange={{fn this.setResourceField "environment"}}
+                                        @placeholder="Select environment"
+                                        @triggerClass="form-select form-input"
+                                        @disabled={{cannot-write @resource}}
+                                        as |option|
+                                    >
+                                        <div class="capitalize text-sm">{{option}}</div>
+                                    </PowerSelect>
+                                </div>
+                            </InputGroup>
+
+                            <InputGroup @name="Status">
+                                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                                    <PowerSelect
+                                        @options={{array "active" "inactive"}}
+                                        @selected={{@resource.status}}
+                                        @onChange={{fn this.setResourceField "status"}}
+                                        @placeholder="Select status"
+                                        @triggerClass="form-select form-input"
+                                        @disabled={{cannot-write @resource}}
+                                        as |option|
+                                    >
+                                        <div class="capitalize text-sm">{{option}}</div>
+                                    </PowerSelect>
+                                </div>
+                            </InputGroup>
+
+                            <InputGroup @name="Return URL" @helpText="The URL the customer is redirected to after payment." @wrapperClass="lg:col-span-2">
+                                <Input @value={{@resource.return_url}} @type="url" class="w-full form-input" placeholder="https://yourapp.com/payment/success" disabled={{cannot-write @resource}} />
+                            </InputGroup>
+
+                            <InputGroup @name="Webhook / Callback URL" @helpText="The registered provider webhook endpoint for this gateway." @wrapperClass="lg:col-span-2">
+                                <Input @value={{@resource.webhook_url}} @type="url" class="w-full form-input" placeholder="https://api.example.com/ledger/webhooks/taler" disabled={{cannot-write @resource}} />
+                                {{#if @resource.system_webhook_url}}
+                                    <div class="mt-2 flex flex-col gap-2 rounded-md border border-gray-200 bg-gray-50 p-2 text-[11px] dark:border-gray-700 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+                                        <span class="min-w-0 break-all font-mono text-gray-600 dark:text-gray-300">{{@resource.system_webhook_url}}</span>
+                                        <Button @icon="copy" @text="Copy" @size="xs" @onClick={{this.copyWebhookUrl}} />
+                                    </div>
+                                {{/if}}
+                            </InputGroup>
+
+                            <InputGroup @name="Description" @wrapperClass="lg:col-span-2">
+                                <Textarea @value={{@resource.description}} class="w-full form-input" rows="2" placeholder="Optional operating notes for this gateway." disabled={{cannot-write @resource}} />
+                            </InputGroup>
+                        </div>
+                    </div>
+
+                    <aside class="rounded-md border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800" aria-label="Gateway checkout readiness">
+                        <h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">Checkout Readiness</h3>
+                        <div class="mt-3 space-y-2 text-xs">
+                            <div class="flex items-center justify-between gap-3 rounded-md border border-gray-200 p-2 dark:border-gray-700">
+                                <span class="text-gray-500 dark:text-gray-300">Driver selected</span>
+                                <Badge @status={{if @resource.driver "success" "warning"}} @hideStatusDot={{true}}>{{if @resource.driver "Ready" "Missing"}}</Badge>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 rounded-md border border-gray-200 p-2 dark:border-gray-700">
+                                <span class="text-gray-500 dark:text-gray-300">Credentials</span>
+                                <Badge @status={{if this.hasRequiredConfig "success" "warning"}} @hideStatusDot={{true}}>{{if this.hasRequiredConfig "Ready" "Review"}}</Badge>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 rounded-md border border-gray-200 p-2 dark:border-gray-700">
+                                <span class="text-gray-500 dark:text-gray-300">Environment</span>
+                                <span class="font-semibold capitalize text-gray-900 dark:text-gray-100">{{or @resource.environment "sandbox"}}</span>
+                            </div>
+                        </div>
+                    </aside>
+                </section>
+            {{else}}
+                <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div class="rounded-md border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+                        <div class="mb-3">
+                            <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">Review Gateway Setup</h2>
+                            <p class="text-xs leading-5 text-gray-500 dark:text-gray-300">Confirm the configuration before saving. Existing gateways can run a live credential check from here.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            <div class="rounded-md border border-gray-200 p-3 dark:border-gray-700">
+                                <div class="text-[11px] font-semibold uppercase text-gray-400 dark:text-gray-500">Gateway</div>
+                                <div class="mt-2 text-sm font-bold text-gray-900 dark:text-gray-100">{{or @resource.name "Unnamed gateway"}}</div>
+                                <div class="mt-1 text-xs text-gray-500 dark:text-gray-300">{{or this.selectedDriver.name @resource.driver}}</div>
+                            </div>
+                            <div class="rounded-md border border-gray-200 p-3 dark:border-gray-700">
+                                <div class="text-[11px] font-semibold uppercase text-gray-400 dark:text-gray-500">Mode</div>
+                                <div class="mt-2 text-sm font-bold capitalize text-gray-900 dark:text-gray-100">{{or @resource.environment "sandbox"}}</div>
+                                <div class="mt-1 text-xs capitalize text-gray-500 dark:text-gray-300">{{or @resource.status "active"}}</div>
+                            </div>
+                        </div>
+
+                        {{#if this.reviewConfigEntries.length}}
+                            <div class="mt-3 rounded-md border border-gray-200 dark:border-gray-700">
+                                {{#each this.reviewConfigEntries as |item|}}
+                                    <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-3 py-2 text-xs last:border-b-0 dark:border-gray-700">
+                                        <span class="text-gray-500 dark:text-gray-300">{{item.label}}</span>
+                                        <span class="max-w-sm break-words text-right font-mono text-gray-900 dark:text-gray-100">{{n-a item.value}}</span>
+                                    </div>
+                                {{/each}}
+                            </div>
+                        {{/if}}
+
+                        <div class="mt-3 rounded-md border p-4 text-xs transition {{if (eq this.connectionState 'success') 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/10'}} {{if (eq this.connectionState 'failed') 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/10'}} {{if (eq this.connectionState 'testing') 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/10'}} {{if (eq this.connectionState 'idle') 'border-dashed border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-800'}}">
+                            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                <div class="flex min-w-0 items-start gap-3">
+                                    <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md {{if (eq this.connectionState 'success') 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'}} {{if (eq this.connectionState 'failed') 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'}} {{if (eq this.connectionState 'testing') 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 animate-pulse'}} {{if (eq this.connectionState 'idle') 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300'}}">
+                                        {{#if (eq this.connectionState "testing")}}<Spinner />{{else if (eq this.connectionState "success")}}<FaIcon @icon="check" />{{else if (eq this.connectionState "failed")}}<FaIcon @icon="triangle-exclamation" />{{else}}<FaIcon @icon="plug" />{{/if}}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-bold text-gray-900 dark:text-gray-100">{{this.connectionStateTitle}}</div>
+                                        <p class="mt-1 max-w-3xl text-xs leading-5 text-gray-600 dark:text-gray-300">{{this.connectionStateMessage}}</p>
+                                        {{#if this.connectionMetadataEntries.length}}
+                                            <div class="mt-3 flex flex-wrap gap-2">
+                                                {{#each this.connectionMetadataEntries as |item|}}
+                                                    <span class="inline-flex items-center rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                                                        <span class="mr-1 font-semibold text-gray-900 dark:text-gray-100">{{item.label}}</span>
+                                                        {{item.value}}
+                                                    </span>
+                                                {{/each}}
+                                            </div>
+                                        {{/if}}
+                                    </div>
+                                </div>
+
+                                <Button @icon="plug" @text={{if (eq this.connectionState "success") "Test Again" "Test Credentials"}} @size="xs" @isLoading={{this.testCredentials.isRunning}} @disabled={{or this.testCredentials.isRunning (not @resource.id)}} @onClick={{perform this.testCredentials}} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <aside class="rounded-md border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800" aria-label="Gateway after saving steps">
+                        <h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">After Saving</h3>
+                        <div class="mt-3 space-y-3 text-xs leading-5 text-gray-500 dark:text-gray-300">
+                            <p>Use the gateway details screen to register webhooks, create test orders, and inspect diagnostics.</p>
+                            <p>For GNU Taler, sandbox gateways can use the hosted Fleetbase Merchant Backend URL when no backend URL is supplied, but API tokens must still be configured.</p>
+                        </div>
+                    </aside>
+                </section>
+            {{/if}}
+        </div>
+    </div>
+
+    <div class="flex flex-shrink-0 items-center justify-between border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900 md:px-6">
+        <div class="text-xs text-gray-500 dark:text-gray-300">{{@footerHelp}}</div>
+        <div class="flex items-center gap-2">
+            <Button @icon="arrow-left" @text="Back" @size="sm" @disabled={{eq this.activeStep 0}} @onClick={{this.previousStep}} />
+            {{#if (eq this.currentStep "review")}}
+                <Button @icon="save" @text={{@saveLabel}} @type="primary" @size="sm" @isLoading={{@isSaving}} @disabled={{@isSaving}} @onClick={{@onSave}} />
+            {{else}}
+                <Button @icon="arrow-right" @text="Next" @type="primary" @size="sm" @onClick={{this.nextStep}} />
+            {{/if}}
+            <Button @icon="times" @text="Cancel" @size="sm" @onClick={{@onCancel}} />
+        </div>
+    </div>
 </div>

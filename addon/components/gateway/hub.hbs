@@ -4,7 +4,7 @@
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
-                        <h1 class="text-lg font-bold text-gray-900 dark:text-gray-100">Payment Gateway Hub</h1>
+                        <h1 class="text-lg font-bold text-gray-900 dark:text-gray-100">Payment Gateways</h1>
                         <Badge @status={{if this.warningCount "warning" "success"}} @hideStatusDot={{true}}>{{this.warningCount}} warnings</Badge>
                     </div>
                     <p class="mt-1 max-w-3xl text-sm leading-5 text-gray-500 dark:text-gray-300">
@@ -26,13 +26,13 @@
             </section>
 
             {{#if this.hasGatewayConnections}}
-                <section class="min-w-0 overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                    <div class="grid gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700 lg:grid-cols-[minmax(0,26rem)_minmax(22rem,max-content)] lg:items-start lg:justify-between">
+                <section class="ledger-gateway-connections-panel min-w-0 overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div class="ledger-gateway-connections-header border-b border-gray-200 px-4 py-3 dark:border-gray-700">
                         <div class="min-w-0 max-w-md">
                             <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100">Connected Gateways</h2>
                             <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-300">Review configured providers, checkout availability, environments, and operational status.</p>
                         </div>
-                        <div class="flex min-w-0 flex-wrap items-center gap-2 lg:ml-auto lg:flex-nowrap lg:justify-end">
+                        <div class="ledger-gateway-connections-actions flex min-w-0 flex-wrap items-center gap-2 lg:ml-auto lg:flex-nowrap lg:justify-end">
                             <Layout::Resource::TabularActions
                                 @title="Connected Gateways"
                                 @searchQuery={{@searchQuery}}
@@ -41,6 +41,9 @@
                                 @bulkActions={{@bulkActions}}
                                 @controller={{@controller}}
                                 @table={{this.table}}
+                                @searchInputClass="ledger-gateway-connections-search"
+                                @filterPickerButtonClass="ledger-gateway-connections-action-button"
+                                @columnPickerButtonClass="ledger-gateway-connections-action-button"
                             />
                         </div>
                     </div>

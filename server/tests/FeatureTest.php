@@ -197,10 +197,24 @@ test('transactions use two-axis lifecycle and settlement status contract', funct
         ->not->toContain("'succeeded'");
 });
 
+test('transaction settlement currency supports taler sandbox currency codes', function () {
+    $fallbackMigration = file_get_contents(__DIR__ . '/../migrations/2024_01_01_000016_extend_transactions_table_for_ledger.php');
+    $widenMigration    = file_get_contents(__DIR__ . '/../migrations/2026_07_17_000001_widen_transaction_settled_currency_for_taler.php');
+
+    expect($fallbackMigration)
+        ->toContain("\$table->string('settled_currency', 10)");
+
+    expect($widenMigration)
+        ->toContain('changeSettledCurrencyLength(10)')
+        ->toContain("\$table->string('settled_currency', \$length)->nullable()->change()");
+});
+
 test('taler gateway lifecycle routes and diagnostics are registered', function () {
     $routes     = file_get_contents(__DIR__ . '/../src/routes.php');
     $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/GatewayController.php');
     $driver     = file_get_contents(__DIR__ . '/../src/Gateways/TalerDriver.php');
+    $gateway    = file_get_contents(__DIR__ . '/../src/Models/Gateway.php');
+    $migration  = file_get_contents(__DIR__ . '/../migrations/2026_07_17_000002_add_meta_to_ledger_gateways_table.php');
     $resource   = file_get_contents(__DIR__ . '/../src/Http/Resources/v1/GatewayTransaction.php');
     $authSchema = file_get_contents(__DIR__ . '/../src/Auth/Schemas/Ledger.php');
 
@@ -218,7 +232,23 @@ test('taler gateway lifecycle routes and diagnostics are registered', function (
         ->toContain('public function testCredentials')
         ->toContain('public function createTestOrder')
         ->toContain('public function registerWebhook')
-        ->toContain('public function diagnostics');
+        ->toContain('public function diagnostics')
+        ->toContain('recordGatewayDiagnostic')
+        ->toContain('sanitizeProviderResult')
+        ->toContain("'last_credential_tested_at'")
+        ->toContain("'last_credential_test_message'")
+        ->toContain("'last_webhook_registration_at'")
+        ->toContain("'last_test_order_at'")
+        ->toContain("'last_test_order_id'")
+        ->not->toContain("'credential_status'        => 'not_checked'");
+
+    expect($gateway)
+        ->toContain("'meta'")
+        ->toContain("'meta'         => 'array'");
+
+    expect($migration)
+        ->toContain("Schema::hasColumn('ledger_gateways', 'meta')")
+        ->toContain("\$table->json('meta')->nullable()");
 
     expect($driver)
         ->toContain('public function testCredentials')
@@ -247,12 +277,20 @@ test('payment gateway management renders hub catalog and full page details', fun
     $hub = file_get_contents(__DIR__ . '/../../addon/components/gateway/hub.hbs');
     $catalogCard = file_get_contents(__DIR__ . '/../../addon/components/gateway/catalog-card.hbs');
     $providerCell = file_get_contents(__DIR__ . '/../../addon/components/table/cell/gateway-provider.hbs');
-    $detailsTemplate = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/index/details.hbs');
+    $detailsTemplate = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/details.hbs');
     $detailsComponent = file_get_contents(__DIR__ . '/../../addon/components/gateway/details.hbs');
+    $detailsComponentJs = file_get_contents(__DIR__ . '/../../addon/components/gateway/details.js');
+    $detailsController = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/details.js');
+    $styles = file_get_contents(__DIR__ . '/../../addon/styles/ledger-engine.css');
 
     expect($routes)
+        ->toContain("this.route('index', { path: '/' });")
+        ->toContain("this.route('new');")
+        ->toContain("this.route('edit', { path: '/edit/:id' });")
+        ->toContain("this.route('details', { path: '/:id' }, function ()")
         ->toContain("this.route('setup')")
-        ->toContain("this.route('diagnostics')");
+        ->toContain("this.route('diagnostics')")
+        ->not->toContain("this.route('index', { path: '/' }, function () {\n                this.route('new');\n                this.route('edit', { path: '/:id/edit' });");
 
     expect($indexController)
         ->toContain("this.fetch.get('gateways/summary'")
@@ -265,11 +303,19 @@ test('payment gateway management renders hub catalog and full page details', fun
         ->toContain('@drivers={{this.drivers}}');
 
     expect($hub)
-        ->toContain('Payment Gateway Hub')
+        ->toContain('Payment Gateways')
+        ->toContain('ledger-gateway-connections-panel')
+        ->toContain('@searchInputClass="ledger-gateway-connections-search"')
         ->toContain('Connected Gateways')
         ->toContain('Supported Gateways')
         ->toContain('<Layout::Resource::Tabular')
         ->toContain('<Gateway::CatalogCard');
+
+    expect($styles)
+        ->toContain('.ledger-gateway-connections-header')
+        ->toContain('body[data-theme=\'dark\'] .ledger-gateway-connections-panel .next-table-wrapper table tbody tr td')
+        ->toContain('.ledger-gateway-kpi-accent-green')
+        ->toContain('.ledger-gateway-kpi-accent-amber');
 
     expect($catalogCard)
         ->toContain('Manage gateway')
@@ -281,15 +327,70 @@ test('payment gateway management renders hub catalog and full page details', fun
 
     expect($detailsTemplate)
         ->toContain('Gateway sections')
-        ->toContain('payments.gateways.index.details.setup')
-        ->toContain('payments.gateways.index.details.diagnostics')
+        ->toContain('{{#each this.tabs as |tab|}}')
+        ->toContain("{{if tab.active 'border-blue-500 text-gray-900 dark:text-white'")
+        ->toContain("{{if this.isTransactionsTab 'min-w-0'")
+        ->toContain('payments.gateways.details.index')
+        ->toContain('payments.gateways.details.setup')
+        ->toContain('payments.gateways.details.diagnostics')
         ->not->toContain('Layout::Resource::Panel');
 
+    expect($detailsController)
+        ->toContain('currentRouteName')
+        ->toContain('isTransactionsTab');
+
+    $newTemplate  = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/new.hbs');
+    $editTemplate = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/edit.hbs');
+    $editController = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/edit.js');
+    $formTemplate = file_get_contents(__DIR__ . '/../../addon/components/gateway/form.hbs');
+
+    expect($newTemplate)
+        ->toContain('Connect Payment Gateway')
+        ->toContain('<Gateway::Form')
+        ->not->toContain('Layout::Resource::Panel');
+
+    expect($editTemplate)
+        ->toContain('Edit {{@model.name}}')
+        ->toContain('<Gateway::Form')
+        ->not->toContain('Layout::Resource::Panel');
+
+    expect($editController)
+        ->toContain('transitionToGatewayDetails')
+        ->toContain("this.hostRouter.transitionTo('console.ledger.payments.gateways.details', gateway)");
+
+    expect($formTemplate)
+        ->toContain('Choose Payment Gateway')
+        ->toContain('this.currentStep')
+        ->toContain('Gateway Credentials')
+        ->toContain('Routing And Status')
+        ->toContain('Review Gateway Setup');
+
     expect($detailsComponent)
-        ->toContain('Gateway Operations')
-        ->toContain('Customer Payment Preview')
-        ->toContain('Operational Health')
-        ->toContain('GNU Taler Diagnostics');
+        ->toContain('Provider Status')
+        ->toContain('Recent Gateway Activity')
+        ->toContain('Gateway Setup')
+        ->toContain('Provider Tools')
+        ->toContain('format-date-fns')
+        ->toContain('setupIdentityRows')
+        ->toContain('setupRoutingRows')
+        ->toContain('setupConfigRows')
+        ->toContain('diagnosticsResults')
+        ->toContain('<ClickToCopy')
+        ->toContain('@size="sm"')
+        ->not->toContain('Gateway Operations')
+        ->not->toContain('Operational Health')
+        ->not->toContain('Customer Payment Preview')
+        ->not->toContain('QR code / wallet redirect appears here');
+
+    expect($detailsComponentJs)
+        ->toContain('runDiagnosticAction')
+        ->toContain('confirmTitle')
+        ->toContain('copySystemWebhookUrl')
+        ->toContain('diagnosticActions')
+        ->toContain('providerStatusRows')
+        ->toContain('recentActivity')
+        ->toContain('lastCredentialTestedAt')
+        ->toContain('overviewActions');
 });
 
 test('invoice refund workflow routes controller and ui are registered', function () {

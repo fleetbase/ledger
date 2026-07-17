@@ -1,7 +1,7 @@
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
 
-export default class PaymentsGatewaysIndexNewRoute extends Route {
+export default class PaymentsGatewaysNewRoute extends Route {
     @service notifications;
     @service hostRouter;
     @service abilities;

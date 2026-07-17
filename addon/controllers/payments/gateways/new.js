@@ -10,28 +10,25 @@ const DEFAULT_PROPERTIES = {
     is_default: false,
 };
 
-export default class PaymentsGatewaysIndexNewController extends Controller {
+export default class PaymentsGatewaysNewController extends Controller {
     @service store;
     @service hostRouter;
     @service notifications;
     @service intl;
     @service events;
 
-    @tracked overlay;
-    @tracked gateway = this.store.createRecord('ledger-gateway', DEFAULT_PROPERTIES);
+    queryParams = ['driver'];
 
-    get actionButtons() {
-        return [];
-    }
+    @tracked driver = null;
+    @tracked gateway = this.store.createRecord('ledger-gateway', DEFAULT_PROPERTIES);
 
     @task *save(gateway) {
         try {
             yield gateway.save();
             this.events.trackResourceCreated(gateway);
-            this.overlay?.close();
 
             yield this.hostRouter.refresh();
-            yield this.hostRouter.transitionTo('console.ledger.payments.gateways.index.details', gateway);
+            yield this.hostRouter.transitionTo('console.ledger.payments.gateways.details', gateway);
             this.notifications.success(
                 this.intl.t('common.resource-created-success-name', {
                     resource: 'Gateway',
@@ -42,6 +39,11 @@ export default class PaymentsGatewaysIndexNewController extends Controller {
         } catch (err) {
             this.notifications.serverError(err);
         }
+    }
+
+    @action cancel() {
+        this.resetForm();
+        return this.hostRouter.transitionTo('console.ledger.payments.gateways.index');
     }
 
     @action resetForm() {

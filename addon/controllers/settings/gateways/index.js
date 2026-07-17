@@ -31,15 +31,15 @@ export default class SettingsGatewaysIndexController extends Controller {
     }
 
     @action addGateway() {
-        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.new');
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.new');
     }
 
     @action viewGateway(gateway) {
-        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.details', gateway.id);
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.details', gateway.id);
     }
 
     @action editGateway(gateway) {
-        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.edit', gateway);
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.edit', gateway);
     }
 
     @action async deleteGateway(gateway) {

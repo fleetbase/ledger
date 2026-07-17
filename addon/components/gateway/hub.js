@@ -91,24 +91,28 @@ export default class GatewayHubComponent extends Component {
                 value: this.summary.active_gateways ?? 0,
                 caption: 'Ready to collect payments',
                 icon: 'plug',
+                accentClass: Number(this.summary.active_gateways ?? 0) > 0 ? 'ledger-gateway-kpi-accent-green' : 'ledger-gateway-kpi-accent-blue',
             },
             {
                 label: 'Live ready',
                 value: this.summary.live_gateways ?? 0,
                 caption: 'Production connections',
                 icon: 'bolt',
+                accentClass: Number(this.summary.live_gateways ?? 0) > 0 ? 'ledger-gateway-kpi-accent-blue' : 'ledger-gateway-kpi-accent-slate',
             },
             {
                 label: 'Webhook issues',
                 value: this.warningCount,
                 caption: this.warningCount > 0 ? 'Need provisioning review' : 'No open warnings',
                 icon: 'link',
+                accentClass: this.warningCount > 0 ? 'ledger-gateway-kpi-accent-amber' : 'ledger-gateway-kpi-accent-green',
             },
             {
                 label: 'Sandbox',
                 value: this.summary.sandbox_gateways ?? 0,
                 caption: 'Testing connections',
                 icon: 'flask',
+                accentClass: Number(this.summary.sandbox_gateways ?? 0) > 0 ? 'ledger-gateway-kpi-accent-amber' : 'ledger-gateway-kpi-accent-slate',
             },
         ];
     }
@@ -130,6 +134,6 @@ export default class GatewayHubComponent extends Component {
             return this.gatewayActions.transition.view(driver.primaryGateway);
         }
 
-        return this.gatewayActions.transition.create();
+        return this.gatewayActions.transition.create(driver.code);
     }
 }

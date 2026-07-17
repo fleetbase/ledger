@@ -11,44 +11,25 @@ export default class GatewayActionsService extends ResourceActionService {
     }
 
     transition = {
-        view: (gateway) => this.transitionTo('payments.gateways.index.details', gateway),
-        create: () => this.transitionTo('payments.gateways.index.new'),
-        edit: (gateway) => this.transitionTo('payments.gateways.index.edit', gateway),
+        view: (gateway) => this.transitionTo('payments.gateways.details', gateway),
+        create: (driver) =>
+            this.transitionTo('payments.gateways.new', {
+                queryParams: {
+                    driver: typeof driver === 'string' ? driver : null,
+                },
+            }),
+        edit: (gateway) => this.transitionTo('payments.gateways.edit', gateway),
     };
 
     @action edit(gateway) {
-        return this.transitionTo('payments.gateways.index.edit', gateway);
+        return this.transitionTo('payments.gateways.edit', gateway);
     }
 
     panel = {
-        create: (attributes = {}, options = {}) => {
-            const gateway = this.createNewInstance(attributes);
-            return this.resourceContextPanel.open({
-                content: 'gateway/form',
-                title: this.intl.t('common.create-a-new-resource', { resource: this.intl.t('resource.gateway')?.toLowerCase() }),
-                saveOptions: { callback: this.refresh },
-                useDefaultSaveTask: true,
-                gateway,
-                ...options,
-            });
-        },
+        create: (attributes = {}) => this.transition.create(attributes.driver),
 
-        edit: (gateway, options = {}) => {
-            return this.resourceContextPanel.open({
-                content: 'gateway/form',
-                title: this.intl.t('common.edit-resource-name', { resourceName: gateway.public_id }),
-                useDefaultSaveTask: true,
-                gateway,
-                ...options,
-            });
-        },
+        edit: (gateway) => this.transition.edit(gateway),
 
-        view: (gateway, options = {}) => {
-            return this.resourceContextPanel.open({
-                gateway,
-                tabs: [{ label: this.intl.t('common.overview'), component: 'gateway/details' }],
-                ...options,
-            });
-        },
+        view: (gateway) => this.transition.view(gateway),
     };
 }
