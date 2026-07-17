@@ -235,6 +235,51 @@ test('taler gateway lifecycle routes and diagnostics are registered', function (
         ->toContain("'diagnostics'");
 });
 
+test('invoice refund workflow routes controller and ui are registered', function () {
+    $routes     = file_get_contents(__DIR__ . '/../src/routes.php');
+    $authSchema = file_get_contents(__DIR__ . '/../src/Auth/Schemas/Ledger.php');
+    $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/InvoiceController.php');
+    $ui         = file_get_contents(__DIR__ . '/../../addon/controllers/billing/invoices/index/details.js');
+    $modal      = file_get_contents(__DIR__ . '/../../addon/components/modals/issue-refund.hbs');
+    $result     = file_get_contents(__DIR__ . '/../../addon/components/modals/refund-result.hbs');
+
+    expect($routes)
+        ->toContain("'{id}/refund-options'")
+        ->toContain("'{id}/refund'");
+
+    expect($authSchema)
+        ->toContain("'refund'")
+        ->toContain("'refund-options'");
+
+    expect($controller)
+        ->toContain('public function refundOptions')
+        ->toContain('public function refund(string $id, Request $request, PaymentService $paymentService)')
+        ->toContain('refundableGatewayTransactions')
+        ->toContain('invoiceRemainingRefundableAmount')
+        ->toContain('new RefundRequest(')
+        ->toContain("'refund_kind' => \$refundKind")
+        ->toContain("'data'                   => \$response->data");
+
+    expect($ui)
+        ->toContain('Issue Refund')
+        ->toContain("invoices/\${invoice.id}/refund-options")
+        ->toContain("invoices/\${invoice.id}/refund")
+        ->toContain('showRefundResult')
+        ->toContain("responseData.taler_refund_uri ?? responseData.refund_url")
+        ->toContain('this.hostRouter.refresh()');
+
+    expect($modal)
+        ->toContain('Remaining refundable')
+        ->toContain('Custom partial amount')
+        ->toContain('GNU Taler may return a refund URI')
+        ->toContain('<MoneyInput');
+
+    expect($result)
+        ->toContain('Taler Refund URI')
+        ->toContain('<ClickToCopy')
+        ->toContain('Gateway refund transaction');
+});
+
 test('taler webhook unresolved routing is audited', function () {
     $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/WebhookController.php');
 

@@ -95,6 +95,8 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                     function ($router, $controller) {
                                         $router->post('create-from-order', $controller('createFromOrder'));
                                         $router->post('{id}/record-payment', $controller('recordPayment'));
+                                        $router->get('{id}/refund-options', $controller('refundOptions'));
+                                        $router->post('{id}/refund', $controller('refund'));
                                         $router->get('{id}/transactions', $controller('transactions'));
                                         $router->post('{id}/mark-as-sent', $controller('markAsSent'));
                                         $router->post('{id}/send', $controller('send'));
