@@ -74,6 +74,16 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
             });
         }
 
+        // Refund - paid or partially refunded invoices with remaining paid funds.
+        if (this.canIssueRefund) {
+            dropdownItems.push({
+                text: 'Issue Refund',
+                icon: 'undo',
+                class: 'text-red-500 hover:text-red-700',
+                fn: () => this.issueRefund(),
+            });
+        }
+
         // Void — for any non-terminal status.
         if (!['paid', 'void', 'cancelled'].includes(invoice?.status)) {
             dropdownItems.push({
@@ -106,6 +116,20 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         }
 
         return buttons;
+    }
+
+    get refundedAmount() {
+        return Number(this.model?.meta?.refunded_amount ?? 0);
+    }
+
+    get remainingRefundableAmount() {
+        return Math.max(0, Number(this.model?.amount_paid ?? 0) - this.refundedAmount);
+    }
+
+    get canIssueRefund() {
+        const status = this.model?.status;
+
+        return ['paid', 'partial', 'refunded'].includes(status) && this.remainingRefundableAmount > 0;
     }
 
     @action async sendInvoice() {
@@ -175,6 +199,125 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         };
 
         this.modalsManager.show('modals/record-payment', options);
+    }
+
+    @action async issueRefund() {
+        const invoice = this.model;
+
+        try {
+            const result = await this.fetch.get(`invoices/${invoice.id}/refund-options`, {}, { namespace: 'ledger/int/v1' });
+            const refundOptions = (result.options ?? []).map((option) => {
+                const gatewayName = option.gateway?.name ?? option.gateway?.driver ?? 'Gateway';
+                const driver = option.gateway?.driver ? ` (${option.gateway.driver})` : '';
+
+                return {
+                    ...option,
+                    label: `${gatewayName}${driver} - ${option.gateway_transaction_id}`,
+                };
+            });
+
+            if (refundOptions.length === 0) {
+                this.notifications.warning('This invoice has no refundable gateway payments.');
+                return;
+            }
+
+            const selectedOption = refundOptions[0];
+            const options = {
+                title: `Issue Refund ${invoice.number}`,
+                acceptButtonText: 'Issue Refund',
+                acceptButtonIcon: 'undo',
+                acceptButtonScheme: 'danger',
+                invoice,
+                summary: result.invoice,
+                refundOptions,
+                selectedGatewayTransactionId: selectedOption.gateway_transaction_id,
+                refundMode: 'full',
+                amount: selectedOption.refundable_amount,
+                reason: '',
+                confirm: async (modal) => {
+                    const selected = refundOptions.find((option) => option.gateway_transaction_id === options.selectedGatewayTransactionId);
+
+                    if (!selected) {
+                        this.notifications.warning('Select a refundable payment.');
+                        return;
+                    }
+
+                    if (!options.amount || options.amount <= 0) {
+                        this.notifications.warning('Enter a refund amount greater than zero.');
+                        return;
+                    }
+
+                    if (options.amount > selected.refundable_amount) {
+                        this.notifications.warning('Refund amount exceeds the selected payment remaining amount.');
+                        return;
+                    }
+
+                    this.confirmRefund(invoice, options, selected, modal);
+                },
+            };
+
+            this.modalsManager.show('modals/issue-refund', options);
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    confirmRefund(invoice, options, selected, refundModal) {
+        const amountLabel = `${options.amount} ${selected.currency ?? options.summary?.currency ?? invoice.currency}`;
+        const gatewayLabel = selected.gateway?.name ?? selected.gateway?.driver ?? 'the selected gateway';
+        const talerNote = selected.requires_customer_action ? ' GNU Taler may return a refund URI that must be shared with the customer wallet.' : '';
+
+        this.modalsManager.confirm({
+            title: `Confirm Refund ${invoice.number}`,
+            body: `Issue a ${amountLabel} refund through ${gatewayLabel}? This will create a gateway refund and Ledger reversal.${talerNote}`,
+            confirm: async (confirmationModal) => {
+                confirmationModal.startLoading();
+
+                try {
+                    const response = await this.refundInvoice(invoice, options);
+                    const responseData = response.data ?? {};
+                    const refundUrl = responseData.taler_refund_uri ?? responseData.refund_url;
+
+                    this.notifications.success('Refund issued successfully.');
+                    await invoice.reload();
+                    this.hostRouter.refresh();
+                    confirmationModal.done();
+                    refundModal.done();
+
+                    if (refundUrl) {
+                        this.showRefundResult(response, refundUrl);
+                    }
+                } catch (error) {
+                    this.notifications.serverError(error);
+                    confirmationModal.stopLoading();
+                }
+            },
+        });
+    }
+
+    refundInvoice(invoice, options) {
+        return this.fetch.post(
+            `invoices/${invoice.id}/refund`,
+            {
+                gateway_transaction_id: options.selectedGatewayTransactionId,
+                amount: options.amount,
+                reason: options.reason || null,
+            },
+            { namespace: 'ledger/int/v1' }
+        );
+    }
+
+    showRefundResult(response, refundUrl) {
+        this.modalsManager.show('modals/refund-result', {
+            title: 'Refund Issued',
+            acceptButtonText: 'Done',
+            acceptButtonIcon: 'check',
+            refundUrl,
+            refundStatus: response.data?.refund_status ?? response.status,
+            walletStatus: response.data?.wallet_status,
+            gatewayTransactionId: response.gateway_transaction_id,
+            confirm: (modal) => modal.done(),
+        });
     }
 
     @action async voidInvoice() {

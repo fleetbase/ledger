@@ -43,6 +43,47 @@ class GatewayController extends LedgerResourceController
         ]);
     }
 
+    public function summary(): JsonResponse
+    {
+        $companyUuid  = session('company');
+        $gateways     = Gateway::where('company_uuid', $companyUuid)->get();
+        $gatewayUuids = $gateways->pluck('uuid');
+        $lastPayment  = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->whereIn('event_type', [
+            \Fleetbase\Ledger\DTO\GatewayResponse::EVENT_PAYMENT_PENDING,
+            \Fleetbase\Ledger\DTO\GatewayResponse::EVENT_PAYMENT_SUCCEEDED,
+        ]));
+        $lastRefund     = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->where('type', 'refund'));
+        $lastSettlement = $this->latestGatewayTransaction($gatewayUuids, fn ($query) => $query->whereNotNull('reconciliation_checked_at'), 'reconciliation_checked_at');
+        $driverSummary  = collect($this->paymentService->getDriverManifest())->map(function ($driver) use ($gateways) {
+            $driverGateways = $gateways->where('driver', $driver['code']);
+
+            return [
+                'code'         => $driver['code'],
+                'name'         => $driver['name'],
+                'capabilities' => $driver['capabilities'] ?? [],
+                'configured'   => $driverGateways->count(),
+                'active'       => $driverGateways->where('status', 'active')->count(),
+                'live'         => $driverGateways->where('environment', 'live')->count(),
+                'sandbox'      => $driverGateways->where('environment', 'sandbox')->count(),
+            ];
+        })->values();
+
+        return response()->json([
+            'status'  => 'ok',
+            'summary' => [
+                'total_gateways'     => $gateways->count(),
+                'active_gateways'    => $gateways->where('status', 'active')->count(),
+                'live_gateways'      => $gateways->where('environment', 'live')->count(),
+                'sandbox_gateways'   => $gateways->where('environment', 'sandbox')->count(),
+                'webhook_warnings'   => $gateways->filter(fn ($gateway) => $gateway->status === 'active' && $gateway->driver !== 'cash' && empty($gateway->webhook_url))->count(),
+                'last_payment_at'    => optional($lastPayment?->created_at)->toISOString(),
+                'last_refund_at'     => optional($lastRefund?->created_at)->toISOString(),
+                'last_settlement_at' => optional($lastSettlement?->reconciliation_checked_at)->toISOString(),
+            ],
+            'drivers' => $driverSummary,
+        ]);
+    }
+
     /**
      * Initiate a payment charge through a gateway.
      */
@@ -106,6 +147,7 @@ class GatewayController extends LedgerResourceController
             'successful'             => $response->successful,
             'gateway_transaction_id' => $response->gatewayTransactionId,
             'message'                => $response->message,
+            'data'                   => $response->data,
         ], $response->isSuccessful() ? 200 : 422);
     }
 
@@ -143,5 +185,267 @@ class GatewayController extends LedgerResourceController
             ->paginate($request->integer('per_page', 25));
 
         return response()->json(GatewayTransactionResource::collection($transactions));
+    }
+
+    public function testCredentials(Request $request, string $id): JsonResponse
+    {
+        $gateway = $this->resolveGateway($id);
+        $driver  = $this->paymentServiceGatewayDriver($gateway);
+
+        if (!method_exists($driver, 'testCredentials')) {
+            return response()->json([
+                'status'  => 'unsupported',
+                'message' => "Gateway driver [{$gateway->driver}] does not support credential diagnostics.",
+            ], 422);
+        }
+
+        $result = $this->sanitizeProviderResult($driver->testCredentials());
+
+        $this->recordGatewayDiagnostic($gateway, 'last_credential_test', [
+            'status'      => $result['status'] ?? (($result['ok'] ?? false) ? 'success' : 'failed'),
+            'successful'  => (bool) ($result['ok'] ?? false),
+            'message'     => $result['message'] ?? null,
+            'http_status' => $result['http_status'] ?? null,
+            'checked_at'  => now()->toISOString(),
+        ]);
+
+        return response()->json($result, ($result['ok'] ?? false) ? 200 : 422);
+    }
+
+    public function createTestOrder(Request $request, string $id): JsonResponse
+    {
+        $gateway = $this->resolveGateway($id);
+        $driver  = $this->paymentServiceGatewayDriver($gateway);
+
+        if (!method_exists($driver, 'createTestOrder')) {
+            return response()->json([
+                'status'  => 'unsupported',
+                'message' => "Gateway driver [{$gateway->driver}] does not support test orders.",
+            ], 422);
+        }
+
+        $response = $driver->createTestOrder([
+            'amount'      => $request->integer('amount', 1),
+            'currency'    => strtoupper($request->input('currency', 'KUDOS')),
+            'description' => $request->input('description', 'Ledger GNU Taler test order'),
+            'metadata'    => [
+                'company_uuid'      => $gateway->company_uuid,
+                'gateway_uuid'      => $gateway->uuid,
+                'gateway_public_id' => $gateway->public_id,
+            ],
+        ]);
+
+        if ($response->gatewayTransactionId) {
+            GatewayTransaction::create([
+                'company_uuid'         => $gateway->company_uuid,
+                'gateway_uuid'         => $gateway->uuid,
+                'gateway_reference_id' => $response->gatewayTransactionId,
+                'type'                 => 'test_order',
+                'event_type'           => $response->eventType,
+                'amount'               => $response->amount,
+                'currency'             => $response->currency,
+                'status'               => $response->status,
+                'message'              => $response->message,
+                'raw_response'         => array_merge($response->rawResponse, ['data' => $response->data]),
+            ]);
+        }
+
+        $this->recordGatewayDiagnostic($gateway, 'last_test_order', [
+            'status'                 => $response->status,
+            'successful'             => $response->successful,
+            'message'                => $response->message,
+            'gateway_transaction_id' => $response->gatewayTransactionId,
+            'checked_at'             => now()->toISOString(),
+        ]);
+
+        return response()->json([
+            'status'                 => $response->status,
+            'successful'             => $response->successful,
+            'gateway_transaction_id' => $response->gatewayTransactionId,
+            'message'                => $response->message,
+            'data'                   => $response->data,
+        ], $response->isSuccessful() ? 200 : 422);
+    }
+
+    public function registerWebhook(Request $request, string $id): JsonResponse
+    {
+        $gateway = $this->resolveGateway($id);
+        $driver  = $this->paymentServiceGatewayDriver($gateway);
+
+        if (!method_exists($driver, 'registerWebhook')) {
+            return response()->json([
+                'status'  => 'unsupported',
+                'message' => "Gateway driver [{$gateway->driver}] does not support webhook provisioning.",
+            ], 422);
+        }
+
+        $result = $this->sanitizeProviderResult($driver->registerWebhook([
+            'webhook_url'  => $request->input('webhook_url') ?: $gateway->getWebhookUrl(),
+            'company_uuid' => $gateway->company_uuid,
+            'gateway_id'   => $gateway->public_id ?? $gateway->uuid,
+            'gateway_uuid' => $gateway->uuid,
+        ]));
+
+        if (($result['ok'] ?? false) && $gateway->webhook_url !== ($result['payload']['url'] ?? null)) {
+            $gateway->webhook_url = $result['payload']['url'] ?? $gateway->webhook_url;
+            $gateway->save();
+        }
+
+        $this->recordGatewayDiagnostic($gateway, 'last_webhook_registration', [
+            'status'      => $result['status'] ?? (($result['ok'] ?? false) ? 'success' : 'failed'),
+            'successful'  => (bool) ($result['ok'] ?? false),
+            'message'     => $result['message'] ?? null,
+            'http_status' => $result['http_status'] ?? null,
+            'webhook_url' => $result['payload']['url'] ?? $gateway->webhook_url,
+            'checked_at'  => now()->toISOString(),
+        ]);
+
+        return response()->json($result, ($result['ok'] ?? false) ? 200 : 422);
+    }
+
+    public function diagnostics(Request $request, string $id): JsonResponse
+    {
+        $gateway = $this->resolveGateway($id);
+
+        $lastWebhook = GatewayTransaction::where('gateway_uuid', $gateway->uuid)
+            ->where('type', 'webhook_event')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        $lastPayment = GatewayTransaction::where('gateway_uuid', $gateway->uuid)
+            ->whereIn('event_type', [\Fleetbase\Ledger\DTO\GatewayResponse::EVENT_PAYMENT_PENDING, \Fleetbase\Ledger\DTO\GatewayResponse::EVENT_PAYMENT_SUCCEEDED])
+            ->orderBy('created_at', 'desc')
+            ->first();
+        $lastRefund = GatewayTransaction::where('gateway_uuid', $gateway->uuid)
+            ->where('type', 'refund')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        $lastSettlement = GatewayTransaction::where('gateway_uuid', $gateway->uuid)
+            ->whereNotNull('reconciliation_checked_at')
+            ->orderBy('reconciliation_checked_at', 'desc')
+            ->first();
+        $diagnosticMeta          = data_get($gateway->meta ?? [], 'diagnostics', []);
+        $lastCredentialTest      = $diagnosticMeta['last_credential_test'] ?? [];
+        $lastWebhookRegistration = $diagnosticMeta['last_webhook_registration'] ?? [];
+        $lastTestOrder           = $diagnosticMeta['last_test_order'] ?? [];
+
+        return response()->json([
+            'status'  => 'ok',
+            'gateway' => [
+                'id'                 => $gateway->public_id,
+                'uuid'               => $gateway->uuid,
+                'driver'             => $gateway->driver,
+                'webhook_url'        => $gateway->webhook_url,
+                'system_webhook_url' => $gateway->getWebhookUrl(),
+                'config_summary'     => $this->gatewayConfigSummary($gateway),
+            ],
+            'diagnostics' => [
+                'credential_status'                 => $lastCredentialTest['status'] ?? 'not_checked',
+                'last_credential_tested_at'         => $lastCredentialTest['checked_at'] ?? null,
+                'last_credential_test_message'      => $lastCredentialTest['message'] ?? null,
+                'last_webhook_registration_at'      => $lastWebhookRegistration['checked_at'] ?? null,
+                'last_test_order_at'                => $lastTestOrder['checked_at'] ?? null,
+                'last_test_order_id'                => $lastTestOrder['gateway_transaction_id'] ?? null,
+                'webhook_registration'              => $gateway->webhook_url ? 'configured' : 'not_configured',
+                'last_webhook_received_at'          => optional($lastWebhook?->created_at)->toISOString(),
+                'last_payment_event_at'             => optional($lastPayment?->created_at)->toISOString(),
+                'last_refund_event_at'              => optional($lastRefund?->created_at)->toISOString(),
+                'last_settlement_seen_at'           => optional($lastSettlement?->reconciliation_checked_at)->toISOString(),
+                'last_reconciliation_status'        => $lastSettlement?->reconciliation_status,
+                'last_credential_test'              => $lastCredentialTest ?: null,
+                'last_webhook_registration'         => $lastWebhookRegistration ?: null,
+                'last_test_order'                   => $lastTestOrder ?: null,
+            ],
+            'last_webhook'    => $lastWebhook ? (new GatewayTransactionResource($lastWebhook))->resolve() : null,
+            'last_payment'    => $lastPayment ? (new GatewayTransactionResource($lastPayment))->resolve() : null,
+            'last_refund'     => $lastRefund ? (new GatewayTransactionResource($lastRefund))->resolve() : null,
+            'last_settlement' => $lastSettlement ? (new GatewayTransactionResource($lastSettlement))->resolve() : null,
+        ]);
+    }
+
+    private function resolveGateway(string $id): Gateway
+    {
+        return Gateway::where('company_uuid', session('company'))
+            ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
+            ->firstOrFail();
+    }
+
+    private function paymentServiceGatewayDriver(Gateway $gateway)
+    {
+        return app(\Fleetbase\Ledger\PaymentGatewayManager::class)
+            ->driver($gateway->driver)
+            ->initialize($gateway->decryptedConfig(), $gateway->is_sandbox);
+    }
+
+    private function latestGatewayTransaction($gatewayUuids, callable $scope, string $orderBy = 'created_at'): ?GatewayTransaction
+    {
+        if ($gatewayUuids->isEmpty()) {
+            return null;
+        }
+
+        $query = GatewayTransaction::whereIn('gateway_uuid', $gatewayUuids);
+        $scope($query);
+
+        return $query->orderBy($orderBy, 'desc')->first();
+    }
+
+    private function recordGatewayDiagnostic(Gateway $gateway, string $key, array $summary): void
+    {
+        $meta                      = $gateway->meta ?? [];
+        $meta['diagnostics'][$key] = array_filter($summary, fn ($value) => $value !== null);
+
+        $gateway->forceFill(['meta' => $meta])->save();
+    }
+
+    private function sanitizeProviderResult(array $result): array
+    {
+        unset($result['raw_response'], $result['raw']);
+
+        return $result;
+    }
+
+    private function gatewayConfigSummary(Gateway $gateway): array
+    {
+        $config = $gateway->decryptedConfig();
+        $rows   = [];
+
+        foreach ($config as $key => $value) {
+            if (is_array($value)) {
+                continue;
+            }
+
+            $label = str($key)->replace('_', ' ')->title()->toString();
+            $value = (string) $value;
+
+            $rows[] = [
+                'label' => $label,
+                'value' => $this->maskConfigValue($key, $value),
+                'mono'  => str_contains($key, 'url') || str_contains($key, 'token') || str_contains($key, 'key'),
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function maskConfigValue(string $key, string $value): string
+    {
+        $key = strtolower($key);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (str_contains($key, 'url') || str_contains($key, 'backend')) {
+            return $value;
+        }
+
+        if (str_contains($key, 'instance')) {
+            return $value;
+        }
+
+        if (strlen($value) <= 6) {
+            return '****';
+        }
+
+        return substr($value, 0, 3) . '****' . substr($value, -3);
     }
 }

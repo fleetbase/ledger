@@ -68,8 +68,7 @@ class WebhookController extends Controller
             ?? $request->header('X-Gateway-ID')
             ?? null;
 
-        // Find the active gateway for this driver
-        $gateway = Gateway::query()
+        $gatewayQuery = Gateway::query()
             ->when($companyUuid, fn ($q) => $q->where('company_uuid', $companyUuid))
             ->where('driver', $driver)
             ->when($gatewayIdentifier, function ($q) use ($gatewayIdentifier) {
@@ -78,8 +77,30 @@ class WebhookController extends Controller
                         ->orWhere('public_id', $gatewayIdentifier);
                 });
             })
-            ->where('status', 'active')
-            ->first();
+            ->where('status', 'active');
+
+        $matchingGateways = $gatewayQuery->get();
+
+        if ($driver === 'taler' && $matchingGateways->count() !== 1) {
+            $message = $matchingGateways->isEmpty()
+                ? 'Taler webhook could not resolve an active gateway.'
+                : 'Taler webhook matched multiple active gateways; exact company_uuid and gateway_id are required.';
+
+            $this->recordUnresolvedWebhook($request, $driver, $message, $companyUuid, $gatewayIdentifier);
+
+            Log::channel('ledger')->warning($message, [
+                'company_uuid'       => $companyUuid,
+                'gateway_identifier' => $gatewayIdentifier,
+                'order_id'           => $request->input('order_id'),
+                'matches'            => $matchingGateways->count(),
+                'ip'                 => $request->ip(),
+            ]);
+
+            return response()->json(['message' => $message], 200);
+        }
+
+        // Find the active gateway for this driver
+        $gateway = $matchingGateways->first();
 
         if (!$gateway) {
             Log::channel('ledger')->warning("Webhook received for unknown/inactive driver: {$driver}", [
@@ -195,5 +216,42 @@ class WebhookController extends Controller
             GatewayResponse::EVENT_REFUND_PROCESSED  => RefundProcessed::dispatch($response, $gateway, $gatewayTransaction),
             default                                  => Log::channel('ledger')->info("Webhook event [{$response->eventType}] has no registered handler."),
         };
+    }
+
+    private function recordUnresolvedWebhook(
+        Request $request,
+        string $driver,
+        string $message,
+        ?string $companyUuid = null,
+        ?string $gatewayIdentifier = null,
+    ): void {
+        $gatewayReferenceId = $request->input('order_id')
+            ?? $request->input('gateway_reference_id')
+            ?? 'unresolved-' . sha1(json_encode($request->all()));
+
+        GatewayTransaction::firstOrCreate(
+            [
+                'gateway_reference_id' => $gatewayReferenceId,
+                'type'                 => 'webhook_event',
+                'event_type'           => GatewayResponse::EVENT_PAYMENT_FAILED,
+            ],
+            [
+                'company_uuid'  => $companyUuid,
+                'gateway_uuid'  => null,
+                'amount'        => null,
+                'currency'      => null,
+                'status'        => GatewayResponse::STATUS_FAILED,
+                'message'       => $message,
+                'raw_response'  => [
+                    'driver'             => $driver,
+                    'gateway_identifier' => $gatewayIdentifier,
+                    'payload'            => $request->all(),
+                    'headers'            => [
+                        'x-company-uuid' => $request->header('X-Company-UUID'),
+                        'x-gateway-id'   => $request->header('X-Gateway-ID'),
+                    ],
+                ],
+            ]
+        );
     }
 }

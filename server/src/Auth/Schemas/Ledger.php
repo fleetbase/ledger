@@ -31,7 +31,7 @@ class Ledger
         // ── Billing ──────────────────────────────────────────────────────────────
         [
             'name'    => 'invoice',
-            'actions' => ['send', 'preview', 'record-payment', 'mark-as-sent', 'render-pdf', 'export', 'import', 'create-from-order'],
+            'actions' => ['send', 'preview', 'record-payment', 'refund', 'refund-options', 'mark-as-sent', 'render-pdf', 'export', 'import', 'create-from-order'],
         ],
         [
             'name'    => 'invoice-item',
@@ -49,7 +49,7 @@ class Ledger
         ],
         [
             'name'    => 'gateway',
-            'actions' => ['charge', 'refund', 'setup-intent'],
+            'actions' => ['charge', 'refund', 'setup-intent', 'test-credentials', 'create-test-order', 'register-webhook', 'diagnostics', 'summary'],
         ],
         [
             'name'    => 'gateway-transaction',

@@ -32,6 +32,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null         $message
  * @property array|null          $raw_response
  * @property \Carbon\Carbon|null $processed_at
+ * @property string|null         $reconciliation_status
+ * @property \Carbon\Carbon|null $reconciliation_checked_at
+ * @property array|null          $reconciliation_data
+ * @property string|null         $refund_status
+ * @property \Carbon\Carbon|null $refund_accepted_at
+ * @property \Carbon\Carbon|null $refund_expires_at
  */
 class GatewayTransaction extends Model
 {
@@ -68,15 +74,25 @@ class GatewayTransaction extends Model
         'message',
         'raw_response',
         'processed_at',
+        'reconciliation_status',
+        'reconciliation_checked_at',
+        'reconciliation_data',
+        'refund_status',
+        'refund_accepted_at',
+        'refund_expires_at',
     ];
 
     /**
      * The attributes that should be cast.
      */
     protected $casts = [
-        'raw_response' => 'array',
-        'amount'       => 'integer',
-        'processed_at' => 'datetime',
+        'raw_response'              => 'array',
+        'amount'                    => 'integer',
+        'processed_at'              => 'datetime',
+        'reconciliation_checked_at' => 'datetime',
+        'reconciliation_data'       => 'array',
+        'refund_accepted_at'        => 'datetime',
+        'refund_expires_at'         => 'datetime',
     ];
 
     /**

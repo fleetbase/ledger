@@ -1,0 +1,30 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <div class="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-700 dark:bg-green-900 dark:text-green-100">
+            Refund accepted by the gateway. Share the refund URI with the customer so they can open it with their Taler wallet.
+        </div>
+
+        <InputGroup @name="Taler Refund URI" @helpText="The customer must open this URI with their Taler wallet to claim the refund.">
+            <div class="flex items-center space-x-2">
+                <Input @value={{@options.refundUrl}} @type="text" class="w-full form-input" readonly={{true}} />
+                <ClickToCopy @value={{@options.refundUrl}} @buttonText="Copy" />
+            </div>
+        </InputGroup>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-md border border-gray-200 dark:border-gray-700 p-3">
+                <div class="text-xs text-gray-500">Refund Status</div>
+                <div class="text-sm font-semibold text-gray-900 dark:text-white">{{n-a @options.refundStatus}}</div>
+            </div>
+            <div class="rounded-md border border-gray-200 dark:border-gray-700 p-3">
+                <div class="text-xs text-gray-500">Wallet Status</div>
+                <div class="text-sm font-semibold text-gray-900 dark:text-white">{{n-a @options.walletStatus}}</div>
+            </div>
+        </div>
+
+        <div class="mt-3 text-xs text-gray-500">
+            Gateway refund transaction:
+            {{n-a @options.gatewayTransactionId}}
+        </div>
+    </div>
+</Modal::Default>

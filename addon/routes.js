@@ -44,13 +44,14 @@ export default buildRoutes(function () {
             });
         });
         this.route('gateways', function () {
-            this.route('index', { path: '/' }, function () {
-                this.route('new');
-                this.route('edit', { path: '/:id/edit' });
-                this.route('details', { path: '/:id' }, function () {
-                    this.route('index', { path: '/' });
-                    this.route('webhooks');
-                });
+            this.route('index', { path: '/' });
+            this.route('new');
+            this.route('edit', { path: '/edit/:id' });
+            this.route('details', { path: '/:id' }, function () {
+                this.route('index', { path: '/' });
+                this.route('setup');
+                this.route('diagnostics');
+                this.route('webhooks');
             });
         });
     });

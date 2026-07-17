@@ -51,7 +51,7 @@ return new class extends Migration
                 $table->decimal('exchange_rate', 18, 8)->nullable()->after('balance_after');
             }
             if (!Schema::hasColumn('transactions', 'settled_currency')) {
-                $table->char('settled_currency', 3)->nullable()->after('exchange_rate');
+                $table->string('settled_currency', 10)->nullable()->after('exchange_rate');
             }
             if (!Schema::hasColumn('transactions', 'settled_amount')) {
                 $table->unsignedBigInteger('settled_amount')->nullable()->after('settled_currency');

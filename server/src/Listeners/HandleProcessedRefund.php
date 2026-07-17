@@ -3,10 +3,13 @@
 namespace Fleetbase\Ledger\Listeners;
 
 use Fleetbase\Ledger\Events\RefundProcessed;
+use Fleetbase\Ledger\Models\Account;
 use Fleetbase\Ledger\Models\Invoice;
+use Fleetbase\Ledger\Models\Transaction;
 use Fleetbase\Ledger\Services\LedgerService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -44,36 +47,93 @@ class HandleProcessedRefund implements ShouldQueue
         }
 
         try {
-            // Mark invoice as refunded
-            $invoiceUuid = data_get($response->rawResponse, 'metadata.invoice_uuid');
+            DB::transaction(function () use ($response, $gatewayTransaction, $gateway) {
+                $invoiceUuid = $this->resolveInvoiceUuid($response, $gatewayTransaction);
+                $invoice     = $invoiceUuid
+                    ? Invoice::where('uuid', $invoiceUuid)->orWhere('public_id', $invoiceUuid)->first()
+                    : null;
 
-            if ($invoiceUuid) {
-                Invoice::where('uuid', $invoiceUuid)
-                    ->orWhere('public_id', $invoiceUuid)
-                    ->update(['status' => 'refunded']);
-            }
+                $amount   = (int) $response->amount;
+                $currency = $response->currency ?? $invoice?->currency ?? 'USD';
 
-            // Create a reversal journal entry
-            if ($response->amount && $response->currency) {
-                $this->ledgerService->createJournalEntry(
-                    type: 'refund',
-                    amount: $response->amount,
-                    currency: $response->currency,
-                    description: sprintf(
-                        'Refund issued via %s — Ref: %s',
-                        $gateway->name,
-                        $response->gatewayTransactionId
-                    ),
-                    metadata: [
-                        'gateway_driver'           => $gateway->driver,
-                        'gateway_transaction_id'   => $response->gatewayTransactionId,
-                        'gateway_transaction_uuid' => $gatewayTransaction->uuid,
-                        'invoice_uuid'             => $invoiceUuid,
-                    ],
-                );
-            }
+                if ($amount > 0) {
+                    $transaction = Transaction::create([
+                        'company_uuid'       => $gateway->company_uuid,
+                        'owner_uuid'         => $invoice?->customer_uuid,
+                        'owner_type'         => $invoice?->customer_type,
+                        'customer_uuid'      => $invoice?->customer_uuid,
+                        'customer_type'      => $invoice?->customer_type,
+                        'payer_uuid'         => $gateway->company_uuid,
+                        'payer_type'         => \Fleetbase\Models\Company::class,
+                        'payee_uuid'         => $invoice?->customer_uuid,
+                        'payee_type'         => $invoice?->customer_type,
+                        'amount'             => $amount,
+                        'net_amount'         => $amount,
+                        'currency'           => $currency,
+                        'description'        => 'Refund for invoice ' . ($invoice?->number ?? $response->gatewayTransactionId),
+                        'type'               => 'gateway_refund',
+                        'direction'          => 'debit',
+                        'status'             => Transaction::STATUS_SUCCESS,
+                        'settlement_status'  => data_get($response->data, 'refund_kind') === 'full' ? Transaction::SETTLEMENT_STATUS_REFUNDED : Transaction::SETTLEMENT_STATUS_PARTIALLY_REFUNDED,
+                        'payment_method'     => $gateway->driver,
+                        'reference'          => $response->gatewayTransactionId,
+                        'settled_at'         => now(),
+                        'settled_amount'     => $amount,
+                        'settled_currency'   => $currency,
+                        'subject_uuid'       => $invoice?->uuid,
+                        'subject_type'       => $invoice ? Invoice::class : null,
+                        'context_uuid'       => $invoice?->uuid,
+                        'context_type'       => $invoice ? Invoice::class : null,
+                    ]);
 
-            $gatewayTransaction->markAsProcessed();
+                    $refundExpense = $this->systemAccount($gateway->company_uuid, 'REFUNDS-DEFAULT', 'Refunds and Reversals', Account::TYPE_EXPENSE, 'Refunds issued through payment gateways.');
+                    $cashAccount   = $this->systemAccount($gateway->company_uuid, 'CASH-DEFAULT', 'Cash', Account::TYPE_ASSET, 'Default cash account');
+
+                    $this->ledgerService->createJournalEntry(
+                        $refundExpense,
+                        $cashAccount,
+                        $amount,
+                        sprintf('Refund issued via %s - Ref: %s', $gateway->name, $response->gatewayTransactionId),
+                        [
+                            'company_uuid'     => $gateway->company_uuid,
+                            'currency'         => $currency,
+                            'journal_type'     => 'gateway_refund',
+                            'transaction_uuid' => $transaction->uuid,
+                            'subject_uuid'     => $invoice?->uuid,
+                            'subject_type'     => $invoice ? Invoice::class : null,
+                            'meta'             => [
+                                'gateway_driver'           => $gateway->driver,
+                                'gateway_transaction_id'   => $response->gatewayTransactionId,
+                                'gateway_transaction_uuid' => $gatewayTransaction->uuid,
+                                'invoice_uuid'             => $invoice?->uuid,
+                                'taler_refund_uri'         => data_get($response->data, 'taler_refund_uri'),
+                            ],
+                        ]
+                    );
+
+                    $gatewayTransaction->transaction_uuid = $transaction->uuid;
+                }
+
+                if ($invoice && $amount > 0) {
+                    $previousRefunded = (int) data_get($invoice->meta, 'refunded_amount', 0);
+                    $refundedAmount   = min((int) $invoice->total_amount, $previousRefunded + $amount);
+                    $meta             = $invoice->meta ?? [];
+                    data_set($meta, 'refunded_amount', $refundedAmount);
+                    data_set($meta, 'last_refund_gateway_transaction_uuid', $gatewayTransaction->uuid);
+                    data_set($meta, 'last_taler_refund_uri', data_get($response->data, 'taler_refund_uri'));
+                    $invoice->meta   = $meta;
+                    $invoice->status = $refundedAmount >= (int) $invoice->total_amount ? 'refunded' : 'partial';
+                    $invoice->save();
+                }
+
+                $gatewayTransaction->refund_status       = data_get($response->data, 'refund_status', $response->status);
+                $gatewayTransaction->refund_accepted_at  = data_get($response->data, 'wallet_status') === 'accepted' ? now() : null;
+                $gatewayTransaction->raw_response        = array_merge($gatewayTransaction->raw_response ?? [], [
+                    'data' => $response->data,
+                ]);
+                $gatewayTransaction->processed_at = now();
+                $gatewayTransaction->save();
+            });
 
             Log::channel('ledger')->info('Refund processed.', [
                 'gateway'                  => $gateway->driver,
@@ -85,5 +145,28 @@ class HandleProcessedRefund implements ShouldQueue
             ]);
             throw $e;
         }
+    }
+
+    private function resolveInvoiceUuid($response, $gatewayTransaction): ?string
+    {
+        return data_get($response->data, 'invoice_uuid')
+            ?: data_get($response->rawResponse, 'metadata.invoice_uuid')
+            ?: data_get($response->rawResponse, 'invoice_uuid')
+            ?: data_get($gatewayTransaction->raw_response, 'invoice_uuid')
+            ?: data_get($gatewayTransaction->raw_response, 'data.invoice_uuid');
+    }
+
+    private function systemAccount(string $companyUuid, string $code, string $name, string $type, string $description): Account
+    {
+        return Account::updateOrCreate(
+            ['company_uuid' => $companyUuid, 'code' => $code],
+            [
+                'name'              => $name,
+                'type'              => $type,
+                'description'       => $description,
+                'is_system_account' => true,
+                'status'            => 'active',
+            ]
+        );
     }
 }

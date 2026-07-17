@@ -95,6 +95,8 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                     function ($router, $controller) {
                                         $router->post('create-from-order', $controller('createFromOrder'));
                                         $router->post('{id}/record-payment', $controller('recordPayment'));
+                                        $router->get('{id}/refund-options', $controller('refundOptions'));
+                                        $router->post('{id}/refund', $controller('refund'));
                                         $router->get('{id}/transactions', $controller('transactions'));
                                         $router->post('{id}/mark-as-sent', $controller('markAsSent'));
                                         $router->post('{id}/send', $controller('send'));
@@ -141,6 +143,7 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 // The 'drivers' static route must be registered BEFORE fleetbaseRoutes
                                 // to avoid being swallowed by the /{id} find route.
                                 $router->get('gateways/drivers', 'GatewayController@drivers');
+                                $router->get('gateways/summary', 'GatewayController@summary');
 
                                 $router->fleetbaseRoutes(
                                     'gateways',
@@ -148,6 +151,10 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                         $router->post('{id}/charge', $controller('charge'));
                                         $router->post('{id}/refund', $controller('refund'));
                                         $router->post('{id}/setup-intent', $controller('setupIntent'));
+                                        $router->post('{id}/test-credentials', $controller('testCredentials'));
+                                        $router->post('{id}/create-test-order', $controller('createTestOrder'));
+                                        $router->post('{id}/register-webhook', $controller('registerWebhook'));
+                                        $router->get('{id}/diagnostics', $controller('diagnostics'));
                                         $router->get('{id}/transactions', $controller('transactions'));
                                     }
                                 );

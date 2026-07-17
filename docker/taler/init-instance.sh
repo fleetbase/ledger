@@ -8,6 +8,8 @@ INSTANCE_ID="${TALER_MERCHANT_INSTANCE_ID:-default}"
 INSTANCE_PASSWORD="${TALER_MERCHANT_INSTANCE_PASSWORD:-fleetbase-taler-dev-password}"
 TOKEN_FILE="${TALER_MERCHANT_TOKEN_FILE:-/var/lib/fleetbase-ledger/taler/generated-token.txt}"
 WEBHOOK_URL="${TALER_MERCHANT_WEBHOOK_URL:-http://httpd/ledger/webhooks/taler}"
+WEBHOOK_COMPANY_UUID="${TALER_MERCHANT_WEBHOOK_COMPANY_UUID:-}"
+WEBHOOK_GATEWAY_ID="${TALER_MERCHANT_WEBHOOK_GATEWAY_ID:-}"
 PAYTO_URI="${TALER_MERCHANT_PAYTO_URI:-payto://x-taler-bank/taler-bank.lvh.me/default?receiver-name=Fleetbase%20Ledger}"
 MERCHANT_BANK_USER="${TALER_MERCHANT_BANK_USER:-default}"
 MERCHANT_BANK_PASSWORD="${TALER_MERCHANT_BANK_PASSWORD:-fleetbase-merchant-bank-password}"
@@ -127,13 +129,15 @@ fi
 
 webhook_payload="$(jq -n \
   --arg url "${WEBHOOK_URL}" \
+  --arg company_uuid "${WEBHOOK_COMPANY_UUID}" \
+  --arg gateway_id "${WEBHOOK_GATEWAY_ID}" \
   '{
     webhook_id: "fleetbase-ledger-pay",
     event_type: "pay",
     url: $url,
     http_method: "POST",
     header_template: "Content-Type: application/json",
-    body_template: "{\"order_id\":\"${ORDER_ID}\",\"event_type\":\"pay\"}"
+    body_template: ("{\"order_id\":\"${ORDER_ID}\",\"event_type\":\"${EVENT_TYPE}\",\"company_uuid\":\"" + $company_uuid + "\",\"gateway_id\":\"" + $gateway_id + "\",\"gateway_uuid\":\"" + $gateway_id + "\"}")
   }')"
 
 webhook_response="$(api POST "/instances/${INSTANCE_ID}/private/webhooks" "${webhook_payload}" "${auth_header}")"

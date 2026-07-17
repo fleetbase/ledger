@@ -29,6 +29,27 @@ instance_id=default
 api_token=<exact contents of generated-token.txt>
 ```
 
+For tenant-safe webhook routing on a multi-company instance, provide the target
+Ledger company and gateway identifier before bootstrapping/registering the local
+merchant webhook:
+
+```sh
+TALER_MERCHANT_WEBHOOK_COMPANY_UUID=<company_uuid>
+TALER_MERCHANT_WEBHOOK_GATEWAY_ID=<gateway_public_id_or_uuid>
+```
+
+The registered Taler webhook body template posts:
+
+```json
+{
+  "order_id": "${ORDER_ID}",
+  "event_type": "${EVENT_TYPE}",
+  "company_uuid": "<company_uuid>",
+  "gateway_id": "<gateway_public_id_or_uuid>",
+  "gateway_uuid": "<gateway_public_id_or_uuid>"
+}
+```
+
 ## Validate the Taler stack
 
 Run the built-in smoke test:

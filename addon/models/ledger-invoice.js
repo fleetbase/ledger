@@ -260,6 +260,7 @@ export default class LedgerInvoiceModel extends Model {
             viewed: 'indigo',
             partial: 'yellow',
             paid: 'green',
+            refunded: 'green',
             overdue: 'red',
             cancelled: 'red',
             void: 'red',

@@ -23,7 +23,7 @@ export default class SettingsGatewaysIndexDetailsController extends Controller {
     }
 
     @action editGateway() {
-        this.hostRouter.transitionTo('console.ledger.payments.gateways.index.edit', this.model);
+        this.hostRouter.transitionTo('console.ledger.payments.gateways.edit', this.model);
     }
 
     @action async deleteGateway() {

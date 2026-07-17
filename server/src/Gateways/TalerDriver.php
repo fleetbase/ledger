@@ -6,6 +6,7 @@ use Fleetbase\Ledger\DTO\GatewayResponse;
 use Fleetbase\Ledger\DTO\PurchaseRequest;
 use Fleetbase\Ledger\DTO\RefundRequest;
 use Fleetbase\Ledger\Exceptions\WebhookSignatureException;
+use Fleetbase\Support\Utils;
 use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -53,6 +54,8 @@ use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
  */
 class TalerDriver extends AbstractGatewayDriver
 {
+    private const HOSTED_SANDBOX_MERCHANT_BACKEND_URL = 'https://merchant.taler.fleetbase.io';
+
     // -------------------------------------------------------------------------
     // Driver Identity & Metadata
     // -------------------------------------------------------------------------
@@ -96,9 +99,10 @@ class TalerDriver extends AbstractGatewayDriver
                 'key'         => 'backend_url',
                 'label'       => 'Merchant Backend URL',
                 'type'        => 'text',
-                'required'    => true,
-                'hint'        => 'Base URL of your Taler Merchant Backend, e.g. https://backend.demo.taler.net/',
-                'description' => 'Base URL of your Taler Merchant Backend, e.g. https://backend.demo.taler.net/',
+                'required'    => false,
+                'default'     => self::HOSTED_SANDBOX_MERCHANT_BACKEND_URL,
+                'hint'        => 'Sandbox defaults to Fleetbase hosted Taler at https://merchant.taler.fleetbase.io. Live gateways require your production Merchant Backend URL.',
+                'description' => 'Base URL of your Taler Merchant Backend. Sandbox defaults to Fleetbase hosted Taler; live gateways require an explicit production URL.',
             ],
             [
                 'key'         => 'instance_id',
@@ -501,8 +505,9 @@ class TalerDriver extends AbstractGatewayDriver
             'amount'   => $talerAmount,
         ]);
 
-        $rawResponse = $response->json() ?? [];
-        $refundUri   = $rawResponse['taler_refund_uri'] ?? null;
+        $rawResponse  = $response->json() ?? [];
+        $refundUri    = $rawResponse['taler_refund_uri'] ?? null;
+        $refundStatus = $refundUri ? 'wallet_uri_returned' : 'backend_approved';
 
         return GatewayResponse::success(
             gatewayTransactionId: $orderId,
@@ -517,8 +522,135 @@ class TalerDriver extends AbstractGatewayDriver
                 'taler_refund_uri' => $refundUri,
                 'refund_url'       => $refundUri,
                 'refund_amount'    => $talerAmount,
+                'refund_status'    => $refundStatus,
+                'wallet_status'    => $refundUri ? 'pending_wallet_acceptance' : 'not_observable',
+                'refund_kind'      => $request->metadata['refund_kind'] ?? null,
             ],
         );
+    }
+
+    // -------------------------------------------------------------------------
+    // Admin / Diagnostics
+    // -------------------------------------------------------------------------
+
+    public function testCredentials(): array
+    {
+        if ($configurationFailure = $this->configurationFailureResponse()) {
+            return [
+                'ok'      => false,
+                'status'  => 'failed',
+                'message' => $configurationFailure->message,
+            ];
+        }
+
+        $instanceId = $this->instanceId();
+
+        try {
+            $response = $this->privateRequest('GET', "instances/{$instanceId}/private/orders");
+        } catch (\Throwable $e) {
+            return [
+                'ok'      => false,
+                'status'  => 'failed',
+                'message' => 'Taler credential check failed: ' . $e->getMessage(),
+            ];
+        }
+
+        return [
+            'ok'          => $response->successful(),
+            'status'      => $response->successful() ? 'ok' : 'failed',
+            'http_status' => $response->status(),
+            'message'     => $response->successful() ? 'Taler credentials accepted.' : 'Taler credentials rejected.',
+            'raw_response'=> $response->json() ?? [],
+            'checked_at'  => now()->toISOString(),
+        ];
+    }
+
+    public function createTestOrder(array $options = []): GatewayResponse
+    {
+        $currency = strtoupper($options['currency'] ?? 'KUDOS');
+        $amount   = (int) ($options['amount'] ?? 1);
+        $orderId  = 'ledger-test-' . Str::lower(Str::random(16));
+
+        return $this->purchase(new PurchaseRequest(
+            amount: $amount,
+            currency: $currency,
+            description: $options['description'] ?? 'Ledger GNU Taler test order',
+            invoiceUuid: $options['invoice_uuid'] ?? null,
+            returnUrl: $options['return_url'] ?? null,
+            metadata: array_merge($options['metadata'] ?? [], [
+                'taler_order_id' => $orderId,
+                'test_order'     => true,
+            ]),
+        ));
+    }
+
+    public function registerWebhook(array $options = []): array
+    {
+        if ($configurationFailure = $this->configurationFailureResponse()) {
+            return [
+                'ok'      => false,
+                'status'  => 'failed',
+                'message' => $configurationFailure->message,
+            ];
+        }
+
+        $instanceId  = $this->instanceId();
+        $webhookId   = $options['webhook_id'] ?? 'fleetbase-ledger-pay';
+        $webhookUrl  = $options['webhook_url'] ?? Utils::apiUrl('/ledger/webhooks/taler');
+        $companyUuid = $options['company_uuid'] ?? '';
+        $gatewayId   = $options['gateway_id'] ?? $options['gateway_uuid'] ?? '';
+
+        $payload = [
+            'webhook_id'      => $webhookId,
+            'event_type'      => $options['event_type'] ?? 'pay',
+            'url'             => $webhookUrl,
+            'http_method'     => 'POST',
+            'header_template' => 'Content-Type: application/json',
+            'body_template'   => json_encode([
+                'order_id'     => '${ORDER_ID}',
+                'event_type'   => '${EVENT_TYPE}',
+                'company_uuid' => $companyUuid,
+                'gateway_id'   => $gatewayId,
+                'gateway_uuid' => $gatewayId,
+            ]),
+        ];
+
+        try {
+            $response = $this->privateRequest('POST', "instances/{$instanceId}/private/webhooks", $payload);
+
+            if ($response->status() === 409) {
+                $response = $this->privateRequest('PATCH', "instances/{$instanceId}/private/webhooks/{$webhookId}", $payload);
+            }
+        } catch (\Throwable $e) {
+            return [
+                'ok'      => false,
+                'status'  => 'failed',
+                'message' => 'Taler webhook registration failed: ' . $e->getMessage(),
+                'payload' => $payload,
+            ];
+        }
+
+        return [
+            'ok'          => in_array($response->status(), [200, 204], true),
+            'status'      => in_array($response->status(), [200, 204], true) ? 'registered' : 'failed',
+            'http_status' => $response->status(),
+            'message'     => in_array($response->status(), [200, 204], true) ? 'Taler webhook registered.' : 'Taler webhook registration failed.',
+            'payload'     => $payload,
+            'raw_response'=> $response->json() ?? [],
+            'checked_at'  => now()->toISOString(),
+        ];
+    }
+
+    public function fetchOrderStatus(string $orderId): array
+    {
+        $instanceId = $this->instanceId();
+        $response   = $this->privateRequest('GET', "instances/{$instanceId}/private/orders/{$orderId}");
+
+        return [
+            'ok'          => $response->successful(),
+            'http_status' => $response->status(),
+            'data'        => $response->json() ?? [],
+        ];
     }
 
     // -------------------------------------------------------------------------
@@ -530,7 +662,17 @@ class TalerDriver extends AbstractGatewayDriver
      */
     private function backendUrl(): string
     {
-        return rtrim($this->config('backend_url', ''), '/');
+        $configuredUrl = rtrim($this->config('backend_url', ''), '/');
+
+        if ($configuredUrl) {
+            return $configuredUrl;
+        }
+
+        if ($this->isSandbox()) {
+            return self::HOSTED_SANDBOX_MERCHANT_BACKEND_URL;
+        }
+
+        return '';
     }
 
     /**
