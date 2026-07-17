@@ -190,7 +190,7 @@ export default class GatewayFormComponent extends Component {
         // When bound via {{on "input" (fn this.updateConfigField field.key)}} the second
         // argument is a DOM InputEvent, not the raw string value.  Extract the actual
         // value from event.target.value in that case so credentials are stored correctly.
-        const resolvedValue = value instanceof Event ? (value.target?.value ?? value) : (value?.value ?? value);
+        const resolvedValue = this.resolveFieldValue(value);
         this.configValues = { ...this.configValues, [key]: resolvedValue };
         // Persist config back to the resource
         this.args.resource.set?.('config', { ...this.configValues });
@@ -216,8 +216,16 @@ export default class GatewayFormComponent extends Component {
     }
 
     @action setResourceField(field, value) {
-        const resolvedValue = value instanceof Event ? (value.target?.value ?? value) : (value?.value ?? value);
+        const resolvedValue = this.resolveFieldValue(value);
         this.args.resource?.set?.(field, resolvedValue);
+    }
+
+    resolveFieldValue(value) {
+        if (value instanceof Event) {
+            return value.target?.value ?? value;
+        }
+
+        return value?.value ?? value;
     }
 
     @action goToStep(index) {

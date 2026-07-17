@@ -117,6 +117,42 @@ export default class GatewayDetailsComponent extends Component {
         return this.diagnosticSummary.last_test_order_id;
     }
 
+    get credentialTileValue() {
+        if (this.credentialStatus === 'success' || this.credentialStatus === 'ok') {
+            return 'Verified';
+        }
+
+        if (this.credentialStatus === 'failed') {
+            return 'Failed';
+        }
+
+        return 'Not Checked';
+    }
+
+    get credentialAccentClass() {
+        if (this.credentialStatus === 'success' || this.credentialStatus === 'ok') {
+            return 'ledger-gateway-kpi-accent-green';
+        }
+
+        if (this.credentialStatus === 'failed') {
+            return 'ledger-gateway-kpi-accent-rose';
+        }
+
+        return 'ledger-gateway-kpi-accent-slate';
+    }
+
+    get webhookRegistrationResultMessage() {
+        if (this.lastWebhookRegistrationAt) {
+            return 'Provider webhook registration completed.';
+        }
+
+        if (this.webhookStatus === 'configured') {
+            return 'Webhook URL is configured, but no registration action has been recorded.';
+        }
+
+        return 'No provider webhook registration stored.';
+    }
+
     get readinessItems() {
         return [
             {
@@ -145,16 +181,11 @@ export default class GatewayDetailsComponent extends Component {
             },
             {
                 label: 'Credentials',
-                value: this.credentialStatus === 'success' || this.credentialStatus === 'ok' ? 'Verified' : this.credentialStatus === 'failed' ? 'Failed' : 'Not Checked',
+                value: this.credentialTileValue,
                 status: this.credentialStatus,
                 icon: 'key',
                 caption: this.lastCredentialTestedAt ? 'Last provider auth test' : 'Run a provider check',
-                accentClass:
-                    this.credentialStatus === 'success' || this.credentialStatus === 'ok'
-                        ? 'ledger-gateway-kpi-accent-green'
-                        : this.credentialStatus === 'failed'
-                          ? 'ledger-gateway-kpi-accent-rose'
-                          : 'ledger-gateway-kpi-accent-slate',
+                accentClass: this.credentialAccentClass,
             },
         ];
     }
@@ -307,11 +338,7 @@ export default class GatewayDetailsComponent extends Component {
             },
             {
                 label: 'Webhook registration',
-                value: this.lastWebhookRegistrationAt
-                    ? 'Provider webhook registration completed.'
-                    : this.webhookStatus === 'configured'
-                      ? 'Webhook URL is configured, but no registration action has been recorded.'
-                      : 'No provider webhook registration stored.',
+                value: this.webhookRegistrationResultMessage,
                 date: this.lastWebhookRegistrationAt,
                 status: this.lastWebhookRegistrationAt ? 'success' : 'warning',
             },
