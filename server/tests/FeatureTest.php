@@ -282,15 +282,24 @@ test('payment gateway management renders hub catalog and full page details', fun
     $detailsComponentJs = file_get_contents(__DIR__ . '/../../addon/components/gateway/details.js');
     $detailsController = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/details.js');
     $styles = file_get_contents(__DIR__ . '/../../addon/styles/ledger-engine.css');
+    $gatewayRoutes = "this.route('gateways', function () {
+            this.route('index', { path: '/' });
+            this.route('new');
+            this.route('edit', { path: '/edit/:id' });
+            this.route('details', { path: '/:id' }, function () {
+                this.route('index', { path: '/' });
+                this.route('setup');
+                this.route('diagnostics');
+                this.route('webhooks');
+            });
+        });";
 
     expect($routes)
-        ->toContain("this.route('index', { path: '/' });")
-        ->toContain("this.route('new');")
-        ->toContain("this.route('edit', { path: '/edit/:id' });")
-        ->toContain("this.route('details', { path: '/:id' }, function ()")
-        ->toContain("this.route('setup')")
-        ->toContain("this.route('diagnostics')")
-        ->not->toContain("this.route('index', { path: '/' }, function () {\n                this.route('new');\n                this.route('edit', { path: '/:id/edit' });");
+        ->toContain($gatewayRoutes)
+        ->not->toContain("this.route('gateways', function () {
+            this.route('index', { path: '/' }, function () {
+                this.route('new');
+                this.route('edit', { path: '/:id/edit' });");
 
     expect($indexController)
         ->toContain("this.fetch.get('gateways/summary'")
