@@ -12,6 +12,7 @@ use Fleetbase\Ledger\Models\Gateway;
 use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\PaymentGatewayManager;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * PaymentService.
@@ -185,10 +186,23 @@ class PaymentService
         ?string $invoiceUuid = null,
     ): GatewayTransaction {
         try {
+            $gatewayReferenceId = $response->gatewayTransactionId;
+            $rawResponse        = $response->rawResponse;
+
+            if ($type === 'refund') {
+                $rawResponse = array_merge([
+                    'original_gateway_reference_id' => $response->gatewayTransactionId,
+                ], $rawResponse);
+
+                if (GatewayTransaction::where('gateway_reference_id', $gatewayReferenceId)->where('type', $type)->where('event_type', $response->eventType)->exists()) {
+                    $gatewayReferenceId .= '-refund-' . Str::lower(Str::random(8));
+                }
+            }
+
             return GatewayTransaction::create([
                 'company_uuid'         => $gateway->company_uuid,
                 'gateway_uuid'         => $gateway->uuid,
-                'gateway_reference_id' => $response->gatewayTransactionId,
+                'gateway_reference_id' => $gatewayReferenceId,
                 'type'                 => $type,
                 'event_type'           => $response->eventType,
                 'amount'               => $response->amount,
@@ -196,7 +210,7 @@ class PaymentService
                 'status'               => $response->status,
                 'message'              => $response->message,
                 'raw_response'         => array_merge(
-                    $response->rawResponse,
+                    $rawResponse,
                     array_filter([
                         'invoice_uuid' => $invoiceUuid,
                         'data'         => $response->data,

@@ -9,14 +9,17 @@ use Fleetbase\Ledger\Gateways\StripeDriver;
 use Fleetbase\Ledger\Http\Resources\v1\Gateway as GatewayResource;
 use Fleetbase\Ledger\Http\Resources\v1\Invoice as InvoiceResource;
 use Fleetbase\Ledger\Models\Gateway;
+use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\PaymentGatewayManager;
 use Fleetbase\Ledger\Services\InvoiceService;
 use Fleetbase\Ledger\Services\PaymentService;
+use Fleetbase\Models\Company;
 use Fleetbase\Support\Utils;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
 
 /**
  * Public (unauthenticated) invoice controller.
@@ -28,6 +31,7 @@ use Illuminate\Routing\Controller;
  *   GET  /ledger/public/invoices/{public_id}
  *   GET  /ledger/public/invoices/{public_id}/gateways
  *   POST /ledger/public/invoices/{public_id}/pay
+ *   GET  /ledger/public/refunds/{refund_id}
  */
 class PublicInvoiceController extends Controller
 {
@@ -134,7 +138,7 @@ class PublicInvoiceController extends Controller
 
         $invoice = $this->resolvePublicInvoice($publicId);
 
-        if (in_array($invoice->status, ['paid', 'void', 'cancelled'])) {
+        if (in_array($invoice->status, ['paid', 'refunded', 'refund_pending', 'partial_refund_pending', 'void', 'cancelled']) || (int) $invoice->balance <= 0) {
             return response()->json([
                 'error' => 'This invoice cannot accept payments in its current status.',
             ], 422);
@@ -195,6 +199,62 @@ class PublicInvoiceController extends Controller
             'gateway_transaction_id' => $response->gatewayTransactionId,
             'message'                => $response->message ?? 'Payment processed successfully.',
             'invoice'                => (new InvoiceResource($invoice->fresh(['customer', 'items'])))->resolve(),
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // GET /ledger/public/refunds/{refund_id}
+    // -------------------------------------------------------------------------
+
+    /**
+     * Return a public-safe GNU Taler refund handoff payload.
+     */
+    public function refund(string $refundId): JsonResponse
+    {
+        $refund = GatewayTransaction::query()
+            ->with('gateway')
+            ->where('type', 'refund')
+            ->where(function ($query) use ($refundId) {
+                $query->where('uuid', $refundId)
+                    ->orWhere('public_id', $refundId)
+                    ->orWhere('gateway_reference_id', $refundId);
+            })
+            ->firstOrFail();
+
+        $refundUri = $this->refundUri($refund);
+
+        if (!$refundUri) {
+            return response()->json(['error' => 'This refund does not have a customer refund URI.'], 404);
+        }
+
+        $invoice     = $this->resolveRefundInvoice($refund);
+        $companyName = Company::where('uuid', $refund->company_uuid)->value('name');
+
+        return response()->json([
+            'refund' => [
+                'id'                     => $refund->public_id ?? $refund->uuid,
+                'amount'                 => (int) $refund->amount,
+                'currency'               => $refund->currency ?? $invoice?->currency,
+                'status'                 => $refund->status,
+                'refund_status'          => $refund->refund_status ?? data_get($refund->raw_response, 'data.refund_status'),
+                'wallet_status'          => data_get($refund->raw_response, 'data.wallet_status'),
+                'taler_refund_uri'       => $refundUri,
+                'qr_image'               => $this->qrImageForUri($refundUri),
+                'qr_text'                => $refundUri,
+                'gateway_transaction_id' => $refund->gateway_reference_id,
+                'created_at'             => optional($refund->created_at)->toISOString(),
+                'processed_at'           => optional($refund->processed_at)->toISOString(),
+                'refund_accepted_at'     => optional($refund->refund_accepted_at)->toISOString(),
+                'refund_expires_at'      => optional($refund->refund_expires_at)->toISOString(),
+                'invoice'                => $invoice ? [
+                    'id'     => $invoice->public_id,
+                    'number' => $invoice->number,
+                    'status' => $invoice->status,
+                ] : null,
+                'company'                => [
+                    'name' => $companyName,
+                ],
+            ],
         ]);
     }
 
@@ -333,5 +393,35 @@ class PublicInvoiceController extends Controller
             $q->where('public_id', $identifier)
               ->orWhere('uuid', $identifier);
         })->firstOrFail();
+    }
+
+    private function refundUri(GatewayTransaction $transaction): ?string
+    {
+        return data_get($transaction->raw_response, 'data.taler_refund_uri')
+            ?: data_get($transaction->raw_response, 'data.refund_url')
+            ?: data_get($transaction->raw_response, 'taler_refund_uri')
+            ?: data_get($transaction->raw_response, 'refund_url');
+    }
+
+    private function resolveRefundInvoice(GatewayTransaction $refund): ?Invoice
+    {
+        $invoiceUuid = data_get($refund->raw_response, 'invoice_uuid')
+            ?: data_get($refund->raw_response, 'data.invoice_uuid')
+            ?: data_get($refund->raw_response, 'metadata.invoice_uuid');
+
+        if (!$invoiceUuid) {
+            return null;
+        }
+
+        return Invoice::where('uuid', $invoiceUuid)->orWhere('public_id', $invoiceUuid)->first();
+    }
+
+    private function qrImageForUri(string $uri): ?string
+    {
+        try {
+            return DNS2D::getBarcodePNG($uri, 'QRCODE', 8, 8);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

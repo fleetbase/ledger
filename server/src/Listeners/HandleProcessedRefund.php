@@ -57,6 +57,8 @@ class HandleProcessedRefund implements ShouldQueue
                 $currency = $response->currency ?? $invoice?->currency ?? 'USD';
 
                 if ($amount > 0) {
+                    $refundReference = $gatewayTransaction->public_id ?: $gatewayTransaction->uuid;
+
                     $transaction = Transaction::create([
                         'company_uuid'       => $gateway->company_uuid,
                         'owner_uuid'         => $invoice?->customer_uuid,
@@ -76,7 +78,7 @@ class HandleProcessedRefund implements ShouldQueue
                         'status'             => Transaction::STATUS_SUCCESS,
                         'settlement_status'  => data_get($response->data, 'refund_kind') === 'full' ? Transaction::SETTLEMENT_STATUS_REFUNDED : Transaction::SETTLEMENT_STATUS_PARTIALLY_REFUNDED,
                         'payment_method'     => $gateway->driver,
-                        'reference'          => $response->gatewayTransactionId,
+                        'reference'          => $refundReference,
                         'settled_at'         => now(),
                         'settled_amount'     => $amount,
                         'settled_currency'   => $currency,
@@ -93,7 +95,7 @@ class HandleProcessedRefund implements ShouldQueue
                         $refundExpense,
                         $cashAccount,
                         $amount,
-                        sprintf('Refund issued via %s - Ref: %s', $gateway->name, $response->gatewayTransactionId),
+                        sprintf('Refund issued via %s - Ref: %s', $gateway->name, $refundReference),
                         [
                             'company_uuid'     => $gateway->company_uuid,
                             'currency'         => $currency,
@@ -105,6 +107,7 @@ class HandleProcessedRefund implements ShouldQueue
                                 'gateway_driver'           => $gateway->driver,
                                 'gateway_transaction_id'   => $response->gatewayTransactionId,
                                 'gateway_transaction_uuid' => $gatewayTransaction->uuid,
+                                'refund_reference'         => $refundReference,
                                 'invoice_uuid'             => $invoice?->uuid,
                                 'taler_refund_uri'         => data_get($response->data, 'taler_refund_uri'),
                             ],
@@ -118,11 +121,24 @@ class HandleProcessedRefund implements ShouldQueue
                     $previousRefunded = (int) data_get($invoice->meta, 'refunded_amount', 0);
                     $refundedAmount   = min((int) $invoice->total_amount, $previousRefunded + $amount);
                     $meta             = $invoice->meta ?? [];
+                    $walletStatus     = data_get($response->data, 'wallet_status');
+                    $refundUri        = data_get($response->data, 'taler_refund_uri')
+                        ?: data_get($response->data, 'refund_url')
+                        ?: data_get($response->rawResponse, 'taler_refund_uri')
+                        ?: data_get($response->rawResponse, 'refund_url');
+                    $requiresWallet   = $gateway->driver === 'taler' && $walletStatus !== 'accepted';
+                    $pendingAmount    = (int) data_get($meta, 'pending_wallet_refund_amount', 0);
+
                     data_set($meta, 'refunded_amount', $refundedAmount);
                     data_set($meta, 'last_refund_gateway_transaction_uuid', $gatewayTransaction->uuid);
-                    data_set($meta, 'last_taler_refund_uri', data_get($response->data, 'taler_refund_uri'));
+                    data_set($meta, 'pending_wallet_refund_amount', $requiresWallet ? min((int) $invoice->total_amount, $pendingAmount + $amount) : max(0, $pendingAmount - $amount));
+
+                    if ($refundUri) {
+                        data_set($meta, 'last_taler_refund_uri', $refundUri);
+                    }
+
                     $invoice->meta   = $meta;
-                    $invoice->status = $refundedAmount >= (int) $invoice->total_amount ? 'refunded' : 'partial';
+                    $invoice->status = $this->invoiceRefundStatus($invoice, $refundedAmount, $requiresWallet);
                     $invoice->save();
                 }
 
@@ -154,6 +170,17 @@ class HandleProcessedRefund implements ShouldQueue
             ?: data_get($response->rawResponse, 'invoice_uuid')
             ?: data_get($gatewayTransaction->raw_response, 'invoice_uuid')
             ?: data_get($gatewayTransaction->raw_response, 'data.invoice_uuid');
+    }
+
+    private function invoiceRefundStatus(Invoice $invoice, int $refundedAmount, bool $requiresWallet): string
+    {
+        $fullyRefunded = $refundedAmount >= (int) $invoice->total_amount;
+
+        if ($requiresWallet) {
+            return $fullyRefunded ? 'refund_pending' : 'partial_refund_pending';
+        }
+
+        return $fullyRefunded ? 'refunded' : 'partial';
     }
 
     private function systemAccount(string $companyUuid, string $code, string $name, string $type, string $description): Account

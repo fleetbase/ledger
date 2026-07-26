@@ -82,7 +82,7 @@ export default class GatewayFormComponent extends Component {
             return 'idle';
         }
 
-        return this.connectionTestResult.success ? 'success' : 'failed';
+        return (this.connectionTestResult.success ?? this.connectionTestResult.ok) ? 'success' : 'failed';
     }
 
     get connectionStateTitle() {
@@ -94,17 +94,13 @@ export default class GatewayFormComponent extends Component {
             case 'failed':
                 return 'Gateway test failed';
             default:
-                return this.args.resource?.id ? 'Ready to verify' : 'Save to verify';
+                return this.canTestCredentials ? 'Ready to verify' : 'Complete credentials to verify';
         }
     }
 
     get connectionStateMessage() {
-        if (!this.args.resource?.id) {
-            return 'Create the gateway first, then run live credential checks and webhook registration from the gateway diagnostics screen.';
-        }
-
         if (this.connectionState === 'idle') {
-            return 'Run a credential test before using this gateway for invoice payments.';
+            return this.args.resource?.id ? 'Run a credential test before using this gateway for invoice payments.' : 'Test the entered provider credentials before creating this gateway.';
         }
 
         if (this.connectionState === 'testing') {
@@ -112,6 +108,10 @@ export default class GatewayFormComponent extends Component {
         }
 
         return this.connectionTestResult?.message ?? 'The gateway credential check completed.';
+    }
+
+    get canTestCredentials() {
+        return Boolean(this.args.resource?.driver) && this.hasRequiredConfig;
     }
 
     get connectionMetadataEntries() {
@@ -136,8 +136,8 @@ export default class GatewayFormComponent extends Component {
 
             if (this.args.resource?.driver) {
                 yield this.loadSchema.perform(this.args.resource.driver);
-            } else {
-                const initialDriver = this.args.initialDriverCode ? this.availableDrivers.find((driver) => driver.code === this.args.initialDriverCode) : this.availableDrivers[0];
+            } else if (this.args.initialDriverCode) {
+                const initialDriver = this.availableDrivers.find((driver) => driver.code === this.args.initialDriverCode);
                 if (initialDriver) {
                     this.selectDriver(initialDriver);
                 }
@@ -147,7 +147,7 @@ export default class GatewayFormComponent extends Component {
         }
     }
 
-    @task *loadSchema(driverCode) {
+    @task *loadSchema(driverCode, syncResourceConfig = false) {
         yield Promise.resolve();
         const driver = this.availableDrivers.find((d) => d.code === driverCode);
         this.configSchema = driver?.config_schema ?? [];
@@ -160,13 +160,8 @@ export default class GatewayFormComponent extends Component {
         });
         this.configValues = values;
 
-        // Default webhook_url to the system-computed handler URL when not already set.
-        // driver.webhook_url is the full URL returned by the backend (e.g. https://api.example.com/ledger/webhooks/stripe).
-        // We never fall back to a relative path here — if the manifest does not include a full URL yet,
-        // the user can copy it from the "System webhook URL" hint shown below the field.
-        const resource = this.args.resource;
-        if (resource && !resource.webhook_url && driver?.webhook_url) {
-            resource.webhook_url = driver.webhook_url;
+        if (syncResourceConfig) {
+            this.args.resource?.set?.('config', values);
         }
     }
 
@@ -175,15 +170,45 @@ export default class GatewayFormComponent extends Component {
             return;
         }
 
-        this.args.resource.set?.('driver', driver.code);
-        this.args.resource.set?.('name', this.args.resource?.name || driver.name);
-        this.args.resource.set?.('code', this.args.resource?.code || driver.code);
-        // Sync the driver's capabilities to the resource so they are persisted
-        if (driver.capabilities) {
-            this.args.resource.set?.('capabilities', driver.capabilities);
+        const resource = this.args.resource;
+        const previousDriver = this.selectedDriver;
+
+        resource.set?.('driver', driver.code);
+
+        if (!resource.name || resource.name === previousDriver?.name) {
+            resource.set?.('name', driver.name);
         }
-        this.loadSchema.perform(driver.code);
+
+        if (!resource.code || resource.code === previousDriver?.code) {
+            resource.set?.('code', driver.code);
+        }
+
+        if (this.shouldReplaceWebhookUrl(resource.webhook_url, previousDriver, driver)) {
+            resource.set?.('webhook_url', driver.webhook_url);
+        }
+
+        if (driver.capabilities) {
+            resource.set?.('capabilities', driver.capabilities);
+        }
+
+        this.loadSchema.perform(driver.code, true);
         this.connectionTestResult = null;
+    }
+
+    shouldReplaceWebhookUrl(currentWebhookUrl, previousDriver, nextDriver) {
+        if (!nextDriver?.webhook_url) {
+            return false;
+        }
+
+        if (!currentWebhookUrl) {
+            return true;
+        }
+
+        if (currentWebhookUrl === previousDriver?.webhook_url) {
+            return true;
+        }
+
+        return this.availableDrivers.some((driver) => driver.code !== nextDriver.code && driver.webhook_url === currentWebhookUrl);
     }
 
     @action updateConfigField(key, value) {
@@ -198,13 +223,22 @@ export default class GatewayFormComponent extends Component {
     }
 
     @task *testCredentials() {
-        if (!this.args.resource?.id) {
-            this.notifications.info('Save this gateway before testing credentials.');
+        if (!this.canTestCredentials) {
+            this.notifications.info('Choose a gateway and complete the required credentials before testing.');
             return;
         }
 
         try {
-            this.connectionTestResult = yield this.fetch.post(`gateways/${this.args.resource.id}/test-credentials`, {}, { namespace: 'ledger/int/v1' });
+            const endpoint = this.args.resource?.id ? `gateways/${this.args.resource.id}/test-credentials` : 'gateways/test-credentials';
+            const payload = this.args.resource?.id
+                ? {}
+                : {
+                      driver: this.args.resource?.driver,
+                      environment: this.args.resource?.environment ?? 'sandbox',
+                      config: this.configValues,
+                  };
+
+            this.connectionTestResult = yield this.fetch.post(endpoint, payload, { namespace: 'ledger/int/v1' });
         } catch (error) {
             this.connectionTestResult = {
                 success: false,

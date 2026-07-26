@@ -220,15 +220,22 @@ test('taler gateway lifecycle routes and diagnostics are registered', function (
 
     expect($routes)
         ->toContain("'gateways/summary'")
+        ->toContain("\$router->post('gateways/test-credentials', 'GatewayController@testDraftCredentials');")
         ->toContain("'{id}/test-credentials'")
         ->toContain("'{id}/create-test-order'")
         ->toContain("'{id}/register-webhook'")
-        ->toContain("'{id}/diagnostics'");
+        ->toContain("'{id}/diagnostics'")
+        ->toContain("\$router->post('gateways/test-credentials', 'GatewayController@testDraftCredentials');\n\n                                \$router->fleetbaseRoutes");
 
     expect($controller)
         ->toContain('public function summary')
         ->toContain("'webhook_warnings'")
         ->toContain("'last_payment_at'")
+        ->toContain('public function testDraftCredentials')
+        ->toContain("'driver'      => ['required', 'string']")
+        ->toContain("'config'      => ['required', 'array']")
+        ->toContain("->driver(\$validated['driver'])")
+        ->toContain('sanitizeProviderResult($driver->testCredentials())')
         ->toContain('public function testCredentials')
         ->toContain('public function createTestOrder')
         ->toContain('public function registerWebhook')
@@ -240,6 +247,7 @@ test('taler gateway lifecycle routes and diagnostics are registered', function (
         ->toContain("'last_webhook_registration_at'")
         ->toContain("'last_test_order_at'")
         ->toContain("'last_test_order_id'")
+        ->toContain("'metadata'    => \$result['metadata'] ?? null")
         ->not->toContain("'credential_status'        => 'not_checked'");
 
     expect($gateway)
@@ -351,6 +359,7 @@ test('payment gateway management renders hub catalog and full page details', fun
     $newTemplate    = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/new.hbs');
     $editTemplate   = file_get_contents(__DIR__ . '/../../addon/templates/payments/gateways/edit.hbs');
     $editController = file_get_contents(__DIR__ . '/../../addon/controllers/payments/gateways/edit.js');
+    $formComponent  = file_get_contents(__DIR__ . '/../../addon/components/gateway/form.js');
     $formTemplate   = file_get_contents(__DIR__ . '/../../addon/components/gateway/form.hbs');
 
     expect($newTemplate)
@@ -373,6 +382,24 @@ test('payment gateway management renders hub catalog and full page details', fun
         ->toContain('Gateway Credentials')
         ->toContain('Routing And Status')
         ->toContain('Review Gateway Setup');
+
+    expect($formComponent)
+        ->toContain('this.args.initialDriverCode')
+        ->toContain('shouldReplaceWebhookUrl')
+        ->toContain("resource.set?.('webhook_url', driver.webhook_url)")
+        ->toContain('this.loadSchema.perform(driver.code, true)')
+        ->toContain('get canTestCredentials()')
+        ->toContain("const endpoint = this.args.resource?.id ? `gateways/\${this.args.resource.id}/test-credentials` : 'gateways/test-credentials'")
+        ->toContain('driver: this.args.resource?.driver')
+        ->toContain('environment: this.args.resource?.environment ??')
+        ->toContain('config: this.configValues')
+        ->not->toContain('Save this gateway before testing credentials')
+        ->not->toContain('this.availableDrivers[0]');
+
+    expect($formTemplate)
+        ->toContain('class="whitespace-nowrap"')
+        ->toContain('@disabled={{or this.testCredentials.isRunning (not this.canTestCredentials)}}')
+        ->not->toContain('(not @resource.id)');
 
     expect($detailsComponent)
         ->toContain('Provider Status')
@@ -403,44 +430,80 @@ test('payment gateway management renders hub catalog and full page details', fun
 });
 
 test('invoice refund workflow routes controller and ui are registered', function () {
-    $routes         = file_get_contents(__DIR__ . '/../src/routes.php');
-    $authSchema     = file_get_contents(__DIR__ . '/../src/Auth/Schemas/Ledger.php');
-    $controller     = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/InvoiceController.php');
-    $ui             = file_get_contents(__DIR__ . '/../../addon/controllers/billing/invoices/index/details.js');
-    $modal          = file_get_contents(__DIR__ . '/../../addon/components/modals/issue-refund.hbs');
-    $result         = file_get_contents(__DIR__ . '/../../addon/components/modals/refund-result.hbs');
-    $modalReexport  = file_get_contents(__DIR__ . '/../../app/components/modals/issue-refund.js');
-    $resultReexport = file_get_contents(__DIR__ . '/../../app/components/modals/refund-result.js');
+    $routes          = file_get_contents(__DIR__ . '/../src/routes.php');
+    $authSchema      = file_get_contents(__DIR__ . '/../src/Auth/Schemas/Ledger.php');
+    $controller      = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/InvoiceController.php');
+    $paymentService  = file_get_contents(__DIR__ . '/../src/Services/PaymentService.php');
+    $ui              = file_get_contents(__DIR__ . '/../../addon/controllers/billing/invoices/index/details.js');
+    $modal           = file_get_contents(__DIR__ . '/../../addon/components/modals/issue-refund.hbs');
+    $result          = file_get_contents(__DIR__ . '/../../addon/components/modals/refund-result.hbs');
+    $history         = file_get_contents(__DIR__ . '/../../addon/components/modals/refund-history.hbs');
+    $handoff         = file_get_contents(__DIR__ . '/../../addon/components/customer-taler-refund.hbs');
+    $handoffJs       = file_get_contents(__DIR__ . '/../../addon/components/customer-taler-refund.js');
+    $extension       = file_get_contents(__DIR__ . '/../../addon/extension.js');
+    $modalReexport   = file_get_contents(__DIR__ . '/../../app/components/modals/issue-refund.js');
+    $resultReexport  = file_get_contents(__DIR__ . '/../../app/components/modals/refund-result.js');
+    $historyReexport = file_get_contents(__DIR__ . '/../../app/components/modals/refund-history.js');
+    $handoffReexport = file_get_contents(__DIR__ . '/../../app/components/customer-taler-refund.js');
+    $listener        = file_get_contents(__DIR__ . '/../src/Listeners/HandleProcessedRefund.php');
+    $publicInvoice   = file_get_contents(__DIR__ . '/../src/Http/Controllers/Public/PublicInvoiceController.php');
+    $notification    = file_get_contents(__DIR__ . '/../src/Notifications/RefundUriAvailable.php');
+    $mailTemplate    = file_get_contents(__DIR__ . '/../resources/views/mail/refund-uri-available.blade.php');
+    $invoiceModel    = file_get_contents(__DIR__ . '/../../addon/models/ledger-invoice.js');
+    $customerInvoice = file_get_contents(__DIR__ . '/../../addon/components/customer-invoice.js');
 
     expect($routes)
         ->toContain("'{id}/refund-options'")
-        ->toContain("'{id}/refund'");
+        ->toContain("'{id}/refund'")
+        ->toContain("'{id}/refunds/{gatewayTransactionId}/send-refund-uri'")
+        ->toContain("'refunds/{refund_id}'");
 
     expect($authSchema)
         ->toContain("'refund'")
-        ->toContain("'refund-options'");
+        ->toContain("'refund-options'")
+        ->toContain("'send-refund-uri'");
 
     expect($controller)
         ->toContain('public function refundOptions')
         ->toContain('public function refund(string $id, Request $request, PaymentService $paymentService)')
+        ->toContain('public function sendRefundUri')
+        ->toContain("'refunds' => \$this->refundGatewayTransactions(\$invoice)")
+        ->toContain('serializeRefundGatewayTransaction')
+        ->toContain('resolveRefundGatewayTransaction')
+        ->toContain('new RefundUriAvailable($invoice, $refund, $uri)')
+        ->toContain('refundHandoffUrl')
+        ->toContain("'refund_handoff_url'")
+        ->toContain("'taler_refund_uri'       => \$refundUri")
+        ->toContain('invoicePaymentReferences')
         ->toContain('refundableGatewayTransactions')
         ->toContain('invoiceRemainingRefundableAmount')
+        ->toContain('raw_response->original_gateway_reference_id')
+        ->toContain('raw_response->data->order_id')
         ->toContain('new RefundRequest(')
         ->toContain("'refund_kind'")
         ->toContain('$refundKind')
         ->toContain("'data'                   => \$response->data");
 
+    expect($paymentService)
+        ->toContain("'original_gateway_reference_id' => \$response->gatewayTransactionId")
+        ->toContain("\$gatewayReferenceId .= '-refund-' . Str::lower(Str::random(8))");
+
     expect($ui)
         ->toContain('Issue Refund')
         ->toContain('invoices/${invoice.id}/refund-options')
         ->toContain('invoices/${invoice.id}/refund')
+        ->toContain("'paid', 'refunded', 'refund_pending', 'partial_refund_pending', 'void', 'cancelled'")
         ->toContain('confirmRefund(invoice, options, selected, modal)')
         ->toContain('this.modalsManager.confirm')
         ->toContain('Confirm Refund')
         ->toContain('refundInvoice(invoice, options)')
         ->toContain('showRefundResult')
-        ->toContain('responseData.taler_refund_uri ?? responseData.refund_url')
-        ->toContain('this.hostRouter.refresh()');
+        ->toContain('response.refund?.refund_url ?? responseData.refund_url ?? responseData.taler_refund_uri')
+        ->toContain('this.hostRouter.refresh()')
+        ->toContain('View Refunds')
+        ->toContain('modals/refund-history')
+        ->toContain('@tracked refundRows = []')
+        ->toContain('sendRefundUri(invoice, refund, email)');
 
     expect($modal)
         ->toContain('Remaining refundable')
@@ -450,15 +513,85 @@ test('invoice refund workflow routes controller and ui are registered', function
         ->toContain('<MoneyInput');
 
     expect($result)
-        ->toContain('Taler Refund URI')
+        ->toContain('Customer Refund Link')
+        ->toContain('Wallet URI')
         ->toContain('<ClickToCopy')
-        ->toContain('Gateway refund transaction');
+        ->toContain('Gateway refund transaction')
+        ->toContain('mb-4 rounded-md')
+        ->toContain('Send Email')
+        ->not->toContain('@type="text" class="w-full form-input" readonly={{true}}');
+
+    expect($history)
+        ->toContain('Customer Email')
+        ->toContain('<ClickToCopy')
+        ->toContain('Send Email')
+        ->toContain('refund.taler_refund_uri')
+        ->toContain('No refund URI has been issued');
+
+    expect($handoff)
+        ->toContain('GNU Taler Refund')
+        ->toContain('Open GNU Taler Wallet')
+        ->toContain('<ClickToCopy')
+        ->toContain('this.qrImageSrc')
+        ->toContain('href={{this.talerRefundUri}}');
+
+    expect($handoffJs)
+        ->toContain('this.fetch.get(`refunds/${this.refundId}`')
+        ->toContain('meta[name="taler-support"]')
+        ->toContain('meta[name="taler-uri"]')
+        ->toContain("support.content = 'uri'")
+        ->toContain('uri.content = this.talerRefundUri');
+
+    expect($extension)
+        ->toContain("slug: 'taler-refund'")
+        ->toContain("new ExtensionComponent('@fleetbase/ledger-engine', 'customer-taler-refund')");
 
     expect($modalReexport)
         ->toContain('@fleetbase/ledger-engine/components/modals/issue-refund');
 
     expect($resultReexport)
         ->toContain('@fleetbase/ledger-engine/components/modals/refund-result');
+
+    expect($historyReexport)
+        ->toContain('@fleetbase/ledger-engine/components/modals/refund-history');
+
+    expect($handoffReexport)
+        ->toContain('@fleetbase/ledger-engine/components/customer-taler-refund');
+
+    expect($listener)
+        ->toContain('$refundReference = $gatewayTransaction->public_id ?: $gatewayTransaction->uuid')
+        ->toContain("'reference'          => \$refundReference")
+        ->toContain("'refund_reference'         => \$refundReference")
+        ->toContain("'pending_wallet_refund_amount'")
+        ->toContain('invoiceRefundStatus')
+        ->toContain("\$gateway->driver === 'taler'")
+        ->toContain("'refund_pending'")
+        ->toContain("'partial_refund_pending'")
+        ->not->toContain("\$invoice->status = \$refundedAmount >= (int) \$invoice->total_amount ? 'refunded' : 'partial'");
+
+    expect($publicInvoice)
+        ->toContain('public function refund(string $refundId)')
+        ->toContain("'taler_refund_uri'")
+        ->toContain("'qr_image'")
+        ->toContain("'refund_pending'")
+        ->toContain("'partial_refund_pending'")
+        ->toContain('(int) $invoice->balance <= 0');
+
+    expect($notification)
+        ->toContain("Utils::consoleUrl('~/taler-refund'")
+        ->toContain("'refundUrl'");
+
+    expect($mailTemplate)
+        ->toContain('{{ $refundUrl }}')
+        ->toContain('{{ $refundUri }}');
+
+    expect($invoiceModel)
+        ->toContain('partial_refund_pending')
+        ->toContain('refund_pending');
+
+    expect($customerInvoice)
+        ->toContain("'refund_pending'")
+        ->toContain("'partial_refund_pending'");
 });
 
 test('taler webhook unresolved routing is audited', function () {
@@ -469,6 +602,80 @@ test('taler webhook unresolved routing is audited', function () {
         ->toContain('recordUnresolvedWebhook')
         ->toContain('matched multiple active gateways')
         ->toContain('Taler webhook could not resolve an active gateway.');
+});
+
+test('taler refund verification command scheduler and ui are registered', function () {
+    $routes     = file_get_contents(__DIR__ . '/../src/routes.php');
+    $authSchema = file_get_contents(__DIR__ . '/../src/Auth/Schemas/Ledger.php');
+    $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/Internal/v1/InvoiceController.php');
+    $provider   = file_get_contents(__DIR__ . '/../src/Providers/LedgerServiceProvider.php');
+    $command    = file_get_contents(__DIR__ . '/../src/Console/Commands/VerifyTalerRefunds.php');
+    $service    = file_get_contents(__DIR__ . '/../src/Services/TalerRefundVerificationService.php');
+    $driver     = file_get_contents(__DIR__ . '/../src/Gateways/TalerDriver.php');
+    $ui         = file_get_contents(__DIR__ . '/../../addon/controllers/billing/invoices/index/details.js');
+    $history    = file_get_contents(__DIR__ . '/../../addon/components/modals/refund-history.hbs');
+
+    expect($routes)
+        ->toContain("'{id}/refunds/{gatewayTransactionId}/verify-status'");
+
+    expect($authSchema)
+        ->toContain("'verify-refund-status'");
+
+    expect($controller)
+        ->toContain('public function verifyRefundStatus')
+        ->toContain('TalerRefundVerificationService $verifier')
+        ->toContain('resolveRefundGatewayTransaction($invoice, $gatewayTransactionId)')
+        ->toContain('$verifier->verifyRefund($refund)');
+
+    expect($provider)
+        ->toContain('TalerRefundVerificationService::class')
+        ->toContain('VerifyTalerRefunds::class')
+        ->toContain("command('ledger:taler:verify-refunds')")
+        ->toContain('everyFifteenMinutes()')
+        ->toContain('withoutOverlapping()');
+
+    expect($command)
+        ->toContain('ledger:taler:verify-refunds')
+        ->toContain('{--refund=')
+        ->toContain('verifyPending')
+        ->toContain('Refund verification complete');
+
+    expect($service)
+        ->toContain('class TalerRefundVerificationService')
+        ->toContain('public function verifyPending')
+        ->toContain('public function verifyRefund')
+        ->toContain('protected function pendingRefundQuery')
+        ->toContain('fetchRefundStatus($orderId, $targetAmount, $refund->currency)')
+        ->toContain('cumulativeRefundAmountForOrder')
+        ->toContain('refund_taken')
+        ->toContain("'pending_wallet_acceptance'")
+        ->toContain("'accepted'");
+
+    expect($driver)
+        ->toContain('fetchOrderStatus(string $orderId, array $query = [])')
+        ->toContain('fetchRefundStatus')
+        ->toContain("'await_refund_obtained' => 'yes'")
+        ->toContain("'timeout_ms'")
+        ->toContain('$pending->get($url, $payload)');
+
+    expect($ui)
+        ->toContain('verifyRefundStatus(invoice, refund)')
+        ->toContain('verify-status')
+        ->toContain('Refund status verified.');
+
+    expect($history)
+        ->toContain('Verify Status')
+        ->toContain('this.verifyRefundStatus');
+});
+
+test('successful payment listener can resolve taler invoice from purchase transaction fallback', function () {
+    $listener = file_get_contents(__DIR__ . '/../src/Listeners/HandleSuccessfulPayment.php');
+
+    expect($listener)
+        ->toContain('resolveInvoiceUuidFromPurchaseTransaction')
+        ->toContain("->where('type', 'purchase')")
+        ->toContain("data_get(\$purchaseTransaction?->raw_response, 'invoice_uuid')")
+        ->toContain("data_get(\$purchaseTransaction?->raw_response, 'data.invoice_uuid')");
 });
 
 test('taler settlement and e2e commands are registered', function () {

@@ -221,6 +221,34 @@ class HandleSuccessfulPayment implements ShouldQueue
             ?: data_get($raw, 'data.object.metadata.invoice_uuid')
             // 4. Normalised GatewayResponse data bag (driver-specific)
             ?: ($response->data['invoice_uuid'] ?? null)
+            // 5. Original purchase transaction for webhook-only confirmations
+            ?: $this->resolveInvoiceUuidFromPurchaseTransaction($gatewayTransaction)
             ?: null;
+    }
+
+    /**
+     * Resolve the invoice UUID from Ledger's original purchase transaction.
+     *
+     * GNU Taler's private order status response may omit custom order metadata
+     * from contract_terms, but Ledger always persists invoice_uuid when the
+     * purchase transaction is created. Webhook confirmations use the same
+     * gateway_reference_id, so this is the reliable local fallback.
+     */
+    private function resolveInvoiceUuidFromPurchaseTransaction(GatewayTransaction $gatewayTransaction): ?string
+    {
+        if (!$gatewayTransaction->gateway_reference_id) {
+            return null;
+        }
+
+        $purchaseTransaction = GatewayTransaction::query()
+            ->where('company_uuid', $gatewayTransaction->company_uuid)
+            ->where('gateway_uuid', $gatewayTransaction->gateway_uuid)
+            ->where('gateway_reference_id', $gatewayTransaction->gateway_reference_id)
+            ->where('type', 'purchase')
+            ->latest()
+            ->first();
+
+        return data_get($purchaseTransaction?->raw_response, 'invoice_uuid')
+            ?: data_get($purchaseTransaction?->raw_response, 'data.invoice_uuid');
     }
 }

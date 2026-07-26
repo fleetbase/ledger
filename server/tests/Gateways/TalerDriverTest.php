@@ -55,6 +55,13 @@ function talerDriver(array $config = [], bool $sandbox = false): TalerDriver
     return $driver;
 }
 
+function talerAuthorizationHeader($httpRequest): ?string
+{
+    $header = $httpRequest->headers()['Authorization'] ?? null;
+
+    return is_array($header) ? ($header[0] ?? null) : $header;
+}
+
 // ---------------------------------------------------------------------------
 // Driver metadata
 // ---------------------------------------------------------------------------
@@ -356,6 +363,33 @@ test('handleWebhook_verifies_paid_order_and_returns_success', function () {
         ->and($response->data['invoice_uuid'])->toBe('invoice-uuid-abc');
 });
 
+test('handleWebhook_uses_contract_amount_when_deposit_total_is_zero', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/TALER-ORDER-DEPOSIT-ZERO' => Http::response(
+            [
+                'order_status'   => 'paid',
+                'deposit_total'  => 'KUDOS:0',
+                'contract_terms' => [
+                    'amount'  => 'KUDOS:0.5',
+                    'summary' => 'Invoice TALER-DEMO-20A32F23F9DA',
+                ],
+            ],
+            200
+        ),
+    ]);
+
+    $request = Request::create('/ledger/webhooks/taler', 'POST', [
+        'order_id' => 'TALER-ORDER-DEPOSIT-ZERO',
+    ]);
+
+    $response = talerDriver()->handleWebhook($request);
+
+    expect($response->isSuccessful())->toBeTrue()
+        ->and($response->eventType)->toBe(GatewayResponse::EVENT_PAYMENT_SUCCEEDED)
+        ->and($response->amount)->toBe(50)
+        ->and($response->currency)->toBe('KUDOS');
+});
+
 // ---------------------------------------------------------------------------
 // handleWebhook() — failure paths
 // ---------------------------------------------------------------------------
@@ -551,6 +585,61 @@ test('testCredentials_checks_private_taler_endpoint', function () {
         ->and($result['http_status'])->toBe(200);
 });
 
+test('testCredentials_sends_secret_token_as_bearer_token', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(['orders' => []], 200),
+    ]);
+
+    talerDriver(['api_token' => 'secret-token:abc'])->testCredentials();
+
+    Http::assertSent(fn ($httpRequest) => talerAuthorizationHeader($httpRequest) === 'Bearer secret-token:abc');
+});
+
+test('testCredentials_accepts_pasted_bearer_secret_token', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(['orders' => []], 200),
+    ]);
+
+    talerDriver(['api_token' => 'Bearer secret-token:abc'])->testCredentials();
+
+    Http::assertSent(fn ($httpRequest) => talerAuthorizationHeader($httpRequest) === 'Bearer secret-token:abc');
+});
+
+test('testCredentials_trims_token_whitespace', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response(['orders' => []], 200),
+    ]);
+
+    talerDriver(['api_token' => '  Bearer secret-token:abc  '])->testCredentials();
+
+    Http::assertSent(fn ($httpRequest) => talerAuthorizationHeader($httpRequest) === 'Bearer secret-token:abc');
+});
+
+test('testCredentials_returns_sanitized_taler_failure_metadata', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response([
+            'code'        => 2000,
+            'hint'        => 'token does not grant access to this instance',
+            'detail'      => 'wrong instance',
+            'request_uid' => 'req-123',
+        ], 403),
+    ]);
+
+    $result = talerDriver(['api_token' => 'secret-token:abc'])->testCredentials();
+
+    expect($result['ok'])->toBeFalse()
+        ->and($result['status'])->toBe('failed')
+        ->and($result['http_status'])->toBe(403)
+        ->and($result['metadata']['backend_url'])->toBe('https://backend.example.taler.net')
+        ->and($result['metadata']['instance_id'])->toBe('testmerchant')
+        ->and($result['metadata']['http_status'])->toBe(403)
+        ->and($result['metadata']['taler_error_code'])->toBe(2000)
+        ->and($result['metadata']['hint'])->toBe('token does not grant access to this instance')
+        ->and($result['metadata']['detail'])->toBe('wrong instance')
+        ->and($result['metadata']['request_uid'])->toBe('req-123')
+        ->and($result)->not->toHaveKey('raw_response');
+});
+
 test('registerWebhook_posts_tenant_safe_body_template', function () {
     fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/webhooks' => Http::response([], 204),
@@ -572,7 +661,8 @@ test('registerWebhook_posts_tenant_safe_body_template', function () {
 
         return str_contains($template, 'company-uuid-1')
             && str_contains($template, 'gateway_public_1')
-            && str_contains($template, '${ORDER_ID}');
+            && str_contains($template, '{{ order_id }}')
+            && str_contains($template, '{{ webhook_type }}');
     });
 });
 

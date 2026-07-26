@@ -278,7 +278,17 @@
                                     </div>
                                 </div>
 
-                                <Button @icon="plug" @text={{if (eq this.connectionState "success") "Test Again" "Test Credentials"}} @size="xs" @isLoading={{this.testCredentials.isRunning}} @disabled={{or this.testCredentials.isRunning (not @resource.id)}} @onClick={{perform this.testCredentials}} />
+                                <div class="flex flex-shrink-0 justify-end">
+                                    <Button
+                                        @icon="plug"
+                                        @text={{if (eq this.connectionState "success") "Test Again" "Test Credentials"}}
+                                        @size="xs"
+                                        @isLoading={{this.testCredentials.isRunning}}
+                                        @disabled={{or this.testCredentials.isRunning (not this.canTestCredentials)}}
+                                        @onClick={{perform this.testCredentials}}
+                                        class="whitespace-nowrap"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
