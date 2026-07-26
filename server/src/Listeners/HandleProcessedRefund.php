@@ -50,7 +50,11 @@ class HandleProcessedRefund implements ShouldQueue
             DB::transaction(function () use ($response, $gatewayTransaction, $gateway) {
                 $invoiceUuid = $this->resolveInvoiceUuid($response, $gatewayTransaction);
                 $invoice     = $invoiceUuid
-                    ? Invoice::where('uuid', $invoiceUuid)->orWhere('public_id', $invoiceUuid)->first()
+                    ? Invoice::query()
+                        ->without(['customer', 'items', 'template', 'order'])
+                        ->where('uuid', $invoiceUuid)
+                        ->orWhere('public_id', $invoiceUuid)
+                        ->first()
                     : null;
 
                 $amount   = (int) $response->amount;

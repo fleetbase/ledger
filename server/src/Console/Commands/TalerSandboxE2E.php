@@ -15,15 +15,15 @@ class TalerSandboxE2E extends Command
 
     public function handle(): int
     {
-        if (!filter_var(env('TALER_E2E_ENABLED', false), FILTER_VALIDATE_BOOLEAN)) {
+        if (!filter_var($this->environment('TALER_E2E_ENABLED', false), FILTER_VALIDATE_BOOLEAN)) {
             $this->warn('[Ledger/Taler] E2E skipped. Set TALER_E2E_ENABLED=true to run against a live sandbox.');
 
             return self::SUCCESS;
         }
 
-        $backendUrl = env('TALER_E2E_BACKEND_URL');
-        $instanceId = env('TALER_E2E_INSTANCE_ID', 'default');
-        $apiToken   = env('TALER_E2E_API_TOKEN');
+        $backendUrl = $this->environment('TALER_E2E_BACKEND_URL');
+        $instanceId = $this->environment('TALER_E2E_INSTANCE_ID', 'default');
+        $apiToken   = $this->environment('TALER_E2E_API_TOKEN');
 
         if (!$backendUrl || !$apiToken) {
             $this->error('[Ledger/Taler] TALER_E2E_BACKEND_URL and TALER_E2E_API_TOKEN are required.');
@@ -49,7 +49,7 @@ class TalerSandboxE2E extends Command
             'currency'    => strtoupper((string) $this->option('currency')),
             'description' => 'Ledger GNU Taler sandbox E2E order',
             'metadata'    => [
-                'company_uuid' => env('TALER_E2E_COMPANY_UUID'),
+                'company_uuid' => $this->environment('TALER_E2E_COMPANY_UUID'),
                 'e2e'          => true,
             ],
         ]);
@@ -66,5 +66,16 @@ class TalerSandboxE2E extends Command
         $this->line('Next: complete the wallet payment, then run webhook/settlement verification and record the evidence in docs/taler/release-evidence.md.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Read opt-in E2E configuration without requiring Laravel's Dotenv
+     * repository to be bootstrapped by the console test harness.
+     */
+    protected function environment(string $key, mixed $default = null): mixed
+    {
+        $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
+
+        return $value === false ? $default : $value;
     }
 }

@@ -62,8 +62,7 @@ class BackfillTransactionDirection extends Command
 
         DB::table('transactions')
             ->whereNull('direction')
-            ->orderBy('id')
-            ->chunk($chunk, function ($rows) use ($bar, &$processed) {
+            ->chunkById($chunk, function ($rows) use ($bar, &$processed) {
                 foreach ($rows as $row) {
                     $direction = in_array(strtolower((string) $row->type), self::DEBIT_TYPES, true)
                         ? 'debit'

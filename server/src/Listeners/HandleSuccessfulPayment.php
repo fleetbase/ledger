@@ -77,7 +77,9 @@ class HandleSuccessfulPayment implements ShouldQueue
 
             $invoice = null;
             if ($invoiceUuid) {
-                $invoice = Invoice::where('uuid', $invoiceUuid)
+                $invoice = Invoice::query()
+                    ->without(['customer', 'items', 'template', 'order'])
+                    ->where('uuid', $invoiceUuid)
                     ->orWhere('public_id', $invoiceUuid)
                     ->first();
             }

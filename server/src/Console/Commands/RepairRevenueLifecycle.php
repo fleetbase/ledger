@@ -29,7 +29,11 @@ class RepairRevenueLifecycle extends Command
 
         $orderClass = 'Fleetbase\\FleetOps\\Models\\Order';
         if (!class_exists($orderClass)) {
+            // FleetOps API is a required Composer dependency of Ledger. This
+            // fallback only protects partially installed runtime environments.
+            // @codeCoverageIgnoreStart
             $this->warn('[Ledger] FleetOps Order model is unavailable; skipping order-linked repairs.');
+        // @codeCoverageIgnoreEnd
         } else {
             $this->reportOrders($orderClass, $apply, $limit);
         }
@@ -70,6 +74,7 @@ class RepairRevenueLifecycle extends Command
     private function reportInvoices(bool $apply, int $limit): void
     {
         $query = Invoice::withTrashed()
+            ->without(['customer', 'items', 'template', 'order.trackingNumber'])
             ->where(function ($query) {
                 $query->whereNotNull('deleted_at')
                     ->orWhereIn('status', ['void', 'voided', 'cancelled', 'canceled']);

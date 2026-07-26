@@ -32,7 +32,7 @@ class CompanyObserver
     {
         // 1. Seed the default chart of accounts for this company
         try {
-            (new LedgerSeeder())->runForCompany($company->uuid);
+            $this->makeLedgerSeeder()->runForCompany($company->uuid);
         } catch (\Throwable $e) {
             Log::error('[Ledger] Failed to seed default accounts for company ' . $company->uuid . ': ' . $e->getMessage());
         }
@@ -43,5 +43,10 @@ class CompanyObserver
         } catch (\Throwable $e) {
             Log::error('[Ledger] Failed to provision wallets for company ' . $company->uuid . ': ' . $e->getMessage());
         }
+    }
+
+    protected function makeLedgerSeeder(): LedgerSeeder
+    {
+        return new LedgerSeeder();
     }
 }

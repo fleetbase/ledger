@@ -684,3 +684,296 @@ test('createTestOrder_uses_deterministic_test_order_metadata', function () {
         ->and($response->gatewayTransactionId)->toBe('ledger-test-returned')
         ->and($response->data['taler_pay_uri'])->toBe('taler://pay/test');
 });
+
+test('fetchOrderStatus_returns_provider status and response data', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-status-1*' => Http::response([
+            'order_status' => 'paid',
+            'refund_taken' => 'USD:1.00',
+        ], 200),
+    ]);
+
+    $result = talerDriver()->fetchOrderStatus('order-status-1', ['timeout_ms' => 1000]);
+
+    expect($result)->toBe([
+        'ok'          => true,
+        'http_status' => 200,
+        'data'        => [
+            'order_status' => 'paid',
+            'refund_taken' => 'USD:1.00',
+        ],
+    ]);
+});
+
+test('fetchRefundStatus_requests wallet acceptance with cumulative amount', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-refund-1*' => Http::response([
+            'refund_pending' => 'USD:0',
+            'refund_taken'   => 'USD:12.50',
+        ], 200),
+    ]);
+
+    $result = talerDriver()->fetchRefundStatus(
+        'order-refund-1',
+        1250,
+        'usd',
+        ['timeout_ms' => 5000]
+    );
+
+    expect($result['ok'])->toBeTrue();
+
+    Http::assertSent(function ($httpRequest) {
+        return $httpRequest->method() === 'GET'
+            && $httpRequest->data() === [
+                'await_refund_obtained' => 'yes',
+                'timeout_ms'            => 5000,
+                'refund'                => 'USD:12.50',
+            ];
+    });
+});
+
+test('fetchRefundStatus omits refund amount when currency is unavailable', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-refund-2*' => Http::response([], 202),
+    ]);
+
+    $result = talerDriver()->fetchRefundStatus('order-refund-2', 500);
+
+    expect($result['ok'])->toBeTrue()
+        ->and($result['http_status'])->toBe(202);
+
+    Http::assertSent(fn ($httpRequest) => !array_key_exists('refund', $httpRequest->data()));
+});
+
+test('purchase reports transport failures during order creation and status lookup', function () {
+    $request = new PurchaseRequest(
+        amount: 1000,
+        currency: 'USD',
+        description: 'Transport failure',
+    );
+
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => function () {
+            throw new RuntimeException('merchant backend offline');
+        },
+    ]);
+
+    $createFailure = talerDriver()->purchase($request);
+
+    expect($createFailure->isFailed())->toBeTrue()
+        ->and($createFailure->message)->toBe('Taler order creation failed: merchant backend offline');
+
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response([
+            'order_id' => 'order-created-no-status',
+        ], 200),
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-created-no-status' => function () {
+            throw new RuntimeException('status endpoint offline');
+        },
+    ]);
+
+    $statusFailure = talerDriver()->purchase($request);
+
+    expect($statusFailure->isFailed())->toBeTrue()
+        ->and($statusFailure->gatewayTransactionId)->toBe('order-created-no-status')
+        ->and($statusFailure->message)->toContain('payment URI retrieval failed: status endpoint offline');
+});
+
+test('webhook and refund report transport failures without leaking exceptions', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-webhook-error' => function () {
+            throw new RuntimeException('verification unavailable');
+        },
+    ]);
+
+    $webhook = talerDriver()->handleWebhook(Request::create('/webhook', 'POST', [
+        'order_id' => 'order-webhook-error',
+    ]));
+
+    expect($webhook->isFailed())->toBeTrue()
+        ->and($webhook->message)->toBe('Taler webhook verification failed: verification unavailable');
+
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-refund-error/refund' => function () {
+            throw new RuntimeException('refund unavailable');
+        },
+    ]);
+
+    $refund = talerDriver()->refund(new RefundRequest(
+        gatewayTransactionId: 'order-refund-error',
+        amount: 500,
+        currency: 'USD',
+    ));
+
+    expect($refund->isFailed())->toBeTrue()
+        ->and($refund->eventType)->toBe(GatewayResponse::EVENT_REFUND_FAILED)
+        ->and($refund->message)->toBe('Taler refund failed: refund unavailable');
+});
+
+test('refund exposes wallet acceptance URI and refund metadata', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-refund-uri/refund' => Http::response([
+            'taler_refund_uri' => 'taler://refund/example/order-refund-uri',
+        ], 200),
+    ]);
+
+    $refund = talerDriver()->refund(new RefundRequest(
+        gatewayTransactionId: 'order-refund-uri',
+        amount: 750,
+        currency: 'KUDOS',
+        reason: null,
+        invoiceUuid: 'invoice-1',
+        metadata: ['refund_kind' => 'partial'],
+    ));
+
+    expect($refund->isSuccessful())->toBeTrue()
+        ->and($refund->data['taler_refund_uri'])->toBe('taler://refund/example/order-refund-uri')
+        ->and($refund->data['refund_status'])->toBe('wallet_uri_returned')
+        ->and($refund->data['wallet_status'])->toBe('pending_wallet_acceptance')
+        ->and($refund->data['refund_kind'])->toBe('partial');
+});
+
+test('taler admin operations return configuration and transport failures', function () {
+    $unconfigured = talerDriver(['api_token' => '']);
+
+    expect($unconfigured->testCredentials())
+        ->toMatchArray(['ok' => false, 'status' => 'failed'])
+        ->and($unconfigured->registerWebhook())
+        ->toMatchArray(['ok' => false, 'status' => 'failed']);
+
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => function () {
+            throw new RuntimeException('credential endpoint offline');
+        },
+    ]);
+
+    expect(talerDriver()->testCredentials()['message'])
+        ->toBe('Taler credential check failed: credential endpoint offline');
+
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/webhooks' => function () {
+            throw new RuntimeException('webhook endpoint offline');
+        },
+    ]);
+
+    expect(talerDriver()->registerWebhook(['webhook_url' => 'https://api.example.test/webhook']))
+        ->toMatchArray([
+            'ok'      => false,
+            'status'  => 'failed',
+            'message' => 'Taler webhook registration failed: webhook endpoint offline',
+        ]);
+});
+
+test('registerWebhook updates an existing hook and reports provider rejection', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/webhooks'                      => Http::response([], 409),
+        'https://backend.example.taler.net/instances/testmerchant/private/webhooks/fleetbase-ledger-pay' => Http::response([], 204),
+    ]);
+
+    $updated = talerDriver()->registerWebhook(['webhook_url' => 'https://api.example.test/webhook']);
+
+    expect($updated['ok'])->toBeTrue()
+        ->and($updated['http_status'])->toBe(204);
+
+    Http::assertSent(fn ($httpRequest) => $httpRequest->method() === 'PATCH');
+
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/webhooks' => Http::response([
+            'code' => 4000,
+        ], 422),
+    ]);
+
+    $rejected = talerDriver()->registerWebhook(['webhook_url' => 'https://api.example.test/webhook']);
+
+    expect($rejected['ok'])->toBeFalse()
+        ->and($rejected['status'])->toBe('failed')
+        ->and($rejected['http_status'])->toBe(422)
+        ->and($rejected['message'])->toBe('Taler webhook registration failed.');
+});
+
+test('credential failure messages include detail fallback and safe generic guidance', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response([
+            'details' => ['field' => 'api_token'],
+        ], 401),
+    ]);
+
+    $detailed = talerDriver()->testCredentials();
+
+    expect($detailed['message'])->toContain('{"field":"api_token"}');
+
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response('not json', 400),
+    ]);
+
+    $generic = talerDriver()->testCredentials();
+
+    expect($generic['message'])->toBe('Taler credentials rejected. HTTP 400. Check the API token and Merchant Backend instance ID.')
+        ->and($generic['metadata'])->not->toHaveKey('taler_error_code');
+});
+
+test('purchase includes an optional fulfillment URL in the signed order', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders' => Http::response([
+            'order_id' => 'order-with-return-url',
+        ], 200),
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-with-return-url' => Http::response([
+            'taler_pay_uri' => 'taler://pay/order-with-return-url',
+        ], 200),
+    ]);
+
+    talerDriver()->purchase(new PurchaseRequest(
+        amount: 500,
+        currency: 'KUDOS',
+        description: 'Return URL test',
+        returnUrl: 'https://console.example.test/invoices/1',
+    ));
+
+    Http::assertSent(fn ($httpRequest) => $httpRequest->method() !== 'POST'
+        || data_get($httpRequest->data(), 'order.fulfillment_url') === 'https://console.example.test/invoices/1');
+});
+
+test('webhook and refund preserve operation-specific configuration failures', function () {
+    $driver = talerDriver(['api_token' => '']);
+
+    $webhook = $driver->handleWebhook(Request::create('/webhook', 'POST', [
+        'order_id' => 'order-1',
+    ]));
+    $refund = $driver->refund(new RefundRequest(
+        gatewayTransactionId: 'order-1',
+        amount: 100,
+        currency: 'USD',
+    ));
+
+    expect($webhook->eventType)->toBe(GatewayResponse::EVENT_PAYMENT_FAILED)
+        ->and($webhook->message)->toBe('Taler API token is not configured.')
+        ->and($refund->eventType)->toBe(GatewayResponse::EVENT_REFUND_FAILED)
+        ->and($refund->message)->toBe('Taler API token is not configured.');
+});
+
+test('webhook safely normalizes absent and malformed taler amounts', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-no-amount' => Http::response([
+            'order_status'   => 'paid',
+            'contract_terms' => [],
+        ], 200),
+        'https://backend.example.taler.net/instances/testmerchant/private/orders/order-bad-amount' => Http::response([
+            'order_status'  => 'paid',
+            'deposit_total' => 'not-an-amount',
+        ], 200),
+    ]);
+
+    $absent = talerDriver()->handleWebhook(Request::create('/webhook', 'POST', [
+        'order_id' => 'order-no-amount',
+    ]));
+    $malformed = talerDriver()->handleWebhook(Request::create('/webhook', 'POST', [
+        'order_id' => 'order-bad-amount',
+    ]));
+
+    expect($absent->isSuccessful())->toBeTrue()
+        ->and($absent->amount)->toBe(0)
+        ->and($absent->currency)->toBe('USD')
+        ->and($malformed->isSuccessful())->toBeTrue()
+        ->and($malformed->amount)->toBe(0)
+        ->and($malformed->currency)->toBe('USD');
+});

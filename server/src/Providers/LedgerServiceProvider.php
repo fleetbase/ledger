@@ -159,7 +159,11 @@ class LedgerServiceProvider extends CoreServiceProvider
         // This allows the Ledger package to be installed independently of the
         // template-builder-system branch of core-api.
         if (!class_exists(TemplateRenderService::class) || !method_exists(TemplateRenderService::class, 'registerContextType')) {
+            // Core API is a required dependency and the supported core version
+            // always provides this method; retain the guard for partial installs.
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         // IMPORTANT: The slug here MUST match the variable namespace used in template

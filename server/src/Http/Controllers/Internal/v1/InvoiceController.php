@@ -250,7 +250,7 @@ class InvoiceController extends LedgerResourceController
     /**
      * Send an invoice to the customer via email and mark it as sent.
      */
-    public function send(string $id, Request $request): InvoiceResource
+    public function send(string $id, Request $request): InvoiceResource|JsonResponse
     {
         $invoice = Invoice::where('company_uuid', session('company'))
             ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
@@ -661,7 +661,7 @@ class InvoiceController extends LedgerResourceController
      *   3. For each incoming item: update if UUID exists, create if not.
      *   4. Call calculateAmount() on each item before saving.
      */
-    protected function _syncItems(Invoice $invoice, array $items): void
+    protected function _syncItems(Invoice $invoice, mixed $items): void
     {
         if (!is_array($items)) {
             return;

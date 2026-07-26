@@ -3,6 +3,7 @@
 namespace Fleetbase\Ledger\Http\Controllers\Api\v1;
 
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Http\Resources\FleetbaseResourceCollection;
 use Fleetbase\Ledger\Http\Resources\v1\Transaction as TransactionResource;
 use Fleetbase\Ledger\Http\Resources\v1\Wallet as WalletResource;
 use Fleetbase\Ledger\Models\Transaction;
@@ -77,7 +78,7 @@ class WalletApiController extends Controller
      * Supports filtering by: type, direction, status, date_from, date_to
      * Supports pagination via limit/page.
      */
-    public function getTransactions(Request $request): AnonymousResourceCollection
+    public function getTransactions(Request $request): AnonymousResourceCollection|FleetbaseResourceCollection
     {
         $subject = $this->resolveSubject($request);
         $wallet  = $this->walletService->getOrCreateWallet($subject);

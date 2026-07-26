@@ -217,7 +217,10 @@ class RevenueLifecycleService
 
     private function reverseOrderInvoiceRevenue($order, string $previousStatus, string $currentStatus, string $reason): int
     {
-        $invoices = Invoice::withTrashed()->where('order_uuid', $order->uuid)->get();
+        $invoices = Invoice::withTrashed()
+            ->without(['customer', 'items', 'template', 'order', 'order.trackingNumber'])
+            ->where('order_uuid', $order->uuid)
+            ->get();
 
         foreach ($invoices as $invoice) {
             if ($invoice->status === 'paid') {
@@ -416,6 +419,7 @@ class RevenueLifecycleService
     private function restoreOrderInvoices($order, string $reason): void
     {
         Invoice::withTrashed()
+            ->without(['customer', 'items', 'template', 'order', 'order.trackingNumber'])
             ->where('order_uuid', $order->uuid)
             ->whereIn('status', ['void', 'voided', 'cancelled', 'canceled'])
             ->get()

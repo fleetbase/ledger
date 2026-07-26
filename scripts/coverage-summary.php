@@ -36,6 +36,25 @@ $coveredMethods    = (int) ($metrics['coveredmethods'] ?? 0);
 $classes           = (int) ($metrics['classes'] ?? 0);
 $coveredClasses    = (int) ($metrics['coveredclasses'] ?? 0);
 
+if (!isset($metrics['coveredclasses'])) {
+    $classes        = 0;
+    $coveredClasses = 0;
+
+    foreach ($project->xpath('.//class') ?: [] as $class) {
+        $classStatements        = intMetric($class, 'statements');
+        $coveredClassStatements = intMetric($class, 'coveredstatements');
+
+        if ($classStatements === 0) {
+            continue;
+        }
+
+        $classes++;
+        if ($coveredClassStatements === $classStatements) {
+            $coveredClasses++;
+        }
+    }
+}
+
 $files       = [];
 $directories = [];
 
