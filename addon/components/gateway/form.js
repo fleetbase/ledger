@@ -82,7 +82,7 @@ export default class GatewayFormComponent extends Component {
             return 'idle';
         }
 
-        return (this.connectionTestResult.success ?? this.connectionTestResult.ok) ? 'success' : 'failed';
+        return this.connectionTestResult.success ?? this.connectionTestResult.ok ? 'success' : 'failed';
     }
 
     get connectionStateTitle() {
