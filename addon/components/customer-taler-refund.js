@@ -60,7 +60,7 @@ export default class CustomerTalerRefundComponent extends Component {
             this.updateTalerUriMeta();
         } catch (error) {
             const status = error?.status ?? error?.response?.status;
-            this.error = status === 404 ? 'Refund not found. Please check the link and try again.' : (error?.message ?? 'Failed to load refund. Please try again later.');
+            this.error = status === 404 ? 'Refund not found. Please check the link and try again.' : error?.message ?? 'Failed to load refund. Please try again later.';
         }
     }
 
