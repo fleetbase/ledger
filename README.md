@@ -14,6 +14,7 @@
     <a href="https://github.com/fleetbase/ledger/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg" alt="License: AGPL-3.0-or-later" /></a>
     <a href="https://github.com/fleetbase/ledger/actions/workflows/server.yml"><img src="https://github.com/fleetbase/ledger/actions/workflows/server.yml/badge.svg" alt="PHP CI" /></a>
     <a href="https://github.com/fleetbase/ledger/actions/workflows/ember.yml"><img src="https://github.com/fleetbase/ledger/actions/workflows/ember.yml/badge.svg" alt="Ember CI" /></a>
+    <a href="https://codecov.io/gh/fleetbase/ledger"><img src="https://codecov.io/gh/fleetbase/ledger/branch/main/graph/badge.svg" alt="Coverage" /></a>
     <a href="https://packagist.org/packages/fleetbase/ledger-api"><img src="https://img.shields.io/packagist/v/fleetbase/ledger-api.svg" alt="Packagist version" /></a>
     <a href="https://www.npmjs.com/package/@fleetbase/ledger-engine"><img src="https://img.shields.io/npm/v/@fleetbase/ledger-engine.svg" alt="npm version" /></a>
     <a href="https://www.fleetbase.io/docs/ledger"><img src="https://img.shields.io/badge/docs-ledger-111827.svg" alt="Ledger documentation" /></a>

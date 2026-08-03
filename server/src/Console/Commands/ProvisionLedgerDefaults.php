@@ -48,7 +48,7 @@ class ProvisionLedgerDefaults extends Command
             return self::SUCCESS;
         }
 
-        $seeder              = new LedgerSeeder();
+        $seeder              = $this->makeLedgerSeeder();
         $accountsProvisioned = 0;
         $companyWallets      = 0;
         $userWallets         = 0;
@@ -135,5 +135,14 @@ class ProvisionLedgerDefaults extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Resolve the account seeder behind a narrow seam so command behavior can
+     * be tested without coupling tests to the seeder's database implementation.
+     */
+    protected function makeLedgerSeeder(): LedgerSeeder
+    {
+        return new LedgerSeeder();
     }
 }

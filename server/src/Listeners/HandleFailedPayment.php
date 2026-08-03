@@ -45,8 +45,10 @@ class HandleFailedPayment implements ShouldQueue
             $invoiceUuid = data_get($response->rawResponse, 'metadata.invoice_uuid');
 
             if ($invoiceUuid) {
-                Invoice::where('uuid', $invoiceUuid)
-                    ->orWhere('public_id', $invoiceUuid)
+                Invoice::where(function ($query) use ($invoiceUuid) {
+                    $query->where('uuid', $invoiceUuid)
+                        ->orWhere('public_id', $invoiceUuid);
+                })
                     ->where('status', 'pending')
                     ->update(['status' => 'overdue']);
             }

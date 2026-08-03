@@ -11,7 +11,6 @@ use Fleetbase\Ledger\Exceptions\WebhookSignatureException;
 use Fleetbase\Ledger\Models\Gateway;
 use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\PaymentGatewayManager;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -149,35 +148,26 @@ class WebhookController extends Controller
         //
         // firstOrCreate() returns the single Eloquent model. Use the model's
         // $wasRecentlyCreated property to determine if it was just inserted.
-        try {
-            $gatewayTransaction = GatewayTransaction::firstOrCreate(
-                // Unique match columns
-                [
-                    'gateway_reference_id' => $gatewayReferenceId,
-                    'type'                 => 'webhook_event',
-                    'event_type'           => $eventType,
-                ],
-                // Values to set only on creation
-                [
-                    'company_uuid'  => $gateway->company_uuid,
-                    'gateway_uuid'  => $gateway->uuid,
-                    'amount'        => $response->amount,
-                    'currency'      => $response->currency,
-                    'status'        => $response->status,
-                    'message'       => $response->message,
-                    'raw_response'  => $response->rawResponse,
-                ]
-            );
-        } catch (UniqueConstraintViolationException $e) {
-            // Extremely rare race condition: two concurrent requests both passed
-            // the firstOrCreate check and one lost. Treat as already-processed.
-            Log::channel('ledger')->info("Webhook duplicate race condition, skipping. [{$driver}]", [
+        // Eloquent's firstOrCreate() catches a concurrent unique-key violation,
+        // then retrieves and returns the row inserted by the winning request.
+        $gatewayTransaction = GatewayTransaction::firstOrCreate(
+            // Unique match columns
+            [
                 'gateway_reference_id' => $gatewayReferenceId,
+                'type'                 => 'webhook_event',
                 'event_type'           => $eventType,
-            ]);
-
-            return response()->json(['message' => 'Already processed.'], 200);
-        }
+            ],
+            // Values to set only on creation
+            [
+                'company_uuid'  => $gateway->company_uuid,
+                'gateway_uuid'  => $gateway->uuid,
+                'amount'        => $response->amount,
+                'currency'      => $response->currency,
+                'status'        => $response->status,
+                'message'       => $response->message,
+                'raw_response'  => $response->rawResponse,
+            ]
+        );
 
         if (!$gatewayTransaction->wasRecentlyCreated) {
             // Record already existed — either a duplicate delivery or a retry.
