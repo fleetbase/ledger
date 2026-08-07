@@ -329,13 +329,6 @@ class StripeDriver extends AbstractGatewayDriver
                     ? $object->payment_intent
                     : ($object->payment_intent->id ?? $gatewayTransactionId);
             }
-            // Amount for checkout sessions is in amount_total (cents)
-            if ($amount === null && isset($object->amount_total)) {
-                $amount = $object->amount_total;
-            }
-            if ($currency === null && isset($object->currency)) {
-                $currency = strtoupper($object->currency);
-            }
         }
 
         $this->logInfo('Webhook received', [

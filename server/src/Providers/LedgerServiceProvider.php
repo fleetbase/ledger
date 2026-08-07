@@ -13,6 +13,7 @@ use Fleetbase\Ledger\Services\InvoiceService;
 use Fleetbase\Ledger\Services\LedgerService;
 use Fleetbase\Ledger\Services\PaymentService;
 use Fleetbase\Ledger\Services\RevenueLifecycleService;
+use Fleetbase\Ledger\Services\TalerRefundVerificationService;
 use Fleetbase\Ledger\Services\WalletService;
 use Fleetbase\Providers\CoreServiceProvider;
 use Fleetbase\Services\TemplateRenderService;
@@ -67,6 +68,7 @@ class LedgerServiceProvider extends CoreServiceProvider
         $this->app->singleton(WalletService::class);
         $this->app->singleton(InvoiceService::class);
         $this->app->singleton(RevenueLifecycleService::class);
+        $this->app->singleton(TalerRefundVerificationService::class);
 
         // Payment gateway system
         // The PaymentGatewayManager is bound as a singleton and also aliased
@@ -115,8 +117,16 @@ class LedgerServiceProvider extends CoreServiceProvider
                 \Fleetbase\Ledger\Console\Commands\UpdateOverdueInvoices::class,
                 \Fleetbase\Ledger\Console\Commands\RepairRevenueLifecycle::class,
                 \Fleetbase\Ledger\Console\Commands\VerifyTalerSettlements::class,
+                \Fleetbase\Ledger\Console\Commands\VerifyTalerRefunds::class,
                 \Fleetbase\Ledger\Console\Commands\TalerSandboxE2E::class,
             ]);
+
+            $this->scheduleCommands(function ($schedule) {
+                $schedule->command('ledger:taler:verify-refunds')
+                    ->everyFifteenMinutes()
+                    ->name('ledger-taler-verify-refunds')
+                    ->withoutOverlapping();
+            });
         }
     }
 
@@ -149,7 +159,11 @@ class LedgerServiceProvider extends CoreServiceProvider
         // This allows the Ledger package to be installed independently of the
         // template-builder-system branch of core-api.
         if (!class_exists(TemplateRenderService::class) || !method_exists(TemplateRenderService::class, 'registerContextType')) {
+            // Core API is a required dependency and the supported core version
+            // always provides this method; retain the guard for partial installs.
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         // IMPORTANT: The slug here MUST match the variable namespace used in template

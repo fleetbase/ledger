@@ -43,6 +43,7 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
             $router->get('invoices/{public_id}', 'PublicInvoiceController@show');
             $router->get('invoices/{public_id}/gateways', 'PublicInvoiceController@gateways');
             $router->post('invoices/{public_id}/pay', 'PublicInvoiceController@pay');
+            $router->get('refunds/{refund_id}', 'PublicInvoiceController@refund');
         });
 
         /*
@@ -97,6 +98,8 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                         $router->post('{id}/record-payment', $controller('recordPayment'));
                                         $router->get('{id}/refund-options', $controller('refundOptions'));
                                         $router->post('{id}/refund', $controller('refund'));
+                                        $router->post('{id}/refunds/{gatewayTransactionId}/send-refund-uri', $controller('sendRefundUri'));
+                                        $router->post('{id}/refunds/{gatewayTransactionId}/verify-status', $controller('verifyRefundStatus'));
                                         $router->get('{id}/transactions', $controller('transactions'));
                                         $router->post('{id}/mark-as-sent', $controller('markAsSent'));
                                         $router->post('{id}/send', $controller('send'));
@@ -144,6 +147,7 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                                 // to avoid being swallowed by the /{id} find route.
                                 $router->get('gateways/drivers', 'GatewayController@drivers');
                                 $router->get('gateways/summary', 'GatewayController@summary');
+                                $router->post('gateways/test-credentials', 'GatewayController@testDraftCredentials');
 
                                 $router->fleetbaseRoutes(
                                     'gateways',

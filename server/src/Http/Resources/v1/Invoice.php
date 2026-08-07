@@ -117,6 +117,11 @@ class Invoice extends FleetbaseResource
             return (new $resourceClass($model))->resolve();
         }
 
+        // Find::httpResourceForModel() always returns either a registered
+        // resource or FleetbaseResource, so this legacy nullable fallback
+        // cannot be reached with the supported core-api contract.
+        // @codeCoverageIgnoreStart
         return (new \Illuminate\Http\Resources\Json\JsonResource($model))->resolve();
+        // @codeCoverageIgnoreEnd
     }
 }

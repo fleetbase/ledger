@@ -12,6 +12,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
     @service intl;
 
     @tracked overlay = null;
+    @tracked refundRows = [];
 
     /**
      * Tab navigation for the details panel.
@@ -42,8 +43,8 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
             });
         }
 
-        // Edit — individual button, available for all statuses except paid / void / cancelled.
-        if (!['paid', 'void', 'cancelled'].includes(invoice?.status)) {
+        // Edit — individual button, available for open invoice statuses.
+        if (!['paid', 'refunded', 'refund_pending', 'partial_refund_pending', 'void', 'cancelled'].includes(invoice?.status)) {
             buttons.push({
                 label: 'Edit',
                 icon: 'pencil',
@@ -74,6 +75,14 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
             });
         }
 
+        if (this.hasRefunds) {
+            dropdownItems.push({
+                text: 'View Refunds',
+                icon: 'receipt',
+                fn: () => this.viewRefunds(),
+            });
+        }
+
         // Refund - paid or partially refunded invoices with remaining paid funds.
         if (this.canIssueRefund) {
             dropdownItems.push({
@@ -85,7 +94,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         }
 
         // Void — for any non-terminal status.
-        if (!['paid', 'void', 'cancelled'].includes(invoice?.status)) {
+        if (!['paid', 'refunded', 'refund_pending', 'partial_refund_pending', 'void', 'cancelled'].includes(invoice?.status)) {
             dropdownItems.push({
                 text: this.intl.t('invoice.actions.void'),
                 icon: 'ban',
@@ -129,7 +138,11 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
     get canIssueRefund() {
         const status = this.model?.status;
 
-        return ['paid', 'partial', 'refunded'].includes(status) && this.remainingRefundableAmount > 0;
+        return ['paid', 'partial', 'partial_refund_pending', 'refund_pending'].includes(status) && this.remainingRefundableAmount > 0;
+    }
+
+    get hasRefunds() {
+        return Boolean(this.refundRows.length > 0 || this.model?.meta?.last_taler_refund_uri || this.refundedAmount > 0);
     }
 
     @action async sendInvoice() {
@@ -205,7 +218,8 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         const invoice = this.model;
 
         try {
-            const result = await this.fetch.get(`invoices/${invoice.id}/refund-options`, {}, { namespace: 'ledger/int/v1' });
+            const result = await this.loadRefundOptions(invoice);
+            this.refundRows = result.refunds ?? [];
             const refundOptions = (result.options ?? []).map((option) => {
                 const gatewayName = option.gateway?.name ?? option.gateway?.driver ?? 'Gateway';
                 const driver = option.gateway?.driver ? ` (${option.gateway.driver})` : '';
@@ -276,13 +290,17 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
                 try {
                     const response = await this.refundInvoice(invoice, options);
                     const responseData = response.data ?? {};
-                    const refundUrl = responseData.taler_refund_uri ?? responseData.refund_url;
+                    const refundUrl = response.refund?.refund_url ?? responseData.refund_url ?? responseData.taler_refund_uri;
 
                     this.notifications.success('Refund issued successfully.');
                     await invoice.reload();
                     this.hostRouter.refresh();
                     confirmationModal.done();
                     refundModal.done();
+
+                    if (response.refund) {
+                        this.refundRows = [response.refund, ...this.refundRows.filter((refund) => refund.id !== response.refund.id)];
+                    }
 
                     if (refundUrl) {
                         this.showRefundResult(response, refundUrl);
@@ -307,17 +325,96 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         );
     }
 
+    loadRefundOptions(invoice) {
+        return this.fetch.get(`invoices/${invoice.id}/refund-options`, {}, { namespace: 'ledger/int/v1' });
+    }
+
+    @action async viewRefunds() {
+        const invoice = this.model;
+
+        try {
+            const result = await this.loadRefundOptions(invoice);
+            this.refundRows = result.refunds ?? [];
+
+            this.modalsManager.show('modals/refund-history', {
+                title: `Refunds ${invoice.number}`,
+                acceptButtonText: 'Done',
+                acceptButtonIcon: 'check',
+                refunds: this.refundRows,
+                customerEmail: invoice.customerEmail,
+                sendRefundUri: (refund, email) => this.sendRefundUri(invoice, refund, email),
+                verifyRefundStatus: (refund) => this.verifyRefundStatus(invoice, refund),
+                confirm: (modal) => modal.done(),
+            });
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
     showRefundResult(response, refundUrl) {
         this.modalsManager.show('modals/refund-result', {
             title: 'Refund Issued',
             acceptButtonText: 'Done',
             acceptButtonIcon: 'check',
             refundUrl,
+            talerRefundUri: response.refund?.taler_refund_uri ?? response.data?.taler_refund_uri,
             refundStatus: response.data?.refund_status ?? response.status,
             walletStatus: response.data?.wallet_status,
             gatewayTransactionId: response.gateway_transaction_id,
+            refund: response.refund ?? { id: response.gateway_transaction_id },
+            customerEmail: this.model?.customerEmail,
+            sendRefundUri: (refund, email) => this.sendRefundUri(this.model, refund, email),
             confirm: (modal) => modal.done(),
         });
+    }
+
+    async sendRefundUri(invoice, refund, email) {
+        const refundId = refund?.id ?? refund?.uuid ?? refund?.gateway_transaction_id;
+
+        if (!refundId) {
+            this.notifications.warning('Unable to resolve the refund transaction.');
+            return;
+        }
+
+        try {
+            const response = await this.fetch.post(
+                `invoices/${invoice.id}/refunds/${refundId}/send-refund-uri`,
+                {
+                    email: email || null,
+                },
+                { namespace: 'ledger/int/v1' }
+            );
+
+            this.notifications.success(response?.message ?? 'Refund URI sent to customer.');
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    async verifyRefundStatus(invoice, refund) {
+        const refundId = refund?.id ?? refund?.uuid ?? refund?.gateway_transaction_id;
+
+        if (!refundId) {
+            this.notifications.warning('Unable to resolve the refund transaction.');
+            return;
+        }
+
+        try {
+            const response = await this.fetch.post(`invoices/${invoice.id}/refunds/${refundId}/verify-status`, {}, { namespace: 'ledger/int/v1' });
+
+            if (response?.refund) {
+                this.refundRows = [response.refund, ...this.refundRows.filter((row) => row.id !== response.refund.id)];
+            }
+
+            if (response?.invoice) {
+                await invoice.reload();
+                this.hostRouter.refresh();
+            }
+
+            this.notifications.success(response?.result?.message ?? 'Refund status verified.');
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
     }
 
     @action async voidInvoice() {

@@ -206,8 +206,40 @@ class GatewayController extends LedgerResourceController
             'successful'  => (bool) ($result['ok'] ?? false),
             'message'     => $result['message'] ?? null,
             'http_status' => $result['http_status'] ?? null,
+            'metadata'    => $result['metadata'] ?? null,
             'checked_at'  => now()->toISOString(),
         ]);
+
+        return response()->json($result, ($result['ok'] ?? false) ? 200 : 422);
+    }
+
+    public function testDraftCredentials(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'driver'      => ['required', 'string'],
+            'environment' => ['nullable', 'string', 'in:sandbox,live'],
+            'config'      => ['required', 'array'],
+        ]);
+
+        try {
+            $driver = app(\Fleetbase\Ledger\PaymentGatewayManager::class)
+                ->driver($validated['driver'])
+                ->initialize($validated['config'], ($validated['environment'] ?? 'sandbox') === 'sandbox');
+        } catch (\Throwable) {
+            return response()->json([
+                'status'  => 'unsupported',
+                'message' => "Gateway driver [{$validated['driver']}] is not available.",
+            ], 422);
+        }
+
+        if (!method_exists($driver, 'testCredentials')) {
+            return response()->json([
+                'status'  => 'unsupported',
+                'message' => "Gateway driver [{$validated['driver']}] does not support credential diagnostics.",
+            ], 422);
+        }
+
+        $result = $this->sanitizeProviderResult($driver->testCredentials());
 
         return response()->json($result, ($result['ok'] ?? false) ? 200 : 422);
     }

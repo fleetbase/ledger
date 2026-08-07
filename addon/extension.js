@@ -84,6 +84,23 @@ export default {
             })
         );
 
+        // ── Public GNU Taler refund handoff ──────────────────────────────────
+        // URL pattern: /~/taler-refund?id=<refund-public_id-or-uuid>
+        menuService.registerMenuItem(
+            'auth:login',
+            new MenuItem({
+                title: 'Taler Refund',
+                slug: 'taler-refund',
+                route: 'virtual',
+                type: 'link',
+                wrapperClass: 'hidden',
+                component: new ExtensionComponent('@fleetbase/ledger-engine', 'customer-taler-refund'),
+                onClick: (menuItem) => {
+                    universe.transitionMenuItem('virtual', menuItem);
+                },
+            })
+        );
+
         // ── Fleet-Ops order details tab: Invoice ──────────────────────────────
         // Injects an "Invoice" tab into the Fleet-Ops order details panel.
         // The tab renders the order-invoice component which fetches and displays

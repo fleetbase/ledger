@@ -10,12 +10,16 @@ use Fleetbase\Ledger\Models\GatewayTransaction;
 use Fleetbase\Ledger\Models\Invoice;
 use Fleetbase\Ledger\Models\InvoiceItem;
 use Fleetbase\Ledger\Models\Transaction;
+use Fleetbase\Ledger\Notifications\RefundUriAvailable;
 use Fleetbase\Ledger\Services\InvoiceService;
 use Fleetbase\Ledger\Services\PaymentService;
+use Fleetbase\Ledger\Services\TalerRefundVerificationService;
 use Fleetbase\Services\TemplateRenderService;
+use Fleetbase\Support\Utils;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 class InvoiceController extends LedgerResourceController
@@ -166,6 +170,7 @@ class InvoiceController extends LedgerResourceController
                 'remaining_refundable_amount' => $this->invoiceRemainingRefundableAmount($invoice),
             ],
             'options' => $options,
+            'refunds' => $this->refundGatewayTransactions($invoice),
         ]);
     }
 
@@ -223,6 +228,7 @@ class InvoiceController extends LedgerResourceController
             'message'                => $response->message,
             'data'                   => $response->data,
             'refund_kind'            => $refundKind,
+            'refund'                 => $this->latestRefundGatewayTransaction($invoice, $response->gatewayTransactionId),
             'invoice'                => (new InvoiceResource($invoice->fresh(['customer', 'items', 'template'])))->resolve(),
         ], $response->isSuccessful() ? 200 : 422);
     }
@@ -244,7 +250,7 @@ class InvoiceController extends LedgerResourceController
     /**
      * Send an invoice to the customer via email and mark it as sent.
      */
-    public function send(string $id, Request $request): InvoiceResource
+    public function send(string $id, Request $request): InvoiceResource|JsonResponse
     {
         $invoice = Invoice::where('company_uuid', session('company'))
             ->where(fn ($q) => $q->where('uuid', $id)->orWhere('public_id', $id))
@@ -258,6 +264,56 @@ class InvoiceController extends LedgerResourceController
         }
 
         return new InvoiceResource($invoice->load(['customer', 'items', 'template']));
+    }
+
+    /**
+     * Email a customer-facing refund URI for a gateway refund.
+     */
+    public function sendRefundUri(string $id, string $gatewayTransactionId, Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'nullable|email',
+        ]);
+
+        $invoice = $this->resolveInvoice($id);
+        $refund  = $this->resolveRefundGatewayTransaction($invoice, $gatewayTransactionId);
+        $uri     = $this->refundUri($refund);
+
+        if (!$uri) {
+            return response()->json(['error' => 'This refund does not have a customer refund URI.'], 422);
+        }
+
+        $email = $request->input('email') ?: $this->customerEmail($invoice);
+
+        if (!$email) {
+            return response()->json(['error' => 'Invoice customer does not have a valid email address.'], 422);
+        }
+
+        Notification::route('mail', $email)->notify(new RefundUriAvailable($invoice, $refund, $uri));
+
+        return response()->json([
+            'ok'      => true,
+            'message' => 'Refund URI sent to customer.',
+            'sent_to' => $email,
+            'refund'  => $this->serializeRefundGatewayTransaction($refund),
+        ]);
+    }
+
+    /**
+     * Manually verify whether a Taler refund has been accepted by the wallet.
+     */
+    public function verifyRefundStatus(string $id, string $gatewayTransactionId, TalerRefundVerificationService $verifier): JsonResponse
+    {
+        $invoice = $this->resolveInvoice($id);
+        $refund  = $this->resolveRefundGatewayTransaction($invoice, $gatewayTransactionId);
+        $result  = $verifier->verifyRefund($refund);
+
+        return response()->json([
+            'ok'      => ($result['status'] ?? null) !== 'error',
+            'result'  => $result,
+            'refund'  => $this->serializeRefundGatewayTransaction($refund->fresh(['gateway'])),
+            'invoice' => (new InvoiceResource($invoice->fresh(['customer', 'items', 'template'])))->resolve(),
+        ], ($result['status'] ?? null) === 'error' ? 422 : 200);
     }
 
     /**
@@ -358,9 +414,153 @@ class InvoiceController extends LedgerResourceController
         return max(0, (int) $invoice->amount_paid - $this->invoiceRefundedAmount($invoice));
     }
 
+    private function refundGatewayTransactions(Invoice $invoice): array
+    {
+        $lastRefundUuid       = data_get($invoice->meta, 'last_refund_gateway_transaction_uuid');
+        $paymentReferences    = $this->invoicePaymentReferences($invoice);
+        $coreRefundReferences = Transaction::where('company_uuid', $invoice->company_uuid)
+            ->where('context_uuid', $invoice->uuid)
+            ->where('type', 'gateway_refund')
+            ->whereNotNull('reference')
+            ->pluck('reference')
+            ->filter()
+            ->values();
+
+        return GatewayTransaction::query()
+            ->with('gateway')
+            ->where('company_uuid', $invoice->company_uuid)
+            ->where('type', 'refund')
+            ->where(function ($query) use ($invoice, $lastRefundUuid, $paymentReferences, $coreRefundReferences) {
+                $query->where('raw_response->invoice_uuid', $invoice->uuid)
+                    ->orWhere('raw_response->data->invoice_uuid', $invoice->uuid)
+                    ->orWhere('raw_response->metadata->invoice_uuid', $invoice->uuid);
+
+                if ($lastRefundUuid) {
+                    $query->orWhere('uuid', $lastRefundUuid);
+                }
+
+                if ($coreRefundReferences->isNotEmpty()) {
+                    $query->orWhereIn('uuid', $coreRefundReferences->all())
+                        ->orWhereIn('public_id', $coreRefundReferences->all())
+                        ->orWhereIn('gateway_reference_id', $coreRefundReferences->all());
+                }
+
+                if ($paymentReferences->isNotEmpty()) {
+                    $query->orWhereIn('raw_response->original_gateway_reference_id', $paymentReferences->all())
+                        ->orWhereIn('raw_response->order_id', $paymentReferences->all())
+                        ->orWhereIn('raw_response->data->order_id', $paymentReferences->all());
+                }
+            })
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (GatewayTransaction $transaction) => $this->serializeRefundGatewayTransaction($transaction))
+            ->values()
+            ->all();
+    }
+
+    private function resolveRefundGatewayTransaction(Invoice $invoice, string $gatewayTransactionId): GatewayTransaction
+    {
+        return GatewayTransaction::query()
+            ->with('gateway')
+            ->where('company_uuid', $invoice->company_uuid)
+            ->where('type', 'refund')
+            ->where(function ($query) use ($gatewayTransactionId) {
+                $query->where('uuid', $gatewayTransactionId)
+                    ->orWhere('public_id', $gatewayTransactionId)
+                    ->orWhere('gateway_reference_id', $gatewayTransactionId)
+                    ->orWhere('raw_response->original_gateway_reference_id', $gatewayTransactionId);
+            })
+            ->where(function ($query) use ($invoice) {
+                $query->where('raw_response->invoice_uuid', $invoice->uuid)
+                    ->orWhere('raw_response->data->invoice_uuid', $invoice->uuid)
+                    ->orWhere('raw_response->metadata->invoice_uuid', $invoice->uuid);
+            })
+            ->firstOrFail();
+    }
+
+    private function latestRefundGatewayTransaction(Invoice $invoice, ?string $gatewayReferenceId = null): ?array
+    {
+        $transaction = GatewayTransaction::query()
+            ->with('gateway')
+            ->where('company_uuid', $invoice->company_uuid)
+            ->where('type', 'refund')
+            ->where(function ($query) use ($invoice) {
+                $query->where('raw_response->invoice_uuid', $invoice->uuid)
+                    ->orWhere('raw_response->data->invoice_uuid', $invoice->uuid)
+                    ->orWhere('raw_response->metadata->invoice_uuid', $invoice->uuid);
+            })
+            ->when($gatewayReferenceId, function ($query) use ($gatewayReferenceId) {
+                $query->where(function ($q) use ($gatewayReferenceId) {
+                    $q->where('gateway_reference_id', $gatewayReferenceId)
+                        ->orWhere('raw_response->original_gateway_reference_id', $gatewayReferenceId);
+                });
+            })
+            ->orderByDesc('created_at')
+            ->first();
+
+        return $transaction ? $this->serializeRefundGatewayTransaction($transaction) : null;
+    }
+
+    private function serializeRefundGatewayTransaction(GatewayTransaction $transaction): array
+    {
+        $refundUri  = $this->refundUri($transaction);
+        $handoffUrl = $refundUri ? $this->refundHandoffUrl($transaction) : null;
+
+        return [
+            'id'                     => $transaction->public_id ?? $transaction->uuid,
+            'uuid'                   => $transaction->uuid,
+            'gateway_transaction_id' => $transaction->gateway_reference_id,
+            'amount'                 => (int) $transaction->amount,
+            'currency'               => $transaction->currency,
+            'status'                 => $transaction->status,
+            'refund_status'          => $transaction->refund_status ?? data_get($transaction->raw_response, 'data.refund_status'),
+            'wallet_status'          => data_get($transaction->raw_response, 'data.wallet_status'),
+            'refund_url'             => $handoffUrl,
+            'refund_handoff_url'     => $handoffUrl,
+            'taler_refund_uri'       => $refundUri,
+            'created_at'             => optional($transaction->created_at)->toISOString(),
+            'processed_at'           => optional($transaction->processed_at)->toISOString(),
+            'refund_accepted_at'     => optional($transaction->refund_accepted_at)->toISOString(),
+            'refund_expires_at'      => optional($transaction->refund_expires_at)->toISOString(),
+            'gateway'                => $transaction->gateway ? [
+                'id'        => $transaction->gateway->public_id ?? $transaction->gateway->uuid,
+                'uuid'      => $transaction->gateway->uuid,
+                'public_id' => $transaction->gateway->public_id,
+                'name'      => $transaction->gateway->name,
+                'driver'    => $transaction->gateway->driver,
+            ] : null,
+        ];
+    }
+
+    private function refundUri(GatewayTransaction $transaction): ?string
+    {
+        return data_get($transaction->raw_response, 'data.taler_refund_uri')
+            ?: data_get($transaction->raw_response, 'data.refund_url')
+            ?: data_get($transaction->raw_response, 'taler_refund_uri')
+            ?: data_get($transaction->raw_response, 'refund_url');
+    }
+
+    private function refundHandoffUrl(GatewayTransaction $transaction): string
+    {
+        return Utils::consoleUrl('~/taler-refund', [
+            'id' => $transaction->public_id ?? $transaction->uuid,
+        ]);
+    }
+
+    private function customerEmail(Invoice $invoice): ?string
+    {
+        $invoice->loadMissing('customer');
+        $customer = $invoice->customer;
+
+        return $customer?->email
+            ?? $customer?->contact_email
+            ?? $customer?->billing_email
+            ?? null;
+    }
+
     private function refundableGatewayTransactions(Invoice $invoice): array
     {
-        if (in_array($invoice->status, ['draft', 'void', 'cancelled'], true)) {
+        if (in_array($invoice->status, ['draft', 'void', 'cancelled', 'refunded'], true)) {
             return [];
         }
 
@@ -370,13 +570,7 @@ class InvoiceController extends LedgerResourceController
             return [];
         }
 
-        $paymentReferences = Transaction::where('company_uuid', $invoice->company_uuid)
-            ->where('context_uuid', $invoice->uuid)
-            ->where('type', 'invoice_payment')
-            ->whereNotNull('reference')
-            ->pluck('reference')
-            ->filter()
-            ->values();
+        $paymentReferences = $this->invoicePaymentReferences($invoice);
 
         $gatewayTransactions = GatewayTransaction::query()
             ->with('gateway')
@@ -402,9 +596,14 @@ class InvoiceController extends LedgerResourceController
                 $paidAmount     = (int) ($transaction->amount ?: $invoice->amount_paid);
                 $refundedAmount = (int) GatewayTransaction::where('company_uuid', $invoice->company_uuid)
                     ->where('gateway_uuid', $transaction->gateway_uuid)
-                    ->where('gateway_reference_id', $transaction->gateway_reference_id)
                     ->where('type', 'refund')
                     ->whereNotIn('status', ['failed'])
+                    ->where(function ($query) use ($transaction) {
+                        $query->where('gateway_reference_id', $transaction->gateway_reference_id)
+                            ->orWhere('raw_response->original_gateway_reference_id', $transaction->gateway_reference_id)
+                            ->orWhere('raw_response->order_id', $transaction->gateway_reference_id)
+                            ->orWhere('raw_response->data->order_id', $transaction->gateway_reference_id);
+                    })
                     ->sum('amount');
                 $remainingPaymentAmount = max(0, $paidAmount - $refundedAmount);
                 $refundableAmount       = min($remainingInvoiceAmount, $remainingPaymentAmount);
@@ -438,6 +637,17 @@ class InvoiceController extends LedgerResourceController
             ->all();
     }
 
+    private function invoicePaymentReferences(Invoice $invoice)
+    {
+        return Transaction::where('company_uuid', $invoice->company_uuid)
+            ->where('context_uuid', $invoice->uuid)
+            ->where('type', 'invoice_payment')
+            ->whereNotNull('reference')
+            ->pluck('reference')
+            ->filter()
+            ->values();
+    }
+
     // -------------------------------------------------------------------------
     // Item sync helper
     // -------------------------------------------------------------------------
@@ -451,7 +661,7 @@ class InvoiceController extends LedgerResourceController
      *   3. For each incoming item: update if UUID exists, create if not.
      *   4. Call calculateAmount() on each item before saving.
      */
-    protected function _syncItems(Invoice $invoice, array $items): void
+    protected function _syncItems(Invoice $invoice, mixed $items): void
     {
         if (!is_array($items)) {
             return;

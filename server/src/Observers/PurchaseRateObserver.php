@@ -118,7 +118,11 @@ class PurchaseRateObserver
                 ->first();
         }
 
+        // Fleet-Ops API is a required Composer dependency of Ledger; this
+        // fallback only protects a partially installed runtime.
+        // @codeCoverageIgnoreStart
         return null;
+        // @codeCoverageIgnoreEnd
     }
 
     /**

@@ -30,7 +30,7 @@ use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
  * Configuration (stored encrypted in ledger_gateways.config):
  *   - backend_url   : Base URL of the Taler Merchant Backend (e.g. https://backend.demo.taler.net/)
  *   - instance_id   : Merchant instance ID (defaults to "default")
- *   - api_token     : Bearer token for authenticating against the private API
+ *   - api_token     : Bearer token body for authenticating against the private API
  *
  * Amount encoding:
  *   Fleetbase stores all monetary values as integers in the smallest currency
@@ -118,8 +118,8 @@ class TalerDriver extends AbstractGatewayDriver
                 'label'       => 'API Token',
                 'type'        => 'password',
                 'required'    => true,
-                'hint'        => 'Bearer token for authenticating against the private Merchant API.',
-                'description' => 'Bearer token for authenticating against the private Merchant API.',
+                'hint'        => 'Paste the instance token as secret-token:... or Bearer secret-token:.... The token must belong to the configured Merchant Backend instance.',
+                'description' => 'Private Merchant API token. Accepted formats: secret-token:... or Bearer secret-token:....',
             ],
         ];
     }
@@ -393,9 +393,16 @@ class TalerDriver extends AbstractGatewayDriver
         $metadata      = $contractTerms['metadata'] ?? [];
         $invoiceUuid   = $contractTerms['invoice_uuid'] ?? $metadata['invoice_uuid'] ?? null;
 
-        // Parse the deposit_total amount back to Fleetbase integer cents.
-        $depositTotal             = $data['deposit_total'] ?? null;
-        [$currency, $amountCents] = $this->fromTalerAmount($depositTotal);
+        // Prefer the exchange deposit total when available, but fall back to
+        // the paid order amount. Some Merchant Backend responses report
+        // deposit_total as KUDOS:0 while the paid contract_terms.amount is the
+        // customer-facing amount Ledger must apply to the invoice.
+        $paidAmount               = $data['deposit_total'] ?? $contractTerms['amount'] ?? null;
+        [$currency, $amountCents] = $this->fromTalerAmount($paidAmount);
+
+        if (($amountCents ?? 0) <= 0 && !empty($contractTerms['amount'])) {
+            [$currency, $amountCents] = $this->fromTalerAmount($contractTerms['amount']);
+        }
 
         $this->logInfo('Webhook verified: payment confirmed', [
             'order_id'     => $orderId,
@@ -537,9 +544,10 @@ class TalerDriver extends AbstractGatewayDriver
     {
         if ($configurationFailure = $this->configurationFailureResponse()) {
             return [
-                'ok'      => false,
-                'status'  => 'failed',
-                'message' => $configurationFailure->message,
+                'ok'       => false,
+                'status'   => 'failed',
+                'message'  => $configurationFailure->message,
+                'metadata' => $this->credentialMetadata(),
             ];
         }
 
@@ -549,18 +557,22 @@ class TalerDriver extends AbstractGatewayDriver
             $response = $this->privateRequest('GET', "instances/{$instanceId}/private/orders");
         } catch (\Throwable $e) {
             return [
-                'ok'      => false,
-                'status'  => 'failed',
-                'message' => 'Taler credential check failed: ' . $e->getMessage(),
+                'ok'       => false,
+                'status'   => 'failed',
+                'message'  => 'Taler credential check failed: ' . $e->getMessage(),
+                'metadata' => $this->credentialMetadata(),
             ];
         }
 
+        $successful = $response->successful();
+        $metadata   = $this->credentialMetadata($response);
+
         return [
-            'ok'          => $response->successful(),
-            'status'      => $response->successful() ? 'ok' : 'failed',
+            'ok'          => $successful,
+            'status'      => $successful ? 'ok' : 'failed',
             'http_status' => $response->status(),
-            'message'     => $response->successful() ? 'Taler credentials accepted.' : 'Taler credentials rejected.',
-            'raw_response'=> $response->json() ?? [],
+            'message'     => $successful ? 'Taler credentials accepted.' : $this->credentialFailureMessage($response, $metadata),
+            'metadata'    => $metadata,
             'checked_at'  => now()->toISOString(),
         ];
     }
@@ -607,8 +619,8 @@ class TalerDriver extends AbstractGatewayDriver
             'http_method'     => 'POST',
             'header_template' => 'Content-Type: application/json',
             'body_template'   => json_encode([
-                'order_id'     => '${ORDER_ID}',
-                'event_type'   => '${EVENT_TYPE}',
+                'order_id'     => '{{ order_id }}',
+                'event_type'   => '{{ webhook_type }}',
                 'company_uuid' => $companyUuid,
                 'gateway_id'   => $gatewayId,
                 'gateway_uuid' => $gatewayId,
@@ -641,16 +653,30 @@ class TalerDriver extends AbstractGatewayDriver
         ];
     }
 
-    public function fetchOrderStatus(string $orderId): array
+    public function fetchOrderStatus(string $orderId, array $query = []): array
     {
         $instanceId = $this->instanceId();
-        $response   = $this->privateRequest('GET', "instances/{$instanceId}/private/orders/{$orderId}");
+        $response   = $this->privateRequest('GET', "instances/{$instanceId}/private/orders/{$orderId}", $query);
 
         return [
             'ok'          => $response->successful(),
             'http_status' => $response->status(),
             'data'        => $response->json() ?? [],
         ];
+    }
+
+    public function fetchRefundStatus(string $orderId, ?int $refundAmount = null, ?string $currency = null, array $query = []): array
+    {
+        $params = array_merge([
+            'await_refund_obtained' => 'yes',
+            'timeout_ms'            => 3000,
+        ], $query);
+
+        if ($refundAmount !== null && $currency) {
+            $params['refund'] = $this->toTalerAmount($refundAmount, $currency);
+        }
+
+        return $this->fetchOrderStatus($orderId, $params);
     }
 
     // -------------------------------------------------------------------------
@@ -751,7 +777,7 @@ class TalerDriver extends AbstractGatewayDriver
             'POST'   => $pending->post($url, $payload),
             'PATCH'  => $pending->patch($url, $payload),
             'DELETE' => $pending->delete($url, $payload),
-            default  => $pending->get($url),
+            default  => $pending->get($url, $payload),
         };
     }
 
@@ -779,7 +805,63 @@ class TalerDriver extends AbstractGatewayDriver
 
     private function apiToken(): string
     {
-        return preg_replace('/^Bearer\s+/i', '', trim((string) $this->config('api_token', '')));
+        return trim(preg_replace('/^Bearer\s+/i', '', trim((string) $this->config('api_token', ''))));
+    }
+
+    private function credentialMetadata(?HttpResponse $response = null): array
+    {
+        $metadata = [
+            'backend_url' => $this->backendUrl(),
+            'instance_id' => $this->instanceId(),
+        ];
+
+        if ($response) {
+            $metadata['http_status'] = $response->status();
+            $metadata                = array_merge($metadata, $this->talerErrorMetadata($response));
+        }
+
+        return array_filter($metadata, fn ($value) => $value !== null && $value !== '');
+    }
+
+    private function talerErrorMetadata(HttpResponse $response): array
+    {
+        $body = $response->json();
+
+        if (!is_array($body)) {
+            return [];
+        }
+
+        $details = $body['details'] ?? $body['detail'] ?? null;
+
+        if (is_array($details)) {
+            $details = json_encode($details);
+        }
+
+        return array_filter([
+            'taler_error_code' => $body['code'] ?? $body['error_code'] ?? null,
+            'hint'             => $body['hint'] ?? null,
+            'detail'           => $details,
+            'request_uid'      => $body['request_uid'] ?? null,
+        ], fn ($value) => $value !== null && $value !== '');
+    }
+
+    private function credentialFailureMessage(HttpResponse $response, array $metadata): string
+    {
+        $message = 'Taler credentials rejected.';
+
+        if ($response->status()) {
+            $message .= ' HTTP ' . $response->status() . '.';
+        }
+
+        if (!empty($metadata['hint'])) {
+            return $message . ' ' . $metadata['hint'];
+        }
+
+        if (!empty($metadata['detail'])) {
+            return $message . ' ' . $metadata['detail'];
+        }
+
+        return $message . ' Check the API token and Merchant Backend instance ID.';
     }
 
     private function qrImageForUri(string $uri): ?string

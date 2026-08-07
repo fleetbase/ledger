@@ -416,10 +416,6 @@ class LedgerService
         foreach ($journals as $journal) {
             $date = $journal->entry_date instanceof \DateTimeInterface ? $journal->entry_date->format('Y-m-d') : (string) $journal->entry_date;
 
-            if (!$daily->has($date)) {
-                $daily->put($date, ['date' => $date, 'revenue' => 0, 'expenses' => 0]);
-            }
-
             $dailyEntry = $daily->get($date);
 
             if ($journal->creditAccount?->type === Account::TYPE_REVENUE) {
@@ -1020,10 +1016,12 @@ class LedgerService
         $asOfCarbon = now()->parse($asOfDate);
 
         // Load all unpaid/partially-paid invoices
-        $invoices = Invoice::where('company_uuid', $companyUuid)
+        $invoices = Invoice::query()
+            ->without(['items', 'template', 'order'])
+            ->where('company_uuid', $companyUuid)
             ->whereNotIn('status', ['paid', 'cancelled', 'void'])
             ->where('balance', '>', 0)
-            ->with('customer')
+            ->withOnly('customer')
             ->get();
 
         $buckets = [

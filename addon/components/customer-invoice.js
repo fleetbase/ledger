@@ -55,7 +55,7 @@ export default class CustomerInvoiceComponent extends Component {
     }
 
     get isPaid() {
-        return this.invoice?.status === 'paid';
+        return ['paid', 'refunded', 'refund_pending', 'partial_refund_pending'].includes(this.invoice?.status);
     }
 
     get isVoid() {
