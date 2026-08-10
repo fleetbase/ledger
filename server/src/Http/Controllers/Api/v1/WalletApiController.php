@@ -173,7 +173,12 @@ class WalletApiController extends Controller
         // Fall back to the authenticated user
         $user = $request->user();
         if (!$user) {
-            abort(401, 'Unauthenticated.');
+            // abort() renders Laravel's HTML error page, so an API client parsing JSON
+            // received 1.8 KB of markup titled "Unauthorized" instead of an error body.
+            // AuthenticationException is what this method already documents throwing,
+            // and the API exception handler renders it as {"errors":["Unauthenticated."]}
+            // with a 401.
+            throw new \Illuminate\Auth\AuthenticationException('Unauthenticated.');
         }
 
         return $user;
