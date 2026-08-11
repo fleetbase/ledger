@@ -131,6 +131,10 @@ function bootWalletControllerDatabase(): void
     $capsule->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => ''], 'testing');
     $capsule->setAsGlobal();
     $capsule->bootEloquent();
+    // Fleetbase\Models\User pins `protected $connection = 'mysql'`, so resolveSubject's
+    // session fallback queries that name specifically. Its own in-memory database is
+    // enough — nothing joins users to the ledger tables.
+    $capsule->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => ''], 'mysql');
     $capsule->getDatabaseManager()->setDefaultConnection('testing');
     Container::getInstance()->instance('db', $capsule->getDatabaseManager());
     Container::getInstance()->instance('request', new Request());
@@ -138,6 +142,21 @@ function bootWalletControllerDatabase(): void
     session(['company' => 'company-wallet-controller']);
 
     $schema = $capsule->getConnection('testing')->getSchemaBuilder();
+    // resolveSubject() falls back to session('user') when no user resolver is bound,
+    // which is the case on every public API request.
+    $capsule->getConnection('mysql')->getSchemaBuilder()->create('users', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->string('name')->nullable();
+        $table->string('email')->nullable();
+        $table->string('phone')->nullable();
+        $table->string('type')->nullable();
+        $table->string('status')->nullable();
+        $table->softDeletes();
+        $table->timestamps();
+    });
     $schema->create('ledger_wallets', function (Blueprint $table) {
         $table->string('uuid')->primary();
         $table->string('public_id')->nullable()->unique();
@@ -393,8 +412,35 @@ test('wallet API resolves authenticated users and rejects unauthenticated reques
 
     $unauthenticated = walletControllerRequest();
     $unauthenticated->setUserResolver(fn () => null);
+    // AuthenticationException, not HttpException: abort(401) rendered Laravel's HTML
+    // error page, so a client parsing JSON got 1.8 KB of markup instead of an error body.
+    session(['user' => null]);
     expect(fn () => $controller->getWallet($unauthenticated))
-        ->toThrow(Symfony\Component\HttpKernel\Exception\HttpException::class);
+        ->toThrow(Illuminate\Auth\AuthenticationException::class);
+});
+
+test('wallet API resolves the session user when no user resolver is bound', function () {
+    // The production path for every public API request. `fleetbase.api` authenticates
+    // with Auth::setSession(), which writes session('user') but leaves $login false — so
+    // no user resolver is bound and $request->user() is null. Reading it alone made all
+    // four wallet routes answer 401 to every credential, including a driver's own Sanctum
+    // token, which authenticates fine against every other public endpoint.
+    $service    = new WalletControllerService();
+    $controller = new WalletApiController($service);
+
+    Fleetbase\Models\User::query()->getConnection()->table('users')->insert([
+        'uuid'         => 'session-user-uuid',
+        'company_uuid' => 'company-wallet-controller',
+    ]);
+    session(['user' => 'session-user-uuid']);
+
+    $request = walletControllerRequest();
+    $request->setUserResolver(fn () => null);
+
+    expect($controller->getWallet($request)->resource)->toBeInstanceOf(Wallet::class)
+        ->and($service->calls[0])->toBe(['getOrCreateWallet', 'session-user-uuid', 'USD']);
+
+    session(['user' => null]);
 });
 
 test('wallet API history is scoped to the provisioned wallet and honors filters', function () {

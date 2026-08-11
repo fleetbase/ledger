@@ -170,8 +170,20 @@ class WalletApiController extends Controller
             return $request->get('_consumer');
         }
 
-        // Fall back to the authenticated user
+        // Fall back to the authenticated user.
+        //
+        // $request->user() alone is not enough: the `fleetbase.api` middleware
+        // authenticates with Auth::setSession(), which writes the session keys but
+        // leaves $login false, so no user resolver is ever bound and $request->user()
+        // is null on every public API request. That made all four wallet routes answer
+        // 401 to every credential — including a driver's own Sanctum token, which
+        // authenticates fine against every other public endpoint. session('user') is
+        // where that middleware actually records the authenticated identity.
         $user = $request->user();
+        if (!$user instanceof \Illuminate\Database\Eloquent\Model && ($sessionUser = session('user'))) {
+            $user = \Fleetbase\Models\User::where('uuid', $sessionUser)->first();
+        }
+
         if (!$user) {
             // abort() renders Laravel's HTML error page, so an API client parsing JSON
             // received 1.8 KB of markup titled "Unauthorized" instead of an error body.
