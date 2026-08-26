@@ -144,7 +144,7 @@ export default class SettingsAccountingController extends Controller {
     @action onSelectCurrency(currency) {
         // CurrencySelect passes the full currency object; store the ISO code.
         // Clearing the selection (null/undefined) resets to company default.
-        this.base_currency = currency?.code ?? null;
+        this.base_currency = currency ?? null;
     }
 
     @action onSelectFiscalYearMonth(option) {
