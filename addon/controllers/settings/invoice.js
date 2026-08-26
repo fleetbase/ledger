@@ -138,7 +138,7 @@ export default class SettingsInvoiceController extends Controller {
     @action onSelectCurrency(currency) {
         // CurrencySelect passes the full currency object; store the ISO code.
         // Clearing the selection (null/undefined) resets to company default.
-        this.default_currency = currency?.code ?? null;
+        this.default_currency = currency ?? null;
     }
 
     @action onSelectPaymentTerms(option) {
