@@ -1,6 +1,6 @@
 {
     "name": "fleetbase/ledger-api",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "description": "Accounting & Invoicing Extension for Fleetbase",
     "keywords": [
         "fleetbase",
