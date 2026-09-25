@@ -374,6 +374,24 @@ test('internal wallet history applies every filter and state management updates 
     expect($unchanged['corrected'])->toBeFalse();
 });
 
+test('editing a wallet never sends its balance on to the update', function () {
+    $controller = new WalletController(new WalletControllerService());
+    $strip      = new ReflectionMethod($controller, 'withoutReadOnlyFields');
+
+    // The console sends the whole record back, including the balance it read (null when the
+    // list payload left it out), which used to fail the NOT NULL balance column.
+    $keyed = WalletControllerRequest::create('/ledger/int/v1/wallets/edited-wallet', 'PUT', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+        'wallet' => ['name' => 'Renamed wallet', 'currency' => 'CAD', 'balance' => null, 'formatted_balance' => '$0.00'],
+    ]));
+    expect($strip->invoke($controller, $keyed)->input('wallet'))->toBe(['name' => 'Renamed wallet', 'currency' => 'CAD']);
+
+    // A balance sent without the resource key is dropped too.
+    $bare = WalletControllerRequest::create('/ledger/int/v1/wallets/edited-wallet', 'PUT', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+        'status' => 'active', 'balance' => 99999,
+    ]));
+    expect($strip->invoke($controller, $bare)->all())->toBe(['status' => 'active']);
+});
+
 test('internal wallet resolution rejects cross-company identifiers', function () {
     $service    = new WalletControllerService();
     $controller = new WalletController($service);

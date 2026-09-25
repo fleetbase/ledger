@@ -12,6 +12,7 @@ use Fleetbase\Ledger\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
 
 class WalletController extends LedgerResourceController
 {
@@ -31,6 +32,36 @@ class WalletController extends LedgerResourceController
     {
         parent::__construct();
         $this->walletService = $walletService;
+    }
+
+    /**
+     * Update a wallet's details.
+     *
+     * A wallet's balance only moves through its transactions (credit, top-up, payout,
+     * transfer), never through an edit. The console sends the whole record back when a
+     * wallet is edited, so drop the balance fields rather than let an edit overwrite the
+     * balance (or fail with a null one).
+     */
+    public function updateRecord(Request $request, string $id)
+    {
+        return parent::updateRecord($this->withoutReadOnlyFields($request), $id);
+    }
+
+    /**
+     * Drop the fields an edit may not set, with or without the `wallet` payload key.
+     */
+    protected function withoutReadOnlyFields(Request $request): Request
+    {
+        $readOnly = ['balance', 'formatted_balance'];
+
+        // The body lives in the JSON bag for JSON requests, the request bag otherwise.
+        $input = $request->isJson() ? $request->json() : $request->request;
+        $input->replace(Arr::except($input->all(), $readOnly));
+        if (is_array($request->input('wallet'))) {
+            $request->merge(['wallet' => Arr::except($request->input('wallet'), $readOnly)]);
+        }
+
+        return $request;
     }
 
     // =========================================================================

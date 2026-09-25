@@ -141,10 +141,11 @@ export default class SettingsAccountingController extends Controller {
 
     // ── Actions ───────────────────────────────────────────────────────────────
 
-    @action onSelectCurrency(currency) {
-        // CurrencySelect passes the full currency object; store the ISO code.
+    @action onSelectCurrency(code) {
+        // CurrencySelect calls @onCurrencyChange(code, currency): the ISO code comes first.
+        // Reading `.code` off it stored null, so a chosen currency never saved (#678).
         // Clearing the selection (null/undefined) resets to company default.
-        this.base_currency = currency?.code ?? null;
+        this.base_currency = code || null;
     }
 
     @action onSelectFiscalYearMonth(option) {
