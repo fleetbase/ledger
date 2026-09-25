@@ -336,19 +336,24 @@ export default {
         widgetService.registerDashboard('ledger');
         widgetService.registerWidgets('ledger', widgets);
         // Ledger's widgets on the shared default dashboard. `order` places them among every
-        // extension's widgets (see fleet-ops' registerWidgets for the whole layout): Revenue
-        // joins the top KPI row beside Radar (10) and Active Orders (30), the other four KPIs
-        // form their own row, and Recent Financial Activity fills the left half beside the
-        // console's Blog (160, h 13) and GitHub card (170, h 6) stacked on the right, so its
-        // height is theirs combined. Ledger's own dashboard above keeps its full set, unordered.
+        // extension's widgets (see fleet-ops' registerWidgets for the whole layout):
+        //   20       Revenue, in the top KPI row beside Radar (10) and Active Orders (30)
+        //   41-44    Expenses, Net Income, Outstanding AR, Overdue AR: the second KPI row
+        //   150/165  Recent Financial Activity (10 rows) with Cash Flow Summary (9) under it,
+        //            beside the console's Blog (160, 13 rows) and GitHub card (170, 6 rows).
+        //            Cash Flow comes after the Blog so it lands under Activity, not beside it.
+        // Ledger's own dashboard above keeps its full set, unordered.
         widgetService.registerWidgets('dashboard', [
             getWidgetById('ledger-kpi-revenue', (widget) => widget.setOption('order', 20)),
-            getWidgetById('ledger-kpi-expenses', (widget) => widget.setOption('order', 110)),
-            getWidgetById('ledger-kpi-net-income', (widget) => widget.setOption('order', 120)),
-            getWidgetById('ledger-kpi-outstanding-ar', (widget) => widget.setOption('order', 130)),
-            getWidgetById('ledger-kpi-overdue-ar', (widget) => widget.setOption('order', 140)),
+            getWidgetById('ledger-kpi-expenses', (widget) => widget.setOption('order', 41)),
+            getWidgetById('ledger-kpi-net-income', (widget) => widget.setOption('order', 42)),
+            getWidgetById('ledger-kpi-outstanding-ar', (widget) => widget.setOption('order', 43)),
+            getWidgetById('ledger-kpi-overdue-ar', (widget) => widget.setOption('order', 44)),
             getWidgetById('ledger-activity-feed', (widget) => {
-                widget.withGridOptions({ w: 6, minW: 6, h: 19, minH: 8 }).setOption('order', 150);
+                widget.withGridOptions({ w: 6, minW: 6, h: 10, minH: 8 }).setOption('order', 150);
+            }),
+            getWidgetById('ledger-cash-flow-summary', (widget) => {
+                widget.withGridOptions({ w: 6, minW: 5, h: 9, minH: 8 }).setOption('order', 165);
             }),
         ]);
     },
