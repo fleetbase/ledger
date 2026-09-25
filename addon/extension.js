@@ -335,14 +335,21 @@ export default {
 
         widgetService.registerDashboard('ledger');
         widgetService.registerWidgets('ledger', widgets);
+        // Ledger's widgets on the shared default dashboard. `order` places them among every
+        // extension's widgets (see fleet-ops' registerWidgets for the whole layout): Revenue
+        // joins the top KPI row beside Radar (10) and Active Orders (30), the other four KPIs
+        // form their own row, and Recent Financial Activity fills the left half beside the
+        // console's Blog (160, h 13) and GitHub card (170, h 6) stacked on the right, so its
+        // height is theirs combined. Ledger's own dashboard above keeps its full set, unordered.
         widgetService.registerWidgets('dashboard', [
+            getWidgetById('ledger-kpi-revenue', (widget) => widget.setOption('order', 20)),
+            getWidgetById('ledger-kpi-expenses', (widget) => widget.setOption('order', 110)),
+            getWidgetById('ledger-kpi-net-income', (widget) => widget.setOption('order', 120)),
+            getWidgetById('ledger-kpi-outstanding-ar', (widget) => widget.setOption('order', 130)),
+            getWidgetById('ledger-kpi-overdue-ar', (widget) => widget.setOption('order', 140)),
             getWidgetById('ledger-activity-feed', (widget) => {
-                widget.withGridOptions({ w: 6, minW: 6, h: 8, minH: 8 });
+                widget.withGridOptions({ w: 6, minW: 6, h: 19, minH: 8 }).setOption('order', 150);
             }),
-            getWidgetById('ledger-kpi-revenue'),
-            getWidgetById('ledger-kpi-net-income'),
-            getWidgetById('ledger-kpi-outstanding-ar'),
-            getWidgetById('ledger-kpi-expenses'),
         ]);
     },
 };
