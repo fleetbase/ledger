@@ -162,9 +162,10 @@ class Invoice extends Model
 
         static::creating(function (Invoice $invoice): void {
             // ── Load company invoice settings ──────────────────────────────────
-            // Setting::lookupCompany uses session('company') which is always set
-            // for authenticated internal requests. Returns [] when not yet saved.
-            $settings = Setting::lookupCompany('ledger.invoice-settings', []);
+            // Resolve from the invoice's company so invoices created from queued
+            // jobs, listeners and observers (no company session) still pick up
+            // the company settings. Returns [] when not yet saved.
+            $settings = Setting::lookupForCompany($invoice->company_uuid ?? session('company'), 'ledger.invoice-settings', []);
             if (!is_array($settings)) {
                 $settings = [];
             }
