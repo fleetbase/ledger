@@ -1,0 +1,107 @@
+ledger:
+  extension-name: Головна книга
+
+common:
+  ledger: Головна книга
+  overview: Огляд
+  transactions: Транзакції
+
+resource:
+  account: Рахунок
+  accounts: Рахунки
+  invoice: Рахунок-фактура
+  invoices: Рахунки-фактури
+  invoice-template: Шаблон рахунка-фактури
+  invoice-templates: Шаблони рахунків-фактур
+  journal: Журнальний запис
+  journal-entries: Журнальні записи
+  transaction: Транзакція
+  transactions: Транзакції
+  wallet: Гаманець
+  wallets: Гаманці
+  gateway: Шлюз
+  gateways: Шлюзи
+  wallet-transaction: Транзакція гаманця
+  wallet-transactions: Транзакції гаманця
+
+column:
+  id: ID
+  number: Номер
+  name: Назва
+  code: Код
+  type: Тип
+  status: Статус
+  direction: Напрямок
+  description: Опис
+  date: Дата
+  created-at: Створено
+  updated-at: Оновлено
+  amount: Сума
+  balance: Баланс
+  balance-after: Баланс після
+  total: Всього
+  net-amount: Чиста сума
+  fee: Комісія
+  tax: Податок
+  currency: Валюта
+  gateway: Шлюз
+  payment-method: Спосіб оплати
+  reference: Референс
+  memo: Примітка
+  period: Період
+  settled-at: Оплачено о
+  failure-reason: Причина помилки
+  due-date: Термін сплати
+  issued-at: Видано о
+  invoice-date: Дата рахунка
+  customer: Клієнт
+  debit-account: Дебетовий рахунок
+  credit-account: Кредитовий рахунок
+  source: Джерело
+  driver: Драйвер
+  environment: Середовище
+  default: За замовчуванням
+  owner: Власник
+  payer: Платник
+  payee: Отримувач платежу
+  frozen: Заморожено
+  orientation: Орієнтація
+
+menu:
+  dashboard: Панель керування
+  billing: Білінг
+  invoices: Рахунки-фактури
+  payments: Платежі
+  wallets: Гаманці
+  gateways: Шлюзи
+  accounting: Бухгалтерія
+  chart-of-accounts: План рахунків
+  journal-entries: Журнальні записи
+  general-ledger: Головна книга
+  reports: Звіти
+  income-statement: Звіт про прибутки та збитки
+  balance-sheet: Баланс
+  trial-balance: Оборотно-сальдова відомість
+  cash-flow: Рух коштів
+  ar-aging: Заборгованість за термінами (AR Aging)
+  wallet-summary: Зведення по гаманцях
+  settings: Налаштування
+  invoice-settings: Налаштування рахунків
+  payment-settings: Налаштування платежів
+  accounting-settings: Бухгалтерські налаштування
+
+invoice:
+  no-transactions: Для цього рахунка-фактури немає записаних транзакцій.
+  actions:
+    preview-invoice: "Попередній перегляд рахунка №{number}"
+    preview-invoice-fallback: Попередній перегляд рахунка
+    download-pdf: Завантажити PDF
+    record-payment: Зареєструвати платіж
+    record-payment-title: "Зареєструвати платіж — {number}"
+    copy-payment-link: Скопіювати посилання на оплату
+    copy-invoice-url: Скопіювати URL рахунка
+    payment-link-copied: URL рахунка скопійовано до буфера обміну.
+    payment-link-copy-failed: Не вдалося скопіювати URL рахунка. Будь ласка, скопіюйте його вручну.
+    send: Надіслати рахунок
+    void: Анулювати рахунок
+    edit: Редагувати рахунок
