@@ -374,6 +374,58 @@ test('internal wallet history applies every filter and state management updates 
     expect($unchanged['corrected'])->toBeFalse();
 });
 
+test('editing a wallet never sends its balance on to the update', function () {
+    $controller = new WalletController(new WalletControllerService());
+    $strip      = new ReflectionMethod($controller, 'withoutReadOnlyFields');
+
+    // The console sends the whole record back, including the balance it read (null when the
+    // list payload left it out), which used to fail the NOT NULL balance column.
+    $keyed = WalletControllerRequest::create('/ledger/int/v1/wallets/edited-wallet', 'PUT', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+        'wallet' => ['name' => 'Renamed wallet', 'currency' => 'CAD', 'balance' => null, 'formatted_balance' => '$0.00'],
+    ]));
+    expect($strip->invoke($controller, $keyed)->input('wallet'))->toBe(['name' => 'Renamed wallet', 'currency' => 'CAD']);
+
+    // A balance sent without the resource key is dropped too.
+    $bare = WalletControllerRequest::create('/ledger/int/v1/wallets/edited-wallet', 'PUT', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+        'status' => 'active', 'balance' => 99999,
+    ]));
+    expect($strip->invoke($controller, $bare)->all())->toBe(['status' => 'active']);
+});
+
+test('wallet update delegates only editable fields to validation and persistence', function () {
+    $wallet  = walletControllerWallet(['uuid' => 'wallet-safe-edit']);
+    $request = WalletControllerRequest::create('/ledger/int/v1/wallets/wallet-safe-edit', 'PUT', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+        'wallet' => ['name' => 'Renamed wallet', 'balance' => null, 'formatted_balance' => '$0.00'],
+    ]));
+    Container::getInstance()->instance('request', $request);
+
+    // Validation and persistence belong to Core. Pin the payload crossing both
+    // boundaries so a full-record Console edit cannot overwrite a monetary balance.
+    $controller = $this->getMockBuilder(WalletController::class)
+        ->setConstructorArgs([new WalletControllerService()])
+        ->onlyMethods(['validateRequest'])
+        ->getMock();
+    $controller->expects($this->once())->method('validateRequest')->with($this->callback(function (Request $validated) use ($request) {
+        expect($validated)->toBe($request)
+            ->and($validated->input('wallet'))->toBe(['name' => 'Renamed wallet']);
+
+        return true;
+    }));
+    $model = $this->getMockBuilder(Wallet::class)->onlyMethods(['updateRecordFromRequest'])->getMock();
+    $model->expects($this->once())->method('updateRecordFromRequest')->willReturnCallback(function (Request $updated, $id) use ($request, $wallet) {
+        expect($updated)->toBe($request)
+            ->and($id)->toBe($wallet->uuid)
+            ->and($updated->input('wallet'))->toBe(['name' => 'Renamed wallet']);
+
+        return $wallet;
+    });
+    $controller->model = $model;
+
+    $result = $controller->updateRecord($request, $wallet->uuid);
+    expect($result)->toBeInstanceOf(Fleetbase\Ledger\Http\Resources\v1\Wallet::class)
+        ->and($result->resource)->toBe($wallet);
+});
+
 test('internal wallet resolution rejects cross-company identifiers', function () {
     $service    = new WalletControllerService();
     $controller = new WalletController($service);

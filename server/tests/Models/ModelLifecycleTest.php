@@ -152,6 +152,59 @@ test('invoice creation normalizes malformed settings and applies complete config
     expect($legacy->due_date->format('Y-m-d'))->toBe('2026-07-15');
 });
 
+test('invoice creation applies the invoice company settings without a company session', function () {
+    Capsule::table('settings')->insert([
+        'key'   => 'company.company-queued-invoice.ledger.invoice-settings',
+        'value' => json_encode(['invoice_prefix' => 'QUE', 'default_currency' => 'SGD']),
+    ]);
+    Cache::flush();
+
+    // Invoices created from queued jobs and listeners have no company session
+    session(['company' => null]);
+    $invoice = new Invoice([
+        'uuid'         => 'invoice-queued',
+        'public_id'    => 'invoice_queued',
+        'company_uuid' => 'company-queued-invoice',
+        'date'         => '2026-07-01',
+    ]);
+    $invoice->save();
+
+    expect($invoice->number)->toStartWith('QUE-')
+        ->and($invoice->currency)->toBe('SGD');
+});
+
+test('invoice settings use the invoice company even when another company is signed in', function () {
+    Capsule::table('settings')->insert([
+        ['key' => 'company.company-invoice.ledger.invoice-settings', 'value' => json_encode(['invoice_prefix' => 'OWN', 'default_currency' => 'SGD'])],
+        ['key' => 'company.company-session.ledger.invoice-settings', 'value' => json_encode(['invoice_prefix' => 'OTHER', 'default_currency' => 'USD'])],
+    ]);
+    Cache::flush();
+    session(['company' => 'company-session']);
+    $invoice = new Invoice([
+        'uuid'         => 'invoice-explicit-company',
+        'public_id'    => 'invoice_explicit_company',
+        'company_uuid' => 'company-invoice',
+        'date'         => '2026-07-01',
+    ]);
+    $invoice->save();
+
+    expect($invoice->number)->toStartWith('OWN-')
+        ->and($invoice->currency)->toBe('SGD');
+});
+
+test('invoice creation without any company context uses safe defaults', function () {
+    session(['company' => null]);
+    $invoice = new Invoice([
+        'uuid'      => 'invoice-no-company',
+        'public_id' => 'invoice_no_company',
+        'date'      => '2026-07-01',
+    ]);
+    $invoice->save();
+
+    expect($invoice->number)->toStartWith('INV-')
+        ->and($invoice->currency)->toBeNull();
+});
+
 test('invoice number generation retries collisions including soft deleted records', function () {
     mt_srand(1234);
     $first  = mt_rand(1, 9);

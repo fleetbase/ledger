@@ -1,18 +1,21 @@
-> v0.0.10 ~ "The public wallet API is reachable"
+> v0.0.11 ~ "Currencies that save, and ledger on the default dashboard"
 
 ---
 ## Highlights
-All four public wallet routes answered `401` to every credential — including a driver's own Sanctum token, which authenticates fine against every other public endpoint. The API was effectively unusable for wallet operations.
+Ledger's widgets take a planned place on the console's Default Dashboard, and the base and invoice currencies chosen in settings are saved.
+
+---
+## Improvements
+- **Ledger on the Default Dashboard.** Revenue sits in the top KPI row beside Fleet-Ops' Radar, Active Orders and Drivers Online. Expenses, Net Income, Outstanding AR and Overdue AR form the row under it; Overdue AR is new on the default dashboard. Recent Financial Activity and Cash Flow Summary sit in the lower left, as tall as the Blog and GitHub cards beside them. Ledger's own dashboard keeps its full widget set. The layout needs `@fleetbase/ember-ui` v0.4.4; on older versions the widgets appear as before.
 
 ---
 ## Bug Fixes
-- **The four public wallet routes were unreachable by any credential.** The `fleetbase.api` middleware authenticates with `Auth::setSession()`, which writes the session keys but leaves `$login` false, so no user resolver is ever bound and `$request->user()` is null on every public API request. `WalletApiController` now falls back to the session identity that middleware actually records.
-- **Unauthenticated requests returned an HTML page, not JSON.** `abort()` rendered Laravel's error page, so an API client parsing JSON received ~1.8 KB of markup titled "Unauthorized". The controller now throws `AuthenticationException`, which the API exception handler renders as `{"errors":["Unauthenticated."]}` with a 401.
+- **The base and invoice currencies never saved** ([fleetbase/fleetbase#678](https://github.com/fleetbase/fleetbase/issues/678)). `CurrencySelect` passes the ISO code first, but the Accounting and Invoice settings read `.code` from it, so Save stored `null` and the page fell back to the default after a reload.
+- **A wallet's currency couldn't be changed.** Editing a wallet failed with `Column 'balance' cannot be null`, because the console sent the whole record back. The serializer no longer sends `balance` or `formatted_balance`, and `WalletController::updateRecord` drops them, so a balance only moves through transactions.
 
 ---
 ## Continuous Integration
-- The Postman API contract now runs against this branch's API code rather than the published package, so a release PR's own changes are actually exercised.
-- The contract workflow tracks the current platform release instead of a pinned ref.
+- The release workflow accepts `release/v*` branches alongside `dev-v*`.
 
 ---
 ## Need help?

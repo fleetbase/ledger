@@ -37,3 +37,6 @@ composer.lock
 *.swp
 *.swo
 .DS_Store
+
+# Temporary Pest compatibility link (server_vendor is the Composer vendor directory)
+/vendor

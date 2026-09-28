@@ -335,14 +335,26 @@ export default {
 
         widgetService.registerDashboard('ledger');
         widgetService.registerWidgets('ledger', widgets);
+        // Ledger's widgets on the shared default dashboard. `order` places them among every
+        // extension's widgets (see fleet-ops' registerWidgets for the whole layout):
+        //   20       Revenue, in the top KPI row beside Radar (10) and Active Orders (30)
+        //   41-44    Expenses, Net Income, Outstanding AR, Overdue AR: the second KPI row
+        //   150/165  Recent Financial Activity (10 rows) with Cash Flow Summary (9) under it,
+        //            beside the console's Blog (160, 13 rows) and GitHub card (170, 6 rows).
+        //            Cash Flow comes after the Blog so it lands under Activity, not beside it.
+        // Ledger's own dashboard above keeps its full set, unordered.
         widgetService.registerWidgets('dashboard', [
+            getWidgetById('ledger-kpi-revenue', (widget) => widget.setOption('order', 20)),
+            getWidgetById('ledger-kpi-expenses', (widget) => widget.setOption('order', 41)),
+            getWidgetById('ledger-kpi-net-income', (widget) => widget.setOption('order', 42)),
+            getWidgetById('ledger-kpi-outstanding-ar', (widget) => widget.setOption('order', 43)),
+            getWidgetById('ledger-kpi-overdue-ar', (widget) => widget.setOption('order', 44)),
             getWidgetById('ledger-activity-feed', (widget) => {
-                widget.withGridOptions({ w: 6, minW: 6, h: 8, minH: 8 });
+                widget.withGridOptions({ w: 6, minW: 6, h: 10, minH: 8 }).setOption('order', 150);
             }),
-            getWidgetById('ledger-kpi-revenue'),
-            getWidgetById('ledger-kpi-net-income'),
-            getWidgetById('ledger-kpi-outstanding-ar'),
-            getWidgetById('ledger-kpi-expenses'),
+            getWidgetById('ledger-cash-flow-summary', (widget) => {
+                widget.withGridOptions({ w: 6, minW: 5, h: 9, minH: 8 }).setOption('order', 165);
+            }),
         ]);
     },
 };

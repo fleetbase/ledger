@@ -24,8 +24,19 @@ if ($pest === null) {
 
 $serverVendor = getcwd() . '/server_vendor';
 $vendor       = getcwd() . '/vendor';
-if (!file_exists($vendor) && is_dir($serverVendor) && function_exists('symlink')) {
-    @symlink($serverVendor, $vendor);
+// Pest 1 resolves PHPUnit through vendor even when Composer uses server_vendor.
+// Keep this compatibility link local to the test run so it cannot enter releases.
+$createdVendorSymlink = false;
+if (!file_exists($vendor) && !is_link($vendor) && is_dir($serverVendor)) {
+    $createdVendorSymlink = symlink('server_vendor', $vendor);
+}
+
+if ($createdVendorSymlink) {
+    register_shutdown_function(static function () use ($vendor): void {
+        if (is_link($vendor) && readlink($vendor) === 'server_vendor') {
+            unlink($vendor);
+        }
+    });
 }
 
 $bootstrap = getcwd() . '/scripts/pest-bootstrap.php';
