@@ -165,8 +165,7 @@ class Invoice extends Model
             // Resolve from the invoice's company so invoices created from queued
             // jobs, listeners and observers (no company session) still pick up
             // the company settings. Returns [] when not yet saved.
-            $companyUuid = $invoice->company_uuid ?? session('company');
-            $settings    = $companyUuid ? Setting::lookup('company.' . $companyUuid . '.ledger.invoice-settings', []) : [];
+            $settings = Setting::lookupForCompany($invoice->company_uuid ?? session('company'), 'ledger.invoice-settings', []);
             if (!is_array($settings)) {
                 $settings = [];
             }
