@@ -32,8 +32,15 @@ export default class PaymentsGatewaysDetailsController extends Controller {
 
     get actionButtons() {
         return [
-            { label: 'Edit', icon: 'pencil', helpText: 'Edit this payment gateway configuration.', onClick: this.editGateway },
-            { label: 'Delete', icon: 'trash', type: 'danger', helpText: 'Permanently remove this payment gateway. This cannot be undone.', onClick: this.deleteGateway },
+            { id: 'edit-gateway', label: 'Edit', icon: 'pencil', helpText: 'Edit this payment gateway configuration.', onClick: this.editGateway },
+            {
+                id: 'delete-gateway',
+                label: 'Delete',
+                icon: 'trash',
+                type: 'danger',
+                helpText: 'Permanently remove this payment gateway. This cannot be undone.',
+                onClick: this.deleteGateway,
+            },
         ];
     }
 

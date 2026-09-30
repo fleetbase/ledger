@@ -7,7 +7,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = [
+    @tracked queryParams = this.transactionActions.queryParamsFor([
         'page',
         'limit',
         'sort',
@@ -27,7 +27,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
         'created_at',
         'updated_at',
         'settled_at',
-    ];
+    ]);
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
@@ -52,6 +52,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
     get actionButtons() {
         return [
             {
+                id: 'refresh',
                 icon: 'refresh',
                 onClick: this.transactionActions.refresh,
                 helpText: this.intl.t('common.refresh'),
@@ -67,6 +68,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
         return [
             // ── Default visible columns ──────────────────────────────────────
             {
+                id: 'public-id',
                 sticky: true,
                 label: this.intl.t('column.id'),
                 valuePath: 'public_id',
@@ -80,6 +82,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'created-at',
                 label: this.intl.t('column.date'),
                 valuePath: 'createdAt',
                 sortParam: 'created_at',
@@ -90,6 +93,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/date',
             },
             {
+                id: 'description',
                 label: this.intl.t('column.description'),
                 valuePath: 'description',
                 resizable: true,
@@ -99,6 +103,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'type',
                 label: this.intl.t('column.type'),
                 valuePath: 'type',
                 resizable: true,
@@ -109,6 +114,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterOptions: ['wallet_deposit', 'wallet_withdrawal', 'wallet_transfer', 'gateway_charge', 'gateway_refund', 'gateway_payout', 'adjustment', 'earning', 'fee'],
             },
             {
+                id: 'direction',
                 label: this.intl.t('column.direction'),
                 valuePath: 'direction',
                 cellComponent: 'table/cell/base',
@@ -126,6 +132,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 ],
             },
             {
+                id: 'amount',
                 label: this.intl.t('column.amount'),
                 valuePath: 'amount',
                 cellComponent: 'table/cell/currency',
@@ -135,6 +142,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterable: false,
             },
             {
+                id: 'status',
                 label: this.intl.t('column.status'),
                 valuePath: 'status',
                 cellComponent: 'table/cell/status',
@@ -146,6 +154,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterOptions: ['pending', 'success', 'failed', 'cancelled', 'voided', 'reversed', 'expired'],
             },
             {
+                id: 'settlement-status',
                 label: 'Settlement',
                 valuePath: 'settlement_status',
                 cellComponent: 'table/cell/status',
@@ -159,6 +168,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
             },
             // ── Hidden / toggleable columns ──────────────────────────────────
             {
+                id: 'net-amount',
                 label: this.intl.t('column.net-amount'),
                 valuePath: 'net_amount',
                 cellComponent: 'table/cell/currency',
@@ -169,6 +179,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterable: false,
             },
             {
+                id: 'fee-amount',
                 label: this.intl.t('column.fee'),
                 valuePath: 'fee_amount',
                 cellComponent: 'table/cell/currency',
@@ -178,6 +189,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterable: false,
             },
             {
+                id: 'tax-amount',
                 label: this.intl.t('column.tax'),
                 valuePath: 'tax_amount',
                 cellComponent: 'table/cell/currency',
@@ -187,6 +199,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterable: false,
             },
             {
+                id: 'currency',
                 label: this.intl.t('column.currency'),
                 valuePath: 'currency',
                 hidden: true,
@@ -197,6 +210,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'gateway',
                 label: this.intl.t('column.gateway'),
                 valuePath: 'gateway',
                 hidden: true,
@@ -207,6 +221,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'payment-method',
                 label: this.intl.t('column.payment-method'),
                 valuePath: 'payment_method',
                 hidden: true,
@@ -225,6 +240,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 ],
             },
             {
+                id: 'reference',
                 label: this.intl.t('column.reference'),
                 valuePath: 'reference',
                 hidden: true,
@@ -235,6 +251,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'period',
                 label: this.intl.t('column.period'),
                 valuePath: 'period',
                 hidden: true,
@@ -245,6 +262,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'settled-at',
                 label: this.intl.t('column.settled-at'),
                 valuePath: 'settled_at',
                 sortParam: 'settled_at',
@@ -256,6 +274,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/date',
             },
             {
+                id: 'failure-reason',
                 label: this.intl.t('column.failure-reason'),
                 valuePath: 'failure_reason',
                 hidden: true,
@@ -266,6 +285,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'updated-at',
                 label: this.intl.t('column.updated-at'),
                 valuePath: 'updatedAt',
                 sortParam: 'updated_at',
@@ -278,6 +298,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
             },
             // ── Row actions dropdown ─────────────────────────────────────────
             {
+                id: 'row-actions',
                 label: '',
                 cellComponent: 'table/cell/dropdown',
                 ddButtonText: false,
@@ -290,6 +311,7 @@ export default class PaymentsTransactionsIndexController extends Controller {
                 width: 60,
                 actions: [
                     {
+                        id: 'view',
                         label: this.intl.t('common.view-resource', { resource: this.intl.t('resource.transaction') }),
                         icon: 'eye',
                         fn: this.transactionActions.transition.view,

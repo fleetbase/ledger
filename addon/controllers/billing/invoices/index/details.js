@@ -35,6 +35,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         // Preview — individual button, only when an invoice template is assigned.
         if (invoice?.template_uuid) {
             buttons.push({
+                id: 'preview-invoice',
                 label: 'Preview',
                 icon: 'eye',
                 type: 'default',
@@ -46,6 +47,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         // Edit — individual button, available for open invoice statuses.
         if (!['paid', 'refunded', 'refund_pending', 'partial_refund_pending', 'void', 'cancelled'].includes(invoice?.status)) {
             buttons.push({
+                id: 'edit',
                 label: 'Edit',
                 icon: 'pencil',
                 type: 'default',
@@ -60,6 +62,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         // Send — draft invoices only.
         if (invoice?.status === 'draft') {
             dropdownItems.push({
+                id: 'send-invoice',
                 text: 'Send Invoice',
                 icon: 'paper-plane',
                 fn: () => this.sendInvoice(),
@@ -69,6 +72,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         // Record Payment — for open / overdue / partially-paid invoices.
         if (['sent', 'viewed', 'overdue', 'partial'].includes(invoice?.status)) {
             dropdownItems.push({
+                id: 'record-payment',
                 text: this.intl.t('invoice.actions.record-payment'),
                 icon: 'check-circle',
                 fn: () => this.recordPayment(),
@@ -77,6 +81,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
 
         if (this.hasRefunds) {
             dropdownItems.push({
+                id: 'view-refunds',
                 text: 'View Refunds',
                 icon: 'receipt',
                 fn: () => this.viewRefunds(),
@@ -86,6 +91,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         // Refund - paid or partially refunded invoices with remaining paid funds.
         if (this.canIssueRefund) {
             dropdownItems.push({
+                id: 'issue-refund',
                 text: 'Issue Refund',
                 icon: 'undo',
                 class: 'text-red-500 hover:text-red-700',
@@ -96,6 +102,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
         // Void — for any non-terminal status.
         if (!['paid', 'refunded', 'refund_pending', 'partial_refund_pending', 'void', 'cancelled'].includes(invoice?.status)) {
             dropdownItems.push({
+                id: 'void-invoice',
                 text: this.intl.t('invoice.actions.void'),
                 icon: 'ban',
                 class: 'text-red-500 hover:text-red-700',
@@ -110,6 +117,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
 
         // Copy Invoice URL — always available.
         dropdownItems.push({
+            id: 'copy-invoice-url',
             text: this.intl.t('invoice.actions.copy-invoice-url'),
             icon: 'link',
             fn: () => this.invoiceActions.copyInvoiceUrl(invoice),
@@ -117,6 +125,7 @@ export default class BillingInvoicesIndexDetailsController extends Controller {
 
         if (dropdownItems.length > 0) {
             buttons.push({
+                id: 'more',
                 icon: 'ellipsis-h',
                 iconPrefix: 'fas',
                 renderInPlace: true,

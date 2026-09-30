@@ -7,7 +7,22 @@ export default class PaymentsWalletsIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'public_id', 'name', 'type', 'status', 'currency', 'is_frozen', 'subject', 'subject_type', 'created_at', 'updated_at'];
+    @tracked queryParams = this.walletActions.queryParamsFor([
+        'page',
+        'limit',
+        'sort',
+        'query',
+        'public_id',
+        'name',
+        'type',
+        'status',
+        'currency',
+        'is_frozen',
+        'subject',
+        'subject_type',
+        'created_at',
+        'updated_at',
+    ]);
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
@@ -27,6 +42,7 @@ export default class PaymentsWalletsIndexController extends Controller {
     get actionButtons() {
         return [
             {
+                id: 'refresh',
                 icon: 'refresh',
                 onClick: this.walletActions.refresh,
                 helpText: this.intl.t('common.refresh'),
@@ -38,6 +54,7 @@ export default class PaymentsWalletsIndexController extends Controller {
         const selected = this.tableContext.getSelectedRows();
         return [
             {
+                id: 'bulk-delete',
                 label: this.intl.t('common.delete-selected-count', { count: selected.length }),
                 class: 'text-red-500',
                 fn: this.walletActions.bulkDelete,
@@ -49,6 +66,7 @@ export default class PaymentsWalletsIndexController extends Controller {
         return [
             // ── Owner (subject) column ───────────────────────────────────────
             {
+                id: 'subject-name',
                 sticky: true,
                 label: this.intl.t('column.owner'),
                 valuePath: 'subject.name',
@@ -63,6 +81,7 @@ export default class PaymentsWalletsIndexController extends Controller {
             },
             // ── Default visible columns ──────────────────────────────────────
             {
+                id: 'name',
                 label: this.intl.t('column.name'),
                 valuePath: 'name',
                 cellComponent: 'table/cell/anchor',
@@ -75,6 +94,7 @@ export default class PaymentsWalletsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'type',
                 label: this.intl.t('column.type'),
                 valuePath: 'type',
                 cellComponent: 'table/cell/base',
@@ -95,6 +115,7 @@ export default class PaymentsWalletsIndexController extends Controller {
                 ],
             },
             {
+                id: 'currency',
                 label: this.intl.t('column.currency'),
                 valuePath: 'currency',
                 width: 90,
@@ -105,6 +126,7 @@ export default class PaymentsWalletsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'balance',
                 label: this.intl.t('column.balance'),
                 valuePath: 'balance',
                 cellComponent: 'table/cell/currency',
@@ -115,6 +137,7 @@ export default class PaymentsWalletsIndexController extends Controller {
                 filterable: false,
             },
             {
+                id: 'status',
                 label: this.intl.t('column.status'),
                 valuePath: 'status',
                 cellComponent: 'table/cell/status',
@@ -134,6 +157,7 @@ export default class PaymentsWalletsIndexController extends Controller {
                 ],
             },
             {
+                id: 'created-at',
                 label: this.intl.t('column.created-at'),
                 valuePath: 'createdAt',
                 sortParam: 'created_at',
@@ -146,6 +170,7 @@ export default class PaymentsWalletsIndexController extends Controller {
             },
             // ── Hidden / toggleable columns ──────────────────────────────────
             {
+                id: 'public-id',
                 label: this.intl.t('column.id'),
                 valuePath: 'public_id',
                 width: 120,
@@ -157,6 +182,7 @@ export default class PaymentsWalletsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'description',
                 label: this.intl.t('column.description'),
                 valuePath: 'description',
                 width: 200,
@@ -166,6 +192,7 @@ export default class PaymentsWalletsIndexController extends Controller {
                 filterable: false,
             },
             {
+                id: 'is-frozen-label',
                 label: this.intl.t('column.frozen'),
                 valuePath: 'is_frozen_label',
                 cellComponent: 'table/cell/base',
@@ -184,6 +211,7 @@ export default class PaymentsWalletsIndexController extends Controller {
                 ],
             },
             {
+                id: 'updated-at',
                 label: this.intl.t('column.updated-at'),
                 valuePath: 'updatedAt',
                 sortParam: 'updated_at',
@@ -196,6 +224,7 @@ export default class PaymentsWalletsIndexController extends Controller {
             },
             // ── Row actions dropdown ─────────────────────────────────────────
             {
+                id: 'row-actions',
                 label: '',
                 cellComponent: 'table/cell/dropdown',
                 ddButtonText: false,
@@ -208,12 +237,14 @@ export default class PaymentsWalletsIndexController extends Controller {
                 width: 60,
                 actions: [
                     {
+                        id: 'view',
                         label: this.intl.t('common.view-resource', { resource: this.intl.t('resource.wallet') }),
                         icon: 'eye',
                         fn: this.walletActions.transition.view,
                         permission: 'ledger view wallet',
                     },
                     {
+                        id: 'delete',
                         label: this.intl.t('common.delete-resource', { resource: this.intl.t('resource.wallet') }),
                         icon: 'trash',
                         fn: this.walletActions.delete,
