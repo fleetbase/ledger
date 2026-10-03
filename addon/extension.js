@@ -135,7 +135,7 @@ export default {
         this.registerWidgets(widgetService);
 
         // Declare the registries extensions can add table columns, actions and
-        // buttons to, e.g. `ledger:table:invoice:columns` or `ledger:details:invoice:menu`.
+        // buttons to, e.g. `ledger:invoice:table:columns` or `ledger:invoice:details:menu`.
         universe.getService('universe/resource-view-service')?.declare('ledger', ['account', 'gateway', 'invoice', 'invoice-template', 'journal', 'transaction', 'wallet']);
     },
 
