@@ -7,6 +7,7 @@ export default class InvoiceTemplateActionsService extends ResourceActionService
         this.initialize('template', {
             permissionPrefix: 'ledger',
             mountPrefix: 'console.ledger',
+            registryResource: 'invoice-template',
         });
     }
 

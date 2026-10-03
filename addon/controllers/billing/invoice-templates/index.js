@@ -7,7 +7,7 @@ export default class BillingInvoiceTemplatesIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query'];
+    @tracked queryParams = this.invoiceTemplateActions.queryParamsFor(['page', 'limit', 'sort', 'query']);
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
@@ -17,11 +17,13 @@ export default class BillingInvoiceTemplatesIndexController extends Controller {
     get actionButtons() {
         return [
             {
+                id: 'refresh',
                 icon: 'refresh',
                 onClick: this.invoiceTemplateActions.refresh,
                 helpText: this.intl.t('common.refresh'),
             },
             {
+                id: 'create',
                 text: this.intl.t('common.new'),
                 type: 'primary',
                 icon: 'plus',
@@ -34,6 +36,7 @@ export default class BillingInvoiceTemplatesIndexController extends Controller {
         const selected = this.tableContext.getSelectedRows();
         return [
             {
+                id: 'bulk-delete',
                 label: this.intl.t('common.delete-selected-count', { count: selected.length }),
                 class: 'text-red-500',
                 fn: this.invoiceTemplateActions.bulkDelete,
@@ -44,6 +47,7 @@ export default class BillingInvoiceTemplatesIndexController extends Controller {
     get columns() {
         return [
             {
+                id: 'name',
                 sticky: true,
                 label: this.intl.t('column.name'),
                 valuePath: 'name',
@@ -59,23 +63,27 @@ export default class BillingInvoiceTemplatesIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'description',
                 label: this.intl.t('column.description'),
                 valuePath: 'description',
                 resizable: true,
             },
             {
+                id: 'orientation',
                 label: this.intl.t('column.orientation'),
                 valuePath: 'orientation',
                 resizable: true,
                 sortable: true,
             },
             {
+                id: 'is-default',
                 label: this.intl.t('column.default'),
                 valuePath: 'is_default',
                 resizable: true,
                 sortable: true,
             },
             {
+                id: 'created-at',
                 label: this.intl.t('column.created-at'),
                 valuePath: 'createdAt',
                 resizable: true,
@@ -83,6 +91,7 @@ export default class BillingInvoiceTemplatesIndexController extends Controller {
             },
             // ── Row actions dropdown ─────────────────────────────────────────
             {
+                id: 'row-actions',
                 label: '',
                 cellComponent: 'table/cell/dropdown',
                 ddButtonText: false,
@@ -99,18 +108,21 @@ export default class BillingInvoiceTemplatesIndexController extends Controller {
                 searchable: false,
                 actions: [
                     {
+                        id: 'edit',
                         label: this.intl.t('common.edit-resource', { resource: this.intl.t('resource.invoice-template') }),
                         icon: 'pencil',
                         fn: this.invoiceTemplateActions.transition.edit,
                         permission: 'ledger update template',
                     },
                     {
+                        id: 'preview',
                         label: this.intl.t('common.view-resource', { resource: this.intl.t('resource.invoice-template') }),
                         icon: 'eye',
                         fn: this.invoiceTemplateActions.preview,
                         permission: 'ledger view template',
                     },
                     {
+                        id: 'delete',
                         label: this.intl.t('common.delete-resource', { resource: this.intl.t('resource.invoice-template') }),
                         icon: 'trash',
                         fn: this.invoiceTemplateActions.delete,

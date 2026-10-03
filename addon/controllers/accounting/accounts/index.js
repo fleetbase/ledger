@@ -7,7 +7,7 @@ export default class AccountingAccountsIndexController extends Controller {
     @service tableContext;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'type', 'status', 'currency'];
+    @tracked queryParams = this.accountActions.queryParamsFor(['page', 'limit', 'sort', 'query', 'type', 'status', 'currency']);
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = 'code';
@@ -20,11 +20,13 @@ export default class AccountingAccountsIndexController extends Controller {
     get actionButtons() {
         return [
             {
+                id: 'refresh',
                 icon: 'refresh',
                 onClick: this.accountActions.refresh,
                 helpText: this.intl.t('common.refresh'),
             },
             {
+                id: 'create',
                 text: this.intl.t('common.new'),
                 type: 'primary',
                 icon: 'plus',
@@ -37,6 +39,7 @@ export default class AccountingAccountsIndexController extends Controller {
         const selected = this.tableContext.getSelectedRows();
         return [
             {
+                id: 'bulk-delete',
                 label: this.intl.t('common.delete-selected-count', { count: selected.length }),
                 class: 'text-red-500',
                 fn: this.accountActions.bulkDelete,
@@ -47,6 +50,7 @@ export default class AccountingAccountsIndexController extends Controller {
     get columns() {
         return [
             {
+                id: 'name',
                 sticky: true,
                 label: this.intl.t('column.name'),
                 valuePath: 'name',
@@ -59,6 +63,7 @@ export default class AccountingAccountsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'code',
                 label: this.intl.t('column.code'),
                 valuePath: 'code',
                 cellComponent: 'table/cell/anchor',
@@ -70,6 +75,7 @@ export default class AccountingAccountsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'type',
                 label: this.intl.t('column.type'),
                 valuePath: 'type',
                 humanize: true,
@@ -89,6 +95,7 @@ export default class AccountingAccountsIndexController extends Controller {
                 ],
             },
             {
+                id: 'currency',
                 label: this.intl.t('column.currency'),
                 valuePath: 'currency',
                 resizable: true,
@@ -98,6 +105,7 @@ export default class AccountingAccountsIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'balance',
                 label: this.intl.t('column.balance'),
                 cellComponent: 'table/cell/currency',
                 valuePath: 'balance',
@@ -105,6 +113,7 @@ export default class AccountingAccountsIndexController extends Controller {
                 sortable: true,
             },
             {
+                id: 'status',
                 label: this.intl.t('column.status'),
                 valuePath: 'status',
                 cellComponent: 'table/cell/status',
