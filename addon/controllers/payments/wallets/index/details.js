@@ -20,9 +20,10 @@ export default class PaymentsWalletsIndexDetailsController extends Controller {
         const frozen = wallet?.is_frozen;
 
         return [
-            { label: 'Add Funds', icon: 'plus-circle', type: 'primary', helpText: 'Add funds to this wallet balance.', onClick: this.topUpWallet },
-            { label: 'Transfer', icon: 'exchange-alt', helpText: 'Transfer funds from this wallet to another wallet.', onClick: this.transferFunds },
+            { id: 'top-up-wallet', label: 'Add Funds', icon: 'plus-circle', type: 'primary', helpText: 'Add funds to this wallet balance.', onClick: this.topUpWallet },
+            { id: 'transfer-funds', label: 'Transfer', icon: 'exchange-alt', helpText: 'Transfer funds from this wallet to another wallet.', onClick: this.transferFunds },
             {
+                id: 'toggle-freeze',
                 label: frozen ? 'Unfreeze' : 'Freeze',
                 icon: frozen ? 'unlock' : 'lock',
                 type: frozen ? 'default' : 'danger',

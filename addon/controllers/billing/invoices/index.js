@@ -9,7 +9,7 @@ export default class BillingInvoicesIndexController extends Controller {
     @service hostRouter;
     @service intl;
 
-    @tracked queryParams = ['page', 'limit', 'sort', 'query', 'status', 'currency', 'order', 'customer', 'created_at', 'due_date', 'amount'];
+    @tracked queryParams = this.invoiceActions.queryParamsFor(['page', 'limit', 'sort', 'query', 'status', 'currency', 'order', 'customer', 'created_at', 'due_date', 'amount']);
     @tracked page = 1;
     @tracked limit = 30;
     @tracked sort = '-created_at';
@@ -26,11 +26,13 @@ export default class BillingInvoicesIndexController extends Controller {
     get actionButtons() {
         return [
             {
+                id: 'refresh',
                 icon: 'refresh',
                 onClick: this.invoiceActions.refresh,
                 helpText: this.intl.t('common.refresh'),
             },
             {
+                id: 'create',
                 text: this.intl.t('common.new'),
                 type: 'primary',
                 icon: 'plus',
@@ -43,6 +45,7 @@ export default class BillingInvoicesIndexController extends Controller {
         const selected = this.tableContext.getSelectedRows();
         return [
             {
+                id: 'bulk-delete',
                 label: this.intl.t('common.delete-selected-count', { count: selected.length }),
                 class: 'text-red-500',
                 fn: this.invoiceActions.bulkDelete,
@@ -53,6 +56,7 @@ export default class BillingInvoicesIndexController extends Controller {
     get columns() {
         return [
             {
+                id: 'number',
                 sticky: true,
                 label: this.intl.t('column.number'),
                 valuePath: 'number',
@@ -65,6 +69,7 @@ export default class BillingInvoicesIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'customer-name',
                 label: this.intl.t('column.customer'),
                 valuePath: 'customerName',
                 resizable: true,
@@ -76,6 +81,7 @@ export default class BillingInvoicesIndexController extends Controller {
                 model: 'customer',
             },
             {
+                id: 'order-tracking-label',
                 label: 'Order',
                 valuePath: 'orderTrackingLabel',
                 cellComponent: 'table/cell/anchor',
@@ -90,6 +96,7 @@ export default class BillingInvoicesIndexController extends Controller {
                 modelNamePath: 'tracking',
             },
             {
+                id: 'status',
                 label: this.intl.t('column.status'),
                 valuePath: 'status',
                 cellComponent: 'table/cell/status',
@@ -113,6 +120,7 @@ export default class BillingInvoicesIndexController extends Controller {
                 ],
             },
             {
+                id: 'total',
                 label: this.intl.t('column.total'),
                 valuePath: 'total',
                 cellComponent: 'table/cell/currency',
@@ -129,6 +137,7 @@ export default class BillingInvoicesIndexController extends Controller {
                 maxLabel: 'Max',
             },
             {
+                id: 'currency',
                 label: this.intl.t('column.currency'),
                 valuePath: 'currency',
                 resizable: true,
@@ -138,6 +147,7 @@ export default class BillingInvoicesIndexController extends Controller {
                 filterComponent: 'filter/string',
             },
             {
+                id: 'balance',
                 label: this.intl.t('column.balance'),
                 valuePath: 'balance',
                 cellComponent: 'table/cell/currency',
@@ -146,6 +156,7 @@ export default class BillingInvoicesIndexController extends Controller {
                 sortable: true,
             },
             {
+                id: 'due-date',
                 label: this.intl.t('column.due-date'),
                 valuePath: 'dueDate',
                 resizable: true,
@@ -155,12 +166,14 @@ export default class BillingInvoicesIndexController extends Controller {
                 filterComponent: 'filter/date',
             },
             {
+                id: 'invoice-date',
                 label: this.intl.t('column.invoice-date'),
                 valuePath: 'invoiceDate',
                 resizable: true,
                 sortable: true,
             },
             {
+                id: 'created-at',
                 label: this.intl.t('column.created-at'),
                 valuePath: 'createdAt',
                 resizable: true,
@@ -170,6 +183,7 @@ export default class BillingInvoicesIndexController extends Controller {
                 filterComponent: 'filter/date',
             },
             {
+                id: 'row-actions',
                 label: '',
                 cellComponent: 'table/cell/dropdown',
                 ddButtonText: false,
@@ -186,36 +200,42 @@ export default class BillingInvoicesIndexController extends Controller {
                 searchable: false,
                 actions: [
                     {
+                        id: 'view',
                         label: this.intl.t('common.view-resource', { resource: this.intl.t('resource.invoice') }),
                         icon: 'eye',
                         fn: this.invoiceActions.transition.view,
                         permission: 'ledger view invoice',
                     },
                     {
+                        id: 'edit',
                         label: this.intl.t('common.edit-resource', { resource: this.intl.t('resource.invoice') }),
                         icon: 'pencil',
                         fn: this.invoiceActions.transition.edit,
                         permission: 'ledger update invoice',
                     },
                     {
+                        id: 'record-payment',
                         label: 'Record Payment',
                         icon: 'check-circle',
                         fn: this.invoiceActions.recordPayment,
                         permission: 'ledger update invoice',
                     },
                     {
+                        id: 'preview-invoice',
                         label: 'Preview Invoice',
                         icon: 'file-invoice',
                         fn: this.invoiceActions.previewInvoice,
                         permission: 'ledger view invoice',
                     },
                     {
+                        id: 'copy-invoice-url',
                         label: this.intl.t('invoice.actions.copy-invoice-url'),
                         icon: 'link',
                         fn: this.invoiceActions.copyInvoiceUrl,
                         permission: 'ledger view invoice',
                     },
                     {
+                        id: 'delete',
                         label: this.intl.t('common.delete-resource', { resource: this.intl.t('resource.invoice') }),
                         icon: 'trash',
                         fn: this.invoiceActions.delete,
