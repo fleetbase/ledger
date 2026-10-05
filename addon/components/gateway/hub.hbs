@@ -34,6 +34,7 @@
                         </div>
                         <div class="ledger-gateway-connections-actions flex min-w-0 flex-wrap items-center gap-2 lg:ml-auto lg:flex-nowrap lg:justify-end">
                             <Layout::Resource::TabularActions
+                                @registry={{@registry}}
                                 @title="Connected Gateways"
                                 @searchQuery={{@searchQuery}}
                                 @onSearch={{@onSearch}}
