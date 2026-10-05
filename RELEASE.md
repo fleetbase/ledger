@@ -3,7 +3,7 @@
 ---
 ## Highlights
 
-- **Resource view registries.** Extensions can add the following through `ledger:table:<resource>:<slot>` and `ledger:details:<resource>:<slot>`:
+- **Resource view registries.** Extensions can add the following through `ledger:<resource>:table:<slot>` and `ledger:<resource>:details:<slot>`:
   - columns, row actions, bulk actions and toolbar buttons on every ledger table;
   - header buttons and "…" menu items on every details panel.
 
