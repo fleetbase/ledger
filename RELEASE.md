@@ -9,7 +9,7 @@
 
 ---
 ## Upgrading
-Takes effect with fleetbase/core-api's cache dependency support ([fleetbase/core-api#299](https://github.com/fleetbase/core-api/pull/299)). With an older core-api the change is inert.
+Takes effect with fleetbase/core-api's cache dependency support ([fleetbase/core-api#301](https://github.com/fleetbase/core-api/pull/301)). With an older core-api the change is inert.
 
 ---
 ## Need help?
