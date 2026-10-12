@@ -59,6 +59,32 @@ class Transaction extends BaseTransaction
     ];
 
     /**
+     * Tables the cached transactions list embeds, so writes to them invalidate it.
+     *
+     * TransactionFilter::queryForInternal eager loads the line items, the journal
+     * with its debit and credit accounts, and the subject, payer, payee, initiator
+     * and context morphs. Morph targets have no single table, so the ones ledger
+     * writes are listed: ledger invoices, the invoice customer types (contacts, vendors)
+     * and companies. Orders and drivers are left out on purpose: they are written
+     * constantly, so declaring them would leave the list almost never cached; their
+     * snapshots in the list may lag by up to the list cache TTL.
+     *
+     * Requires fleetbase/core-api's cache dependency support; inert before it.
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = [
+        'items',
+        'journal',
+        'journal.debitAccount',
+        'journal.creditAccount',
+        'ledger_invoices',
+        'contacts',
+        'vendors',
+        'companies',
+    ];
+
+    /**
      * Merge ledger-specific fillable fields into the parent's list.
      */
     public function __construct(array $attributes = [])
