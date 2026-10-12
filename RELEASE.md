@@ -1,17 +1,15 @@
-> v0.0.12 ~ "Extensions can add columns, actions and buttons to ledger tables and panels"
+> v0.0.13 ~ "Transaction lists stay current when what they show changes"
 
 ---
-## Highlights
+## Bug Fixes
 
-- **Resource view registries.** Extensions can add the following through `ledger:<resource>:table:<slot>` and `ledger:<resource>:details:<slot>`:
-  - columns, row actions, bulk actions and toolbar buttons on every ledger table;
-  - header buttons and "…" menu items on every details panel.
+- **Stale transaction lists.** The cached transactions list holds its line items, journal entries with their debit and credit accounts, and each transaction's subject, payer, payee, initiator and context. Edits to any of those didn't invalidate the list, so they could show stale values until the cache expired. The list's cache key now carries the versions of those tables.
 
-  Resources: `account`, `gateway`, `invoice`, `invoice-template`, `journal`, `transaction`, `wallet`. Built-in items carry stable ids, so registered items can be placed before or after them.
+  Two exceptions: orders and drivers are written constantly, so a transaction's order or driver snapshot can lag by up to the five-minute list cache.
 
 ---
 ## Upgrading
-Needs fleetbase/ember-core v0.3.25 and fleetbase/ember-ui v0.4.5.
+Takes effect with fleetbase/core-api's cache dependency support ([fleetbase/core-api#299](https://github.com/fleetbase/core-api/pull/299)). With an older core-api the change is inert.
 
 ---
 ## Need help?
