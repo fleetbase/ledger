@@ -124,6 +124,31 @@ test('gateway models protect credentials and expose operational helpers', functi
         ->and($gateway->toArray())->not->toHaveKey('config');
 });
 
+test('ledger transaction declares the relations its cached list eager loads as cache dependencies', function () {
+    $transaction  = new Transaction();
+    $dependencies = (fn () => $this->apiCacheDependencies)->call($transaction);
+
+    expect($dependencies)->toBe(['items', 'journal', 'journal.debitAccount', 'journal.creditAccount', 'ledger_invoices', 'contacts', 'vendors', 'companies'])
+        // Raw entries name the morph targets' tables; contacts and vendors belong to FleetOps
+        ->and((new Invoice())->getTable())->toBe('ledger_invoices')
+        ->and((new Fleetbase\Models\Company())->getTable())->toBe('companies');
+
+    // Every relation path must resolve, or core's cache rejects the declaration
+    $tables = [];
+    foreach (array_filter($dependencies, fn ($path) => method_exists($transaction, explode('.', $path)[0])) as $path) {
+        $model = $transaction;
+        foreach (explode('.', $path) as $segment) {
+            $relation = $model->{$segment}();
+            expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\Relation::class)
+                ->and($relation)->not->toBeInstanceOf(MorphTo::class);
+            $model    = $relation->getRelated();
+            $tables[] = $model->getTable();
+        }
+    }
+
+    expect(array_values(array_unique($tables)))->toBe(['transaction_items', 'ledger_journals', 'ledger_accounts']);
+});
+
 test('wallet relationships computed values and state rules cover every owner type', function () {
     $wallet = new WalletStateProbe(['balance' => 1050, 'status' => Wallet::STATUS_ACTIVE]);
 
