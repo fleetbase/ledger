@@ -33,18 +33,22 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
         |--------------------------------------------------------------------------
         |
         | These routes allow customers to view and pay invoices without logging in.
-        | They are scoped by the globally-unique invoice public_id / uuid.
+        | They are scoped by the globally-unique invoice public_id / uuid. Writes
+        | are logged to the API request logs like the public API's.
         |
         | GET  /ledger/public/invoices/{public_id}
         | GET  /ledger/public/invoices/{public_id}/gateways
         | POST /ledger/public/invoices/{public_id}/pay
         */
-        $router->prefix('public')->namespace('Public')->group(function ($router) {
-            $router->get('invoices/{public_id}', 'PublicInvoiceController@show');
-            $router->get('invoices/{public_id}/gateways', 'PublicInvoiceController@gateways');
-            $router->post('invoices/{public_id}/pay', 'PublicInvoiceController@pay');
-            $router->get('refunds/{refund_id}', 'PublicInvoiceController@refund');
-        });
+        $router->prefix('public')->namespace('Public')->group(
+            ['middleware' => [Fleetbase\Http\Middleware\LogApiRequests::class]],
+            function ($router) {
+                $router->get('invoices/{public_id}', 'PublicInvoiceController@show');
+                $router->get('invoices/{public_id}/gateways', 'PublicInvoiceController@gateways');
+                $router->post('invoices/{public_id}/pay', 'PublicInvoiceController@pay');
+                $router->get('refunds/{refund_id}', 'PublicInvoiceController@refund');
+            }
+        );
 
         /*
         |--------------------------------------------------------------------------
