@@ -11,9 +11,11 @@
 
 ---
 ## Upgrading
-The transaction list fix takes effect with fleetbase/core-api's cache dependency support ([fleetbase/core-api#301](https://github.com/fleetbase/core-api/pull/301)). With an older core-api the change is inert.
+The transaction list fix takes effect with fleetbase/core-api v1.6.69, which adds cache dependency support ([fleetbase/core-api#301](https://github.com/fleetbase/core-api/pull/301)). With an older core-api the change is inert.
 
-API request logging takes effect with [fleetbase/core-api#302](https://github.com/fleetbase/core-api/pull/302), which logs every route that runs `LogApiRequests` rather than only `v1/...`. With an older core-api, ledger requests are still not logged.
+API request logging takes effect with fleetbase/core-api v1.6.69 ([fleetbase/core-api#302](https://github.com/fleetbase/core-api/pull/302)), which logs every route that runs `LogApiRequests` rather than only `v1/...`. With an older core-api, ledger requests are still not logged.
+
+The console engine now depends on fleetbase/ember-ui v0.4.6 and fleetbase/ember-core v0.3.26.
 
 ---
 ## Need help?
