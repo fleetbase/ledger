@@ -40,15 +40,12 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
         | GET  /ledger/public/invoices/{public_id}/gateways
         | POST /ledger/public/invoices/{public_id}/pay
         */
-        $router->prefix('public')->namespace('Public')->group(
-            ['middleware' => [Fleetbase\Http\Middleware\LogApiRequests::class]],
-            function ($router) {
-                $router->get('invoices/{public_id}', 'PublicInvoiceController@show');
-                $router->get('invoices/{public_id}/gateways', 'PublicInvoiceController@gateways');
-                $router->post('invoices/{public_id}/pay', 'PublicInvoiceController@pay');
-                $router->get('refunds/{refund_id}', 'PublicInvoiceController@refund');
-            }
-        );
+        $router->prefix('public')->namespace('Public')->middleware([Fleetbase\Http\Middleware\LogApiRequests::class])->group(function ($router) {
+            $router->get('invoices/{public_id}', 'PublicInvoiceController@show');
+            $router->get('invoices/{public_id}/gateways', 'PublicInvoiceController@gateways');
+            $router->post('invoices/{public_id}/pay', 'PublicInvoiceController@pay');
+            $router->get('refunds/{refund_id}', 'PublicInvoiceController@refund');
+        });
 
         /*
         |--------------------------------------------------------------------------
