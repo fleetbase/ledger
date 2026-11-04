@@ -1110,7 +1110,7 @@ class LedgerService
         $endDate   = $endDate ?? now()->toDateString();
 
         // Previous period (same length, immediately before)
-        $periodDays    = now()->parse($startDate)->diffInDays(now()->parse($endDate)) + 1;
+        $periodDays    = (int) now()->parse($startDate)->diffInDays(now()->parse($endDate), true) + 1;
         $prevEndDate   = now()->parse($startDate)->subDay()->toDateString();
         $prevStartDate = now()->parse($prevEndDate)->subDays($periodDays - 1)->toDateString();
 
