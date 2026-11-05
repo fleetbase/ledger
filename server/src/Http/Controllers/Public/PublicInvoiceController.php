@@ -138,7 +138,7 @@ class PublicInvoiceController extends Controller
 
         $invoice = $this->resolvePublicInvoice($publicId);
 
-        if (in_array($invoice->status, ['paid', 'refunded', 'refund_pending', 'partial_refund_pending', 'void', 'cancelled']) || (int) $invoice->balance <= 0) {
+        if (in_array($invoice->status, ['draft', 'paid', 'refunded', 'refund_pending', 'partial_refund_pending', 'void', 'cancelled']) || (int) $invoice->balance <= 0) {
             return response()->json([
                 'error' => 'This invoice cannot accept payments in its current status.',
             ], 422);
@@ -169,6 +169,10 @@ class PublicInvoiceController extends Controller
 
         // ── Cash/manual: immediate local record ────────────────────────────────
         if ($driver instanceof CashDriver) {
+            if (!$driver->allowsCustomerConfirmation($gateway->decryptedConfig())) {
+                return response()->json(['error' => 'Cash payments are confirmed by the business once they receive the money.'], 422);
+            }
+
             return $this->recordManualPayment($driver, $invoice, $request);
         }
 
