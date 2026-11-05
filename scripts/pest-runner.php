@@ -24,7 +24,8 @@ if ($pest === null) {
 
 $serverVendor = getcwd() . '/server_vendor';
 $vendor       = getcwd() . '/vendor';
-// Pest 1 resolves PHPUnit through vendor even when Composer uses server_vendor.
+// Pest hardcodes its autoloader at ../../../vendor/autoload.php (pestphp/pest#920),
+// so it still needs a vendor entry even though Composer uses server_vendor.
 // Keep this compatibility link local to the test run so it cannot enter releases.
 $createdVendorSymlink = false;
 if (!file_exists($vendor) && !is_link($vendor) && is_dir($serverVendor)) {
