@@ -171,9 +171,10 @@ test('Ledger service provider boots package assets events template schema comman
         ['views', dirname(__DIR__, 2) . '/src/Providers/../../resources/views', 'ledger'],
     )
         ->and($events->listeners)->toBe([
-            PaymentSucceeded::class => HandleSuccessfulPayment::class,
-            PaymentFailed::class    => HandleFailedPayment::class,
-            RefundProcessed::class  => HandleProcessedRefund::class,
+            PaymentSucceeded::class                        => HandleSuccessfulPayment::class,
+            Fleetbase\Ledger\Events\InvoicePaid::class     => Fleetbase\Ledger\Listeners\MarkOrderPaid::class,
+            PaymentFailed::class                           => HandleFailedPayment::class,
+            RefundProcessed::class                         => HandleProcessedRefund::class,
         ])
         ->and($provider->commandClasses)->toBe([
             ProvisionLedgerDefaults::class,

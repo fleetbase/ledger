@@ -77,6 +77,12 @@ class PurchaseRateObserver
                 'notes'            => "Auto-generated from Fleet-Ops order {$order->public_id}",
             ], $purchaseRate);
 
+            // An order's final fare is billed straight away, so the customer can pay it. Fleet-Ops
+            // sets `fare_finalized_at` on the order before buying the final price.
+            if ($invoice && data_get($order, 'fare_finalized_at') && $invoice->status === 'draft') {
+                $invoice->markAsSent();
+            }
+
             Log::channel('ledger')->info('[Ledger] PurchaseRateObserver: invoice created for order.', [
                 'invoice_uuid'       => $invoice->uuid,
                 'invoice_number'     => $invoice->number,
