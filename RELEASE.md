@@ -1,24 +1,14 @@
-> v0.0.13 ~ "Transaction lists stay current when what they show changes"
+> v0.1.0 ~ "Laravel 12 and core-api 2.0"
 
 ---
-## Bug Fixes
+## Highlights
 
-- **Stale transaction lists.** The cached transactions list holds its line items, journal entries with their debit and credit accounts, and each transaction's subject, payer, payee, initiator and context. Edits to any of those didn't invalidate the list, so they could show stale values until the cache expired. The list's cache key now carries the versions of those tables.
-
-  Two exceptions: orders and drivers are written constantly, so a transaction's order or driver snapshot can lag by up to the five-minute list cache.
-
-- **Public API requests weren't logged.** Writes to the public wallet API (`ledger/v1/...`) and the customer invoice routes (`ledger/public/...`, such as paying an invoice) are now written to the API request logs, like core's public API. Webhooks and the console's internal routes aren't logged.
+- **Laravel 12.** The server package now runs on Laravel 12 with Carbon 3 and requires `fleetbase/core-api` ^2.0. It installs into the Laravel 12 Fleetbase API (fleetbase/fleetbase v0.8.0); Laravel 10 installs stay on the v0.0.13 line.
+- **No security advisory exceptions.** `composer audit` reports no advisories on the Laravel 12 dependency set, so the Composer advisory workarounds are gone.
 
 ---
 ## Upgrading
-The transaction list fix takes effect with fleetbase/core-api v1.6.69, which adds cache dependency support ([fleetbase/core-api#301](https://github.com/fleetbase/core-api/pull/301)). With an older core-api the change is inert.
 
-API request logging takes effect with fleetbase/core-api v1.6.69 ([fleetbase/core-api#302](https://github.com/fleetbase/core-api/pull/302)), which logs every route that runs `LogApiRequests` rather than only `v1/...`. With an older core-api, ledger requests are still not logged.
-
-The console engine now depends on fleetbase/ember-ui v0.4.6 and fleetbase/ember-core v0.3.26.
-
----
-## Need help?
-- [GitHub Discussions](https://github.com/fleetbase/fleetbase/discussions)
-- [Discord](https://discord.gg/HnTqQ6zAVn)
----
+- **Requires fleetbase/core-api v2.0.0** (Laravel 12, PHP 8.2 or later). Upgrade the API to fleetbase/fleetbase v0.8.0 first, then this extension.
+- **Requires** `fleetbase/fleetops-api` ^0.7.0. Install those Laravel 12 releases first.
+- Run `php artisan migrate` after upgrading.
