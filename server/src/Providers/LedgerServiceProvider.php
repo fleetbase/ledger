@@ -9,7 +9,7 @@ use Fleetbase\Ledger\Events\RefundProcessed;
 use Fleetbase\Ledger\Listeners\HandleFailedPayment;
 use Fleetbase\Ledger\Listeners\HandleProcessedRefund;
 use Fleetbase\Ledger\Listeners\HandleSuccessfulPayment;
-use Fleetbase\Ledger\Listeners\MarkRideInvoicePaid;
+use Fleetbase\Ledger\Listeners\MarkOrderPaid;
 use Fleetbase\Ledger\PaymentGatewayManager;
 use Fleetbase\Ledger\Services\InvoiceService;
 use Fleetbase\Ledger\Services\LedgerService;
@@ -141,7 +141,7 @@ class LedgerServiceProvider extends CoreServiceProvider
     private function registerPaymentEvents(): void
     {
         Event::listen(PaymentSucceeded::class, HandleSuccessfulPayment::class);
-        Event::listen(InvoicePaid::class, MarkRideInvoicePaid::class);
+        Event::listen(InvoicePaid::class, MarkOrderPaid::class);
         Event::listen(PaymentFailed::class, HandleFailedPayment::class);
         Event::listen(RefundProcessed::class, HandleProcessedRefund::class);
     }

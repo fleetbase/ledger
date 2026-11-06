@@ -169,15 +169,15 @@ test('purchase rate invoice failures are contained and audited', function () {
         ->toContain('[Ledger] PurchaseRateObserver: failed to create invoice.');
 });
 
-test('a ride\'s final fare is sent straight away so the rider can pay it', function () {
+test('an order\'s final fare is sent straight away so the customer can pay it', function () {
     $final           = new PurchaseRateObserverInvoiceService();
     $booking         = new PurchaseRateObserverInvoiceService();
     $already         = new PurchaseRateObserverInvoiceService();
     $already->status = 'sent';
 
-    (new PurchaseRateObserver($final))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['meta' => ['fare' => ['final' => true]]])));
+    (new PurchaseRateObserver($final))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['fare_finalized_at' => '2026-11-06 10:00:00'])));
     (new PurchaseRateObserver($booking))->created(purchaseRateObserverRate(purchaseRateObserverOrder()));
-    (new PurchaseRateObserver($already))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['meta' => ['fare' => ['final' => true]]])));
+    (new PurchaseRateObserver($already))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['fare_finalized_at' => '2026-11-06 10:00:00'])));
 
     expect($final->created->sent)->toBeTrue()
         ->and($booking->created->sent)->toBeFalse()

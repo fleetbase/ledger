@@ -172,7 +172,7 @@ test('Ledger service provider boots package assets events template schema comman
     )
         ->and($events->listeners)->toBe([
             PaymentSucceeded::class                        => HandleSuccessfulPayment::class,
-            Fleetbase\Ledger\Events\InvoicePaid::class     => Fleetbase\Ledger\Listeners\MarkRideInvoicePaid::class,
+            Fleetbase\Ledger\Events\InvoicePaid::class     => Fleetbase\Ledger\Listeners\MarkOrderPaid::class,
             PaymentFailed::class                           => HandleFailedPayment::class,
             RefundProcessed::class                         => HandleProcessedRefund::class,
         ])

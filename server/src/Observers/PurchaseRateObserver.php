@@ -77,9 +77,9 @@ class PurchaseRateObserver
                 'notes'            => "Auto-generated from Fleet-Ops order {$order->public_id}",
             ], $purchaseRate);
 
-            // A ride's final fare is billed straight away, so the rider can pay it. Fleet-Ops
-            // marks it on the order (`meta.fare.final`) before buying the final price.
-            if ($invoice && data_get($order, 'meta.fare.final') === true && $invoice->status === 'draft') {
+            // An order's final fare is billed straight away, so the customer can pay it. Fleet-Ops
+            // sets `fare_finalized_at` on the order before buying the final price.
+            if ($invoice && data_get($order, 'fare_finalized_at') && $invoice->status === 'draft') {
                 $invoice->markAsSent();
             }
 
