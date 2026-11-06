@@ -46,7 +46,7 @@ if (!is_file($bootstrap)) {
     exit(1);
 }
 
-$args = array_slice($argv, 1);
+$args             = array_slice($argv, 1);
 $hasConfiguration = false;
 foreach ($args as $arg) {
     if (str_starts_with($arg, '--configuration')) {
