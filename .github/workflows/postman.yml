@@ -20,10 +20,17 @@ permissions:
 
 jobs:
   contract:
-    uses: fleetbase/fleetbase/.github/workflows/api-contract.yml@880c7392c67c93e3a65f01916d7a04036c098935
+    # Laravel 12 release only. Revert this job to what it was before the release once it
+    # ships, including the fleetbase pin. The published image is Laravel 10 and its
+    # extensions require core-api 1.x, so this branch can only resolve against the whole
+    # Laravel 12 train: the `l12` stack builds the image from fleetbase's Laravel 12 branch and
+    # links core-api and every extension from their release branches. Point `uses` and
+    # `stack-ref` at `main` once fleetbase/fleetbase's contract-stack change merges there.
+    uses: fleetbase/fleetbase/.github/workflows/api-contract.yml@ci/contract-stack
     with:
-      fleetbase-ref: 880c7392c67c93e3a65f01916d7a04036c098935
       collections: "Fleetbase Ledger API"
+      stack: l12
+      stack-ref: ci/contract-stack
       build-from-source: false
       # Without this the run tests the version of fleetbase/ledger-api baked into the
       # published image, not the branch under review. The workflow checks this
