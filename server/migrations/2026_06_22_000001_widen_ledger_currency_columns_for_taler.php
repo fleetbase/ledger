@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Widen Ledger-owned currency columns so demo and regional Taler currencies
      * such as KUDOS can be persisted without exposing them as normal UI options.
@@ -16,7 +15,7 @@ return new class extends Migration
         $this->changeCurrencyColumn('ledger_journals', false, 'USD', 10);
         $this->changeCurrencyColumn('ledger_invoices', false, 'USD', 10);
         $this->changeCurrencyColumn('ledger_wallets', false, 'USD', 10);
-        $this->changeCurrencyColumn('ledger_gateway_transactions', true, null, 10);
+        $this->changeCurrencyColumn('ledger_gateway_transactions', true, null, 10, true);
     }
 
     public function down(): void
@@ -25,17 +24,17 @@ return new class extends Migration
         $this->changeCurrencyColumn('ledger_journals', false, 'USD', 3);
         $this->changeCurrencyColumn('ledger_invoices', false, 'USD', 3);
         $this->changeCurrencyColumn('ledger_wallets', false, 'USD', 3);
-        $this->changeCurrencyColumn('ledger_gateway_transactions', true, null, 3);
+        $this->changeCurrencyColumn('ledger_gateway_transactions', true, null, 3, true);
     }
 
-    private function changeCurrencyColumn(string $tableName, bool $nullable, ?string $default, int $length): void
+    private function changeCurrencyColumn(string $tableName, bool $nullable, ?string $default, int $length, bool $fixed = false): void
     {
         if (!Schema::hasTable($tableName) || !Schema::hasColumn($tableName, 'currency')) {
             return;
         }
 
-        Schema::table($tableName, function (Blueprint $table) use ($length, $nullable, $default) {
-            $column = $table->string('currency', $length);
+        Schema::table($tableName, function (Blueprint $table) use ($length, $nullable, $default, $fixed) {
+            $column = $fixed ? $table->char('currency', $length) : $table->string('currency', $length);
 
             if ($nullable) {
                 $column->nullable();
