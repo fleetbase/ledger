@@ -77,6 +77,12 @@ class PurchaseRateObserver
                 'notes'            => "Auto-generated from Fleet-Ops order {$order->public_id}",
             ], $purchaseRate);
 
+            // A ride's final fare is billed straight away, so the rider can pay it. Fleet-Ops
+            // marks it on the order (`meta.fare.final`) before buying the final price.
+            if ($invoice && data_get($order, 'meta.fare.final') === true && $invoice->status === 'draft') {
+                $invoice->markAsSent();
+            }
+
             Log::channel('ledger')->info('[Ledger] PurchaseRateObserver: invoice created for order.', [
                 'invoice_uuid'       => $invoice->uuid,
                 'invoice_number'     => $invoice->number,

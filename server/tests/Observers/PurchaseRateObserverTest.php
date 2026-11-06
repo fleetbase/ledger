@@ -29,10 +29,27 @@ class PurchaseRateObserverInvoiceService extends InvoiceService
             throw $this->exception;
         }
 
-        return new Invoice([
+        $invoice = new PurchaseRateObserverRideInvoice([
             'uuid'   => 'generated-invoice',
             'number' => 'INV-GENERATED',
         ]);
+        $invoice->status = $this->status;
+
+        return $this->created = $invoice;
+    }
+
+    public string $status                            = 'draft';
+    public ?PurchaseRateObserverRideInvoice $created = null;
+}
+
+/** An invoice that records being sent instead of saving. */
+class PurchaseRateObserverRideInvoice extends Invoice
+{
+    public bool $sent = false;
+
+    public function markAsSent(): void
+    {
+        $this->sent = true;
     }
 }
 
@@ -150,4 +167,19 @@ test('purchase rate invoice failures are contained and audited', function () {
     expect($service->calls)->toHaveCount(1)
         ->and(collect(LoggerManager::$records)->pluck('message')->all())
         ->toContain('[Ledger] PurchaseRateObserver: failed to create invoice.');
+});
+
+test('a ride\'s final fare is sent straight away so the rider can pay it', function () {
+    $final           = new PurchaseRateObserverInvoiceService();
+    $booking         = new PurchaseRateObserverInvoiceService();
+    $already         = new PurchaseRateObserverInvoiceService();
+    $already->status = 'sent';
+
+    (new PurchaseRateObserver($final))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['meta' => ['fare' => ['final' => true]]])));
+    (new PurchaseRateObserver($booking))->created(purchaseRateObserverRate(purchaseRateObserverOrder()));
+    (new PurchaseRateObserver($already))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['meta' => ['fare' => ['final' => true]]])));
+
+    expect($final->created->sent)->toBeTrue()
+        ->and($booking->created->sent)->toBeFalse()
+        ->and($already->created->sent)->toBeFalse();
 });
