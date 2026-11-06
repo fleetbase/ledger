@@ -7,6 +7,7 @@ use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Support\CustomerAuth;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Ledger\Models\Invoice;
+use Fleetbase\Support\Utils;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -34,8 +35,17 @@ class CustomerInvoiceController extends Controller
                 'total_amount' => $invoice->total_amount,
                 'balance'      => $invoice->balance,
                 'currency'     => $invoice->currency,
+                'payment_url'  => $this->paymentUrl($invoice),
             ] : null,
         ]);
+    }
+
+    /**
+     * The hosted invoice page, where the customer picks how to pay.
+     */
+    protected function paymentUrl(Invoice $invoice): string
+    {
+        return Utils::consoleUrl('~/invoice', ['id' => $invoice->public_id]);
     }
 
     protected function currentCustomer(): ?Contact
@@ -49,13 +59,14 @@ class CustomerInvoiceController extends Controller
     }
 
     /**
-     * The newest invoice the customer can see. A draft isn't theirs to see yet.
+     * The newest invoice the customer can see. A draft isn't theirs to see yet, and a void or
+     * canceled one was replaced.
      */
     protected function findInvoice(Order $order): ?Invoice
     {
         return Invoice::where('order_uuid', $order->uuid)
             ->where('company_uuid', $order->company_uuid)
-            ->where('status', '!=', 'draft')
+            ->whereNotIn('status', ['draft', 'void', 'cancelled', 'canceled'])
             ->latest()
             ->first();
     }
