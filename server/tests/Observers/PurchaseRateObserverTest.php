@@ -29,7 +29,7 @@ class PurchaseRateObserverInvoiceService extends InvoiceService
             throw $this->exception;
         }
 
-        $invoice = new PurchaseRateObserverRideInvoice([
+        $invoice = new PurchaseRateObserverRecordingInvoice([
             'uuid'   => 'generated-invoice',
             'number' => 'INV-GENERATED',
         ]);
@@ -38,12 +38,12 @@ class PurchaseRateObserverInvoiceService extends InvoiceService
         return $this->created = $invoice;
     }
 
-    public string $status                            = 'draft';
-    public ?PurchaseRateObserverRideInvoice $created = null;
+    public string $status                                 = 'draft';
+    public ?PurchaseRateObserverRecordingInvoice $created = null;
 }
 
 /** An invoice that records being sent instead of saving. */
-class PurchaseRateObserverRideInvoice extends Invoice
+class PurchaseRateObserverRecordingInvoice extends Invoice
 {
     public bool $sent = false;
 
@@ -169,17 +169,11 @@ test('purchase rate invoice failures are contained and audited', function () {
         ->toContain('[Ledger] PurchaseRateObserver: failed to create invoice.');
 });
 
-test('an order\'s final fare is sent straight away so the customer can pay it', function () {
-    $final           = new PurchaseRateObserverInvoiceService();
-    $booking         = new PurchaseRateObserverInvoiceService();
-    $already         = new PurchaseRateObserverInvoiceService();
-    $already->status = 'sent';
+test('a new purchase rate\'s invoice stays a draft until something sends it', function () {
+    $service = new PurchaseRateObserverInvoiceService();
 
-    (new PurchaseRateObserver($final))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['fare_finalized_at' => '2026-11-06 10:00:00'])));
-    (new PurchaseRateObserver($booking))->created(purchaseRateObserverRate(purchaseRateObserverOrder()));
-    (new PurchaseRateObserver($already))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['fare_finalized_at' => '2026-11-06 10:00:00'])));
+    (new PurchaseRateObserver($service))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['meta' => ['repriced' => true]])));
 
-    expect($final->created->sent)->toBeTrue()
-        ->and($booking->created->sent)->toBeFalse()
-        ->and($already->created->sent)->toBeFalse();
+    // Sending is an order config's choice (Ledger's `send_invoice` action), not the observer's.
+    expect($service->created->sent)->toBeFalse();
 });

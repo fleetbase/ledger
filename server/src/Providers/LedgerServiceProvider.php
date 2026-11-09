@@ -9,7 +9,7 @@ use Fleetbase\Ledger\Events\RefundProcessed;
 use Fleetbase\Ledger\Listeners\HandleFailedPayment;
 use Fleetbase\Ledger\Listeners\HandleProcessedRefund;
 use Fleetbase\Ledger\Listeners\HandleSuccessfulPayment;
-use Fleetbase\Ledger\Listeners\MarkOrderPaid;
+use Fleetbase\Ledger\Listeners\SettleOrderTransaction;
 use Fleetbase\Ledger\PaymentGatewayManager;
 use Fleetbase\Ledger\Services\InvoiceService;
 use Fleetbase\Ledger\Services\LedgerService;
@@ -105,6 +105,9 @@ class LedgerServiceProvider extends CoreServiceProvider
         // Register event-listener bindings for the payment gateway system
         $this->registerPaymentEvents();
 
+        // Order configs can send an order's invoice from one of their triggers.
+        $this->registerOrderConfigActions();
+
         // Register the ledger-invoice context type with the template builder so
         // the frontend variable picker knows which variables are available when
         // designing invoice templates. The TemplateRenderService also uses this
@@ -133,6 +136,17 @@ class LedgerServiceProvider extends CoreServiceProvider
     }
 
     /**
+     * Add Ledger's actions to Fleet-Ops order config triggers, when Fleet-Ops has them.
+     */
+    private function registerOrderConfigActions(): void
+    {
+        $registry = 'Fleetbase\\FleetOps\\Support\\OrderConfig\\OrderConfigActions';
+        if (interface_exists('Fleetbase\\FleetOps\\Contracts\\OrderConfigAction') && class_exists($registry)) {
+            $registry::register(\Fleetbase\Ledger\OrderConfig\SendInvoice::class);
+        }
+    }
+
+    /**
      * Register all payment-related event-listener pairs.
      *
      * All listeners implement ShouldQueue and will be processed
@@ -141,7 +155,7 @@ class LedgerServiceProvider extends CoreServiceProvider
     private function registerPaymentEvents(): void
     {
         Event::listen(PaymentSucceeded::class, HandleSuccessfulPayment::class);
-        Event::listen(InvoicePaid::class, MarkOrderPaid::class);
+        Event::listen(InvoicePaid::class, SettleOrderTransaction::class);
         Event::listen(PaymentFailed::class, HandleFailedPayment::class);
         Event::listen(RefundProcessed::class, HandleProcessedRefund::class);
     }

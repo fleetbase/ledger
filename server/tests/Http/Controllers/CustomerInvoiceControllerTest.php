@@ -32,18 +32,18 @@ class CustomerInvoiceControllerProbe extends CustomerInvoiceController
     }
 }
 
-function customerInvoiceProbe(string $orderCustomer = 'rider-1'): CustomerInvoiceControllerProbe
+function customerInvoiceProbe(string $orderCustomer = 'customer-1'): CustomerInvoiceControllerProbe
 {
     $probe           = new CustomerInvoiceControllerProbe();
     $probe->customer = new Contact();
-    $probe->customer->setRawAttributes(['uuid' => 'rider-1'], true);
+    $probe->customer->setRawAttributes(['uuid' => 'customer-1'], true);
     $probe->order = new Order();
     $probe->order->setRawAttributes(['uuid' => 'order-1', 'company_uuid' => 'company-1', 'customer_uuid' => $orderCustomer], true);
 
     return $probe;
 }
 
-test('a rider gets the invoice for their own order', function () {
+test('a customer gets the invoice for their own order', function () {
     $probe          = customerInvoiceProbe();
     $probe->invoice = new Invoice();
     $probe->invoice->setRawAttributes(['public_id' => 'invoice_1', 'status' => 'sent', 'total_amount' => 2401, 'balance' => 2401, 'currency' => 'SGD'], true);
@@ -62,7 +62,7 @@ test('an order with no invoice yet answers with none', function () {
     expect(customerInvoiceProbe()->forOrder('order_1')->getData(true))->toBe(['invoice' => null]);
 });
 
-test('another rider and a missing order are both not found', function () {
+test('another customer\'s order and a missing order are both not found', function () {
     $missing        = customerInvoiceProbe();
     $missing->order = null;
 
