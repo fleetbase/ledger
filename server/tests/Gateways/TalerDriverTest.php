@@ -864,6 +864,19 @@ test('taler admin operations return configuration and transport failures', funct
         ]);
 });
 
+test('private requests send DELETE to the backend', function () {
+    fakeTalerHttp([
+        'https://backend.example.taler.net/instances/testmerchant/private/webhooks/fleetbase-ledger-pay' => Http::response([], 204),
+    ]);
+
+    $response = (new ReflectionMethod(TalerDriver::class, 'privateRequest'))
+        ->invoke(talerDriver(), 'DELETE', 'instances/testmerchant/private/webhooks/fleetbase-ledger-pay');
+
+    expect($response->status())->toBe(204);
+
+    Http::assertSent(fn ($httpRequest) => $httpRequest->method() === 'DELETE');
+});
+
 test('registerWebhook updates an existing hook and reports provider rejection', function () {
     fakeTalerHttp([
         'https://backend.example.taler.net/instances/testmerchant/private/webhooks'                      => Http::response([], 409),

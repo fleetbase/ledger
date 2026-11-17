@@ -61,6 +61,12 @@ Route::prefix(config('ledger.api.routing.prefix', 'ledger'))->namespace('Fleetba
                         $router->get('wallet/balance', 'Api\v1\WalletApiController@getBalance');
                         $router->get('wallet/transactions', 'Api\v1\WalletApiController@getTransactions');
                         $router->post('wallet/topup', 'Api\v1\WalletApiController@topUp');
+                        $router->group(
+                            ['middleware' => [Fleetbase\FleetOps\Http\Middleware\AuthenticateCustomerToken::class]],
+                            function ($router) {
+                                $router->get('customers/orders/{id}/invoice', 'Api\v1\CustomerInvoiceController@forOrder');
+                            }
+                        );
                     }
                 );
             }

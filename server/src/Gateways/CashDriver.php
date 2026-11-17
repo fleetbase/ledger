@@ -58,7 +58,23 @@ class CashDriver extends AbstractGatewayDriver
                 'required' => false,
                 'hint'     => 'Instructions shown to customers after selecting this payment method.',
             ],
+            [
+                'key'         => 'staff_confirm_only',
+                'label'       => 'Only your team can mark cash invoices as paid',
+                'type'        => 'boolean',
+                'required'    => false,
+                'description' => 'When off, anyone with the invoice link can mark it paid.',
+            ],
         ];
+    }
+
+    /**
+     * Whether the public invoice page may mark an invoice paid. Gateways saved before this
+     * setting existed keep working as they did.
+     */
+    public function allowsCustomerConfirmation(array $config): bool
+    {
+        return !filter_var($config['staff_confirm_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
     }
 
     /**

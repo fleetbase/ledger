@@ -490,6 +490,27 @@ test('invoice status and aging reports retain every bucket and currency contract
         ->and($status['summary']->firstWhere('status', 'sent')['currency'])->toBeNull();
 });
 
+test('dashboard compares against a previous period of the same whole number of days', function () {
+    $service = new class extends LedgerService {
+        public array $periods = [];
+
+        public function getIncomeStatement(string $companyUuid, ?string $startDate = null, ?string $endDate = null): array
+        {
+            $this->periods[] = [$startDate, $endDate];
+
+            return parent::getIncomeStatement($companyUuid, $startDate, $endDate);
+        }
+    };
+
+    $service->getDashboardMetrics('company-ledger', '2026-02-01', '2026-02-10');
+    expect($service->periods[1] ?? null)->toBe(['2026-01-22', '2026-01-31']);
+
+    // Reversed dates still count as a positive length, as they do on Carbon 2.
+    $service->periods = [];
+    $service->getDashboardMetrics('company-ledger', '2026-02-10', '2026-02-01');
+    expect($service->periods[1] ?? null)->toBe(['2026-01-31', '2026-02-09']);
+});
+
 test('dashboard aggregates metrics wallets activity and percentage changes', function () {
     $cash    = ledgerAccount('1000', Account::TYPE_ASSET);
     $revenue = ledgerAccount('4000', Account::TYPE_REVENUE);

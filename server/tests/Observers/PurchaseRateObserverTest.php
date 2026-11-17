@@ -29,10 +29,27 @@ class PurchaseRateObserverInvoiceService extends InvoiceService
             throw $this->exception;
         }
 
-        return new Invoice([
+        $invoice = new PurchaseRateObserverRecordingInvoice([
             'uuid'   => 'generated-invoice',
             'number' => 'INV-GENERATED',
         ]);
+        $invoice->status = $this->status;
+
+        return $this->created = $invoice;
+    }
+
+    public string $status                                 = 'draft';
+    public ?PurchaseRateObserverRecordingInvoice $created = null;
+}
+
+/** An invoice that records being sent instead of saving. */
+class PurchaseRateObserverRecordingInvoice extends Invoice
+{
+    public bool $sent = false;
+
+    public function markAsSent(): void
+    {
+        $this->sent = true;
     }
 }
 
@@ -150,4 +167,13 @@ test('purchase rate invoice failures are contained and audited', function () {
     expect($service->calls)->toHaveCount(1)
         ->and(collect(LoggerManager::$records)->pluck('message')->all())
         ->toContain('[Ledger] PurchaseRateObserver: failed to create invoice.');
+});
+
+test('a new purchase rate\'s invoice stays a draft until something sends it', function () {
+    $service = new PurchaseRateObserverInvoiceService();
+
+    (new PurchaseRateObserver($service))->created(purchaseRateObserverRate(purchaseRateObserverOrder(['meta' => ['repriced' => true]])));
+
+    // Sending is an order config's choice (Ledger's `send_invoice` action), not the observer's.
+    expect($service->created->sent)->toBeFalse();
 });

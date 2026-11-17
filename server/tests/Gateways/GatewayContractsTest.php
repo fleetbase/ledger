@@ -114,7 +114,7 @@ test('cash driver records purchases and refunds without an external provider', f
         ->and($driver->getCapabilities())->toBe(['purchase', 'refund'])
         ->and($driver->hasCapability('purchase'))->toBeTrue()
         ->and($driver->hasCapability('webhooks'))->toBeFalse()
-        ->and(array_column($driver->getConfigSchema(), 'key'))->toBe(['label', 'instructions'])
+        ->and(array_column($driver->getConfigSchema(), 'key'))->toBe(['label', 'instructions', 'staff_confirm_only'])
         ->and($purchase->gatewayTransactionId)->toStartWith('cash_')
         ->and($purchase->amount)->toBe(2250)
         ->and($purchase->message)->toBe('Collect a stamped receipt.')

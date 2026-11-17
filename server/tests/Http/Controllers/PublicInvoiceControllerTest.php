@@ -209,6 +209,32 @@ test('cash public payments record the exact invoice balance immediately', functi
         ]);
 });
 
+test('a cash gateway can leave confirming payment to the business', function (mixed $setting) {
+    $gateway         = invoiceControllerGateway('cash');
+    $gateway->config = ['staff_confirm_only' => $setting];
+    $gateway->save();
+    $invoice        = invoiceControllerInvoice(['status' => 'sent', 'total_amount' => 750, 'amount_paid' => 0, 'balance' => 750]);
+    $invoiceService = new InvoiceControllerServiceSpy();
+    $controller     = publicInvoiceController(new CashDriver(), $invoiceService);
+
+    $response = $controller->pay(invoiceControllerRequest(['gateway_id' => $gateway->public_id]), $invoice->public_id);
+
+    expect($response->getStatusCode())->toBe(422)
+        ->and($invoiceService->calls)->toBe([]);
+})->with([true, '1']);
+
+test('a draft invoice cannot be paid through the public route', function () {
+    $gateway        = invoiceControllerGateway('cash');
+    $invoice        = invoiceControllerInvoice(['status' => 'draft', 'total_amount' => 750, 'amount_paid' => 0, 'balance' => 750]);
+    $invoiceService = new InvoiceControllerServiceSpy();
+    $controller     = publicInvoiceController(new CashDriver(), $invoiceService);
+
+    $response = $controller->pay(invoiceControllerRequest(['gateway_id' => $gateway->public_id]), $invoice->public_id);
+
+    expect($response->getStatusCode())->toBe(422)
+        ->and($invoiceService->calls)->toBe([]);
+});
+
 test('asynchronous public payments construct metadata and map failure pending and success states', function () {
     $gateway = invoiceControllerGateway('taler');
     Illuminate\Database\Capsule\Manager::table('customers')->insert([

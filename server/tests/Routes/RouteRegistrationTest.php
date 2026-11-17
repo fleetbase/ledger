@@ -21,7 +21,7 @@ test('Ledger registers public API internal resource action settings search and r
         $routes
     );
 
-    expect($routes)->toHaveCount(70)
+    expect($routes)->toHaveCount(71)
         ->and($signatures)->toContain(
             'POST|webhooks/{driver}|WebhookController@handle',
             'GET|invoices/{public_id}|PublicInvoiceController@show',
@@ -54,6 +54,7 @@ test('Ledger logs requests to its public API and customer invoice routes but not
 
     // The public API's fleetbase.api group runs LogApiRequests
     expect($middleware['POST|wallet/topup|Api\v1\WalletApiController@topUp'])->toBe(['fleetbase.api'])
+        ->and($middleware['GET|customers/orders/{id}/invoice|Api\v1\CustomerInvoiceController@forOrder'])->toBe(['fleetbase.api', Fleetbase\FleetOps\Http\Middleware\AuthenticateCustomerToken::class])
         ->and($middleware['POST|invoices/{public_id}/pay|PublicInvoiceController@pay'])->toBe([Fleetbase\Http\Middleware\LogApiRequests::class])
         ->and($middleware['GET|invoices/{public_id}|PublicInvoiceController@show'])->toBe([Fleetbase\Http\Middleware\LogApiRequests::class])
         ->and($middleware['POST|webhooks/{driver}|WebhookController@handle'])->toBe([])
